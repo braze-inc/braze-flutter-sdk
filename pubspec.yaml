@@ -1,0 +1,25 @@
+name: braze_plugin
+description: This is the Braze plugin for Flutter. Effective marketing automation is an essential part of successfully scaling and managing your business.
+version: 1.5.0
+homepage: https://www.braze.com/
+
+environment:
+  sdk: ">=2.0.0 <3.0.0"
+  flutter: ">=1.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.braze.brazeplugin
+        pluginClass: BrazePlugin
+      ios:
+        pluginClass: BrazePlugin

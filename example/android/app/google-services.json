@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "141145922305",
+    "firebase_url": "https://flutter-sample-9d2f4.firebaseio.com",
+    "project_id": "flutter-sample-9d2f4",
+    "storage_bucket": "flutter-sample-9d2f4.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:141145922305:android:79445a7a4c774308",
+        "android_client_info": {
+          "package_name": "braze.com.brazepluginexample"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "141145922305-u8obcu23qvc25l0vp67s39dtmkpin9pe.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCz0nCM27MMnNXlVpQ6Cr4PsxZw07agj94"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
