@@ -7,18 +7,21 @@ import 'package:flutter/foundation.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+
   final List<MethodCall> log = <MethodCall>[];
+  final String mockInstallTrackingId = '_test_install_tracking_id_';
+
   setUpAll(() async {
     MethodChannel('braze_plugin')
         .setMockMethodCallHandler((MethodCall methodCall) async {
       log.add(methodCall);
       // If needed to mock return values:
-      // switch (methodCall.method) {
-      //   case 'someMethod':
-      //     return someValue;
-      //   default:
-      //     return null;
-      // }
+      switch (methodCall.method) {
+        case 'getInstallTrackingId':
+          return mockInstallTrackingId;
+        default:
+          return null;
+      }
     });
   });
   tearDown(() async {
@@ -145,15 +148,16 @@ void main() {
     ]);
   });
 
-  test('should call getInstallTrackingId', () {
+  test('should call getInstallTrackingId', () async {
     BrazePlugin _braze = new BrazePlugin();
-    _braze.getInstallTrackingId();
+    final result = await _braze.getInstallTrackingId();
     expect(log, <Matcher>[
       isMethodCall(
         'getInstallTrackingId',
         arguments: null,
       )
     ]);
+    expect(result, mockInstallTrackingId);
   });
 
   test('should call addAlias', () {
@@ -179,7 +183,10 @@ void main() {
     expect(log, <Matcher>[
       isMethodCall(
         'logCustomEvent',
-        arguments: <String, dynamic>{'eventName': _eventName},
+        arguments: <String, dynamic>{
+          'eventName': _eventName,
+          'properties': null,
+        },
       ),
     ]);
   });
@@ -214,7 +221,8 @@ void main() {
           'productId': _productId,
           'currencyCode': _currencyCode,
           'price': _price,
-          'quantity': _quantity
+          'quantity': _quantity,
+          'properties': null
         },
       ),
     ]);
