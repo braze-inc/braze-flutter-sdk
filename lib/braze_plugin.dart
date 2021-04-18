@@ -370,8 +370,9 @@ class BrazePlugin {
       case "handleBrazeInAppMessage":
         final Map<dynamic, dynamic> argumentsMap = call.arguments;
         String? inAppMessageString = argumentsMap['inAppMessage'];
-        if (_brazeInAppMessageHandler is Function(BrazeInAppMessage)) {
-          _brazeInAppMessageHandler!(BrazeInAppMessage(inAppMessageString!));
+        final brazeInAppMessageHandler = this._brazeInAppMessageHandler;
+        if (brazeInAppMessageHandler != null) {
+          brazeInAppMessageHandler(BrazeInAppMessage(inAppMessageString!));
         } else {
           print("Braze in-app message callback not present. Doing nothing.");
         }
@@ -382,8 +383,9 @@ class BrazePlugin {
         for (dynamic card in argumentsMap['contentCards']) {
           brazeCards.add(BrazeContentCard(card));
         }
-        if (_brazeContentCardHandler is Function(List<BrazeContentCard>)) {
-          _brazeContentCardHandler!(brazeCards);
+        final brazeContentCardHandler = this._brazeContentCardHandler;
+        if (brazeContentCardHandler != null) {
+          brazeContentCardHandler(brazeCards);
         } else {
           print("Braze content card callback not present. Doing nothing.");
         }
