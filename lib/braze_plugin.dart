@@ -4,8 +4,8 @@ import 'package:flutter/services.dart';
 
 class BrazePlugin {
   static const MethodChannel _channel = const MethodChannel('braze_plugin');
-  Function(BrazeInAppMessage) _brazeInAppMessageHandler;
-  Function(List<BrazeContentCard>) _brazeContentCardHandler;
+  Function(BrazeInAppMessage)? _brazeInAppMessageHandler;
+  Function(List<BrazeContentCard>)? _brazeContentCardHandler;
 
   BrazePlugin() {
     _channel.setMethodCallHandler(_handleBrazeData);
@@ -369,9 +369,9 @@ class BrazePlugin {
     switch (call.method) {
       case "handleBrazeInAppMessage":
         final Map<dynamic, dynamic> argumentsMap = call.arguments;
-        String inAppMessageString = argumentsMap['inAppMessage'];
+        String? inAppMessageString = argumentsMap['inAppMessage'];
         if (_brazeInAppMessageHandler is Function(BrazeInAppMessage)) {
-          _brazeInAppMessageHandler(BrazeInAppMessage(inAppMessageString));
+          _brazeInAppMessageHandler!(BrazeInAppMessage(inAppMessageString!));
         } else {
           print("Braze in-app message callback not present. Doing nothing.");
         }
@@ -383,7 +383,7 @@ class BrazePlugin {
           brazeCards.add(BrazeContentCard(card));
         }
         if (_brazeContentCardHandler is Function(List<BrazeContentCard>)) {
-          _brazeContentCardHandler(brazeCards);
+          _brazeContentCardHandler!(brazeCards);
         } else {
           print("Braze content card callback not present. Doing nothing.");
         }
