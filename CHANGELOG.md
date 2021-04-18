@@ -1,3 +1,14 @@
+## 2.0.0
+
+##### Breaking
+- This release adds null-safety.
+- The new minimum Dart version is now 2.12.0.
+
+##### Added
+- The functions `logEvent` and `logPurchase` now take an optional `properties` parameter.
+  This parameter can be used as a replacement for `logEventWithProperties` and `logPurchaseWithProperties`.
+- The functions `logEventWithProperties` and `logPurchaseWithProperties` are now deprecated in favor of the `properties` parameter.
+
 ## 1.5.0
 
 ##### Breaking
