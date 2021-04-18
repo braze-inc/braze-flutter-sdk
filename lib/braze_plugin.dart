@@ -22,7 +22,7 @@ class BrazePlugin {
   }
 
   /// Changes the current Braze userId
-  void changeUser(String userId) {
+  void changeUser(String userId) { // todo: check if it can be nullable.
     final Map<String, dynamic> params = <String, dynamic>{"userId": userId};
     _channel.invokeMethod('changeUser', params);
   }
@@ -69,7 +69,7 @@ class BrazePlugin {
 
   /// Logs a button click for the provided in-app message button data
   void logInAppMessageButtonClicked(
-      BrazeInAppMessage inAppMessage, int buttonId) {
+      BrazeInAppMessage inAppMessage, int buttonId) { // todo: check if button id can be null
     final Map<String, dynamic> params = <String, dynamic>{
       "inAppMessageString": inAppMessage.inAppMessageJsonString,
       "buttonId": buttonId
@@ -227,6 +227,7 @@ class BrazePlugin {
     _callStringMethod('unsetCustomUserAttribute', 'key', key);
   }
 
+  // todo: Check if any of the following can be null to unset the user property.
   /// Sets the first name default user attribute
   void setFirstName(String firstName) {
     _callStringMethod('setFirstName', 'firstName', firstName);
@@ -282,6 +283,7 @@ class BrazePlugin {
     _callStringMethod('setAvatarImageUrl', 'avatarImageUrl', avatarImageUrl);
   }
 
+  // todo: Check if everything has to be set or any can be null.
   /// Sets attribution data
   void setAttributionData(
       String network, String campaign, String adGroup, String creative) {
