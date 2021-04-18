@@ -94,14 +94,16 @@ class BrazePlugin {
   }
 
   /// Logs a custom event to Braze
-  void logCustomEvent(String eventName) {
+  void logCustomEvent(String eventName, {Map<String, dynamic>? properties}) {
     final Map<String, dynamic> params = <String, dynamic>{
-      "eventName": eventName
+      "eventName": eventName,
+      "properties": properties
     };
     _channel.invokeMethod('logCustomEvent', params);
   }
 
   /// Logs a custom event to Braze
+  @Deprecated('Use logCustomEvent(eventName, properties: properties) instead.')
   void logCustomEventWithProperties(
       String eventName, Map<String, dynamic> properties) {
     final Map<String, dynamic> params = <String, dynamic>{
@@ -113,17 +115,19 @@ class BrazePlugin {
 
   /// Logs a purchase event to Braze
   void logPurchase(
-      String productId, String currencyCode, double price, int quantity) {
+      String productId, String currencyCode, double price, int quantity, {Map<String, dynamic>? properties}) {
     final Map<String, dynamic> params = <String, dynamic>{
       "productId": productId,
       "currencyCode": currencyCode,
       "price": price,
-      "quantity": quantity
+      "quantity": quantity,
+      "properties": properties
     };
     _channel.invokeMethod('logPurchase', params);
   }
 
   /// Logs a purchase event to Braze
+  @Deprecated('Use logPurchase(productId, currencyCode, price, quantity, properties: properties) instead.')
   void logPurchaseWithProperties(String productId, String currencyCode,
       double price, int quantity, Map<String, dynamic> properties) {
     final Map<String, dynamic> params = <String, dynamic>{
