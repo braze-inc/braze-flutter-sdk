@@ -1,47 +1,40 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="braze.com.brazepluginexample">
-
-    <!-- The INTERNET permission is required for development. Specifically,
-         flutter needs it to communicate with the running application
-         to allow setting breakpoints, to provide hot reload, etc.
-    -->
-    <uses-permission android:name="android.permission.INTERNET"/>
-
-    <!-- io.flutter.app.FlutterApplication is an android.app.Application that
-         calls FlutterMain.startInitialization(this); in its onCreate method.
-         In most cases you can leave this as-is, but you if you want to provide
-         additional functionality it is fine to subclass or reimplement
-         FlutterApplication and put your custom class here. -->
-    <application
-        android:label="braze_plugin_example"
-        android:icon="@mipmap/ic_launcher">
-        <activity
-            android:name=".MainActivity"
-            android:launchMode="singleTop"
-            android:theme="@style/LaunchTheme"
-            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection|fontScale|screenLayout|density"
-            android:hardwareAccelerated="true"
-            android:windowSoftInputMode="adjustResize">
-            <meta-data
-                android:name="flutterEmbedding"
-                android:value="2" />
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
-        </activity>
-        <service android:name="com.appboy.AppboyFirebaseMessagingService">
-            <intent-filter>
-                <action android:name="com.google.firebase.MESSAGING_EVENT" />
-            </intent-filter>
-        </service>
-        <activity android:name="com.appboy.ui.AppboyWebViewActivity" android:theme="@android:style/Theme" />
-        <activity
-            android:name=".EmbeddingV1Activity"
-            android:theme="@style/LaunchTheme"
-            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection|fontScale"
-            android:hardwareAccelerated="true"
-            android:windowSoftInputMode="adjustResize">
-        </activity>
-    </application>
+  package="braze.com.brazepluginexample">
+  <uses-permission android:name="android.permission.INTERNET" />
+  <application
+    android:allowBackup="false"
+    android:icon="@mipmap/ic_launcher"
+    android:label="braze_plugin_example">
+    <activity
+      android:name=".MainActivity"
+      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection|fontScale|screenLayout|density"
+      android:hardwareAccelerated="true"
+      android:launchMode="singleTop"
+      android:theme="@style/LaunchTheme"
+      android:windowSoftInputMode="adjustResize">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+      <meta-data
+        android:name="flutterEmbedding"
+        android:value="2" />
+    </activity>
+    <activity
+      android:name="com.appboy.ui.AppboyWebViewActivity"
+      android:theme="@android:style/Theme" />
+    <activity
+      android:name=".EmbeddingV1Activity"
+      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection|fontScale"
+      android:hardwareAccelerated="true"
+      android:theme="@style/LaunchTheme"
+      android:windowSoftInputMode="adjustResize" />
+    <service
+      android:name="com.appboy.AppboyFirebaseMessagingService"
+      android:exported="false">
+      <intent-filter>
+        <action android:name="com.google.firebase.MESSAGING_EVENT" />
+      </intent-filter>
+    </service>
+  </application>
 </manifest>

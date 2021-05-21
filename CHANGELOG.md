@@ -1,3 +1,19 @@
+## 2.0.0
+
+##### Breaking
+- Migrates the plugin to support null safety. All non-optional function parameters have been updated to be non-nullable unless otherwise specified. [Read here](https://dart.dev/null-safety) for more information about null safety.
+  - Please reference [the Dart documentation](https://dart.dev/null-safety/migration-guide) when migrating your app to null safety.
+  - Apps that have not yet migrated to null safety are compatible with this version as long as they are using Dart 2.12+.
+  - Thanks @IchordeDionysos for contributing!
+- Passing through `null` as a value for user attributes is no longer supported.
+  - The only attribute that is able to be unset is `email` by passing in `null` into `setEmail`.
+- The methods `logEvent` and `logPurchase` now take an optional `properties` parameter.
+- The native Android bridge uses [Braze Android SDK 14.0.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#1400).
+- The minimum supported Dart version is `2.12.0`.
+
+##### Changed
+- `logEventWithProperties` and `logPurchaseWithProperties` are now deprecated in favor of `logEvent` and `logPurchase`.
+
 ## 1.5.0
 
 ##### Breaking

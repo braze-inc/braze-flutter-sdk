@@ -12,12 +12,10 @@ import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 
-import com.appboy.Appboy
-import com.appboy.AppboyLifecycleCallbackListener
-import com.appboy.configuration.CachedConfigurationProvider
 import com.appboy.enums.Gender
 import com.appboy.enums.Month
 import com.appboy.enums.NotificationSubscriptionType
+import com.appboy.events.SimpleValueCallback
 import com.appboy.models.cards.Card
 import com.appboy.models.IInAppMessage
 import com.appboy.models.IInAppMessageImmersive
@@ -25,6 +23,8 @@ import com.appboy.models.outgoing.AppboyProperties
 import com.appboy.models.outgoing.AttributionData
 import com.appboy.services.AppboyLocationService
 import com.appboy.ui.activities.AppboyContentCardsActivity
+import com.braze.Braze
+import com.braze.BrazeUser
 
 import android.app.Activity
 import android.content.Context
@@ -152,10 +152,10 @@ class BrazePlugin: MethodCallHandler, FlutterPlugin, ActivityAware {
       when (call.method) {
         "changeUser" -> {
           val userId = call.argument<String>("userId")
-          Appboy.getInstance(context).changeUser(userId)
+          Braze.getInstance(context).changeUser(userId)
         }
         "requestContentCardsRefresh" -> {
-          Appboy.getInstance(context).requestContentCardsRefresh(false)
+          Braze.getInstance(context).requestContentCardsRefresh(false)
         }
         "launchContentCards" -> {
           if (this.activity != null) {
@@ -167,7 +167,7 @@ class BrazePlugin: MethodCallHandler, FlutterPlugin, ActivityAware {
         "logContentCardClicked" -> {
           val contentCardString = call.argument<String>("contentCardString")
           if (contentCardString != null) {
-            val contentCard = Appboy.getInstance(context).deserializeContentCard(contentCardString)
+            val contentCard = Braze.getInstance(context).deserializeContentCard(contentCardString)
             if (contentCard != null) {
               contentCard.logClick()
             }
@@ -176,7 +176,7 @@ class BrazePlugin: MethodCallHandler, FlutterPlugin, ActivityAware {
         "logContentCardImpression" -> {
           val contentCardString = call.argument<String>("contentCardString")
           if (contentCardString != null) {
-            val contentCard = Appboy.getInstance(context).deserializeContentCard(contentCardString)
+            val contentCard = Braze.getInstance(context).deserializeContentCard(contentCardString)
             if (contentCard != null) {
               contentCard.logImpression()
             }
@@ -185,28 +185,28 @@ class BrazePlugin: MethodCallHandler, FlutterPlugin, ActivityAware {
         "logContentCardDismissed" -> {
           val contentCardString = call.argument<String>("contentCardString")
           if (contentCardString != null) {
-            val contentCard = Appboy.getInstance(context).deserializeContentCard(contentCardString)
+            val contentCard = Braze.getInstance(context).deserializeContentCard(contentCardString)
             if (contentCard != null) {
               contentCard.setIsDismissed(true)
             }
           }
         }
         "logInAppMessageClicked" -> {
-          val inAppMessage = Appboy.getInstance(context)
+          val inAppMessage = Braze.getInstance(context)
               .deserializeInAppMessageString(call.argument<String>("inAppMessageString"))
           if (inAppMessage != null) {
             inAppMessage.logClick()
           }
         }
         "logInAppMessageImpression" -> {
-          val inAppMessage = Appboy.getInstance(context)
+          val inAppMessage = Braze.getInstance(context)
               .deserializeInAppMessageString(call.argument<String>("inAppMessageString"))
           if (inAppMessage != null) {
             inAppMessage.logImpression()
           }
         }
         "logInAppMessageButtonClicked" -> {
-          val inAppMessage = Appboy.getInstance(context)
+          val inAppMessage = Braze.getInstance(context)
               .deserializeInAppMessageString(call.argument<String>("inAppMessageString"))
           if (inAppMessage is IInAppMessageImmersive) {
             val buttonId = call.argument<Int>("buttonId")?: 0
@@ -219,19 +219,16 @@ class BrazePlugin: MethodCallHandler, FlutterPlugin, ActivityAware {
             }
           }
         }
-        "getInstallTrackingId" -> {
-          result.success(Appboy.getInstance(context).getInstallTrackingId())
-        }
         "addAlias" -> {
           val aliasName = call.argument<String>("aliasName")
           val aliasLabel = call.argument<String>("aliasLabel")
-          Appboy.getInstance(context).getCurrentUser()?.addAlias(aliasName, aliasLabel)
+          Braze.getInstance(context).runOnUser { user -> user.addAlias(aliasName, aliasLabel) }
         }
         "logCustomEvent" -> {
           val eventName = call.argument<String>("eventName")
           val properties = convertToAppboyProperties(
                   call.argument<Map<String, *>>("properties"))
-          Appboy.getInstance(context).logCustomEvent(eventName, properties)
+          Braze.getInstance(context).logCustomEvent(eventName, properties)
         }
         "logPurchase" -> {
           val productId = call.argument<String>("productId")
@@ -240,88 +237,87 @@ class BrazePlugin: MethodCallHandler, FlutterPlugin, ActivityAware {
           val quantity = call.argument<Int>("quantity")?: 1
           val properties = convertToAppboyProperties(
                   call.argument<Map<String, *>>("properties"))
-          Appboy.getInstance(context).logPurchase(productId, currencyCode, BigDecimal(price),
+          Braze.getInstance(context).logPurchase(productId, currencyCode, BigDecimal(price),
                   quantity, properties)
         }
         "addToCustomAttributeArray" -> {
           val key = call.argument<String>("key")
           val value = call.argument<String>("value")
-          Appboy.getInstance(context).getCurrentUser()?.addToCustomAttributeArray(key, value)
+          Braze.getInstance(context).runOnUser { user -> user.addToCustomAttributeArray(key, value) }
         }
         "removeFromCustomAttributeArray" -> {
           val key = call.argument<String>("key")
           val value = call.argument<String>("value")
-          Appboy.getInstance(context).getCurrentUser()?.removeFromCustomAttributeArray(key, value)
+          Braze.getInstance(context).runOnUser { user -> user.removeFromCustomAttributeArray(key, value) }
         }
         "setStringCustomUserAttribute" -> {
           val key = call.argument<String>("key")
           val value = call.argument<String>("value")
-          Appboy.getInstance(context).getCurrentUser()?.setCustomUserAttribute(key, value)
+          Braze.getInstance(context).runOnUser { user -> user.setCustomUserAttribute(key, value) }
         }
         "setDoubleCustomUserAttribute" -> {
           val key = call.argument<String>("key")
           val value = call.argument<Double>("value")?: 0.0
-          Appboy.getInstance(context).getCurrentUser()?.setCustomUserAttribute(key, value)
+          Braze.getInstance(context).runOnUser { user -> user.setCustomUserAttribute(key, value) }
         }
         "setDateCustomUserAttribute" -> {
           val key = call.argument<String>("key")
           val value = (call.argument<Int>("value")?: 0).toLong()
-          Appboy.getInstance(context).getCurrentUser()?.setCustomUserAttributeToSecondsFromEpoch(
-                  key, value)
+          Braze.getInstance(context).runOnUser { user -> user.setCustomUserAttributeToSecondsFromEpoch(key, value) }
         }
         "setIntCustomUserAttribute" -> {
           val key = call.argument<String>("key")
           val value = call.argument<Int>("value")?: 0
-          Appboy.getInstance(context).getCurrentUser()?.setCustomUserAttribute(key, value)
+          Braze.getInstance(context).runOnUser { user -> user.setCustomUserAttribute(key, value) }
         }
         "incrementCustomUserAttribute" -> {
           val key = call.argument<String>("key")
           val value = call.argument<Int>("value")?: 0
-          Appboy.getInstance(context).getCurrentUser()?.incrementCustomUserAttribute(key, value)
-        }
-        "setPushNotificationSubscriptionType" -> {
-          val type = getSubscriptionType(call.argument<String>("type")?: "")
-          Appboy.getInstance(context).getCurrentUser()?.setPushNotificationSubscriptionType(type)
-        }
-        "setEmailNotificationSubscriptionType" -> {
-          val type = getSubscriptionType(call.argument<String>("type")?: "")
-          Appboy.getInstance(context).getCurrentUser()?.setEmailNotificationSubscriptionType(type)
+          Braze.getInstance(context).runOnUser { user -> user.incrementCustomUserAttribute(key, value) }
         }
         "setBoolCustomUserAttribute" -> {
           val key = call.argument<String>("key")
           val value = call.argument<Boolean>("value")?: false
-          Appboy.getInstance(context).getCurrentUser()?.setCustomUserAttribute(key, value)
+          Braze.getInstance(context).runOnUser { user -> user.setCustomUserAttribute(key, value) }
+        }
+        "unsetCustomUserAttribute" -> {
+          val key = call.argument<String>("key")
+          Braze.getInstance(context).runOnUser { user -> user.unsetCustomUserAttribute(key) }
+        }
+        "setPushNotificationSubscriptionType" -> {
+          val type = getSubscriptionType(call.argument<String>("type")?: "")
+          Braze.getInstance(context).runOnUser { user -> user.setPushNotificationSubscriptionType(type) }
+        }
+        "setEmailNotificationSubscriptionType" -> {
+          val type = getSubscriptionType(call.argument<String>("type")?: "")
+          Braze.getInstance(context).runOnUser { user -> user.setEmailNotificationSubscriptionType(type) }
         }
         "setLocationCustomAttribute" -> {
           val key = call.argument<String>("key")
           val lat = call.argument<Double>("lat")?: 0.0
           val long = call.argument<Double>("long")?: 0.0
-          Appboy.getInstance(context).getCurrentUser()?.setLocationCustomAttribute(key, lat, long)
+          Braze.getInstance(context).runOnUser { user -> user.setLocationCustomAttribute(key, lat, long) }
         }
         "requestImmediateDataFlush" -> {
-          Appboy.getInstance(context).requestImmediateDataFlush()
-        }
-        "unsetCustomUserAttribute" -> {
-          val key = call.argument<String>("key")
-          Appboy.getInstance(context).getCurrentUser()?.unsetCustomUserAttribute(key)
+          Braze.getInstance(context).requestImmediateDataFlush()
         }
         "setFirstName" -> {
           val firstName = call.argument<String>("firstName")
-          Appboy.getInstance(context).getCurrentUser()?.setFirstName(firstName)
+          Braze.getInstance(context).runOnUser { user -> user.setFirstName(firstName) }
         }
         "setLastName" -> {
           val lastName = call.argument<String>("lastName")
-          Appboy.getInstance(context).getCurrentUser()?.setLastName(lastName)
+          Braze.getInstance(context).runOnUser { user -> user.setLastName(lastName) }
         }
         "setDateOfBirth" -> {
           val year = call.argument<Int>("year")?: 0
           val month = getMonth(call.argument<Int>("month")?: 0)
           val day = call.argument<Int>("day")?: 0
-          Appboy.getInstance(context).getCurrentUser()?.setDateOfBirth(year, month, day)
+          Braze.getInstance(context).runOnUser { user -> user.setDateOfBirth(year, month, day) }
         }
         "setEmail" -> {
           val email = call.argument<String>("email")
-          Appboy.getInstance(context).getCurrentUser()?.setEmail(email)
+          Braze.getInstance(context).runOnUser { user -> user.setEmail(email) }
         }
         "setGender" -> {
           val gender = call.argument<String>("gender")
@@ -342,23 +338,23 @@ class BrazePlugin: MethodCallHandler, FlutterPlugin, ActivityAware {
           } else {
             return
           }
-          Appboy.getInstance(context).getCurrentUser()?.setGender(genderEnum)
+          Braze.getInstance(context).runOnUser { user -> user.setGender(genderEnum) }
         }
         "setLanguage" -> {
           val language = call.argument<String>("language")
-          Appboy.getInstance(context).getCurrentUser()?.setLanguage(language)
+          Braze.getInstance(context).runOnUser { user -> user.setLanguage(language) }
         }
         "setCountry" -> {
           val country = call.argument<String>("country")
-          Appboy.getInstance(context).getCurrentUser()?.setCountry(country)
+          Braze.getInstance(context).runOnUser { user -> user.setCountry(country) }
         }
         "setHomeCity" -> {
           val homeCity = call.argument<String>("homeCity")
-          Appboy.getInstance(context).getCurrentUser()?.setHomeCity(homeCity)
+          Braze.getInstance(context).runOnUser { user -> user.setHomeCity(homeCity) }
         }
         "setPhoneNumber" -> {
           val phoneNumber = call.argument<String>("phoneNumber")
-          Appboy.getInstance(context).getCurrentUser()?.setPhoneNumber(phoneNumber)
+          Braze.getInstance(context).runOnUser { user -> user.setPhoneNumber(phoneNumber) }
         }
         "setAttributionData" -> {
           val network = call.argument<String>("network")
@@ -366,38 +362,57 @@ class BrazePlugin: MethodCallHandler, FlutterPlugin, ActivityAware {
           val adGroup = call.argument<String>("adGroup")
           val creative = call.argument<String>("creative")
           val attributionData = AttributionData(network, campaign, adGroup, creative)
-          Appboy.getInstance(context).getCurrentUser()?.setAttributionData(attributionData)
+          Braze.getInstance(context).runOnUser { user -> user.setAttributionData(attributionData) }
         }
         "setAvatarImageUrl" -> {
           val avatarImageUrl = call.argument<String>("avatarImageUrl")
-          Appboy.getInstance(context).getCurrentUser()?.setAvatarImageUrl(avatarImageUrl)
+          Braze.getInstance(context).runOnUser { user -> user.setAvatarImageUrl(avatarImageUrl) }
         }
         "registerAndroidPushToken" -> {
           val pushToken = call.argument<String>("pushToken")
-          Appboy.getInstance(context).registerAppboyPushMessages(pushToken)
+          Braze.getInstance(context).registerAppboyPushMessages(pushToken)
+        }
+        "getInstallTrackingId" -> {
+          result.success(Braze.getInstance(context).getInstallTrackingId())
         }
         "setGoogleAdvertisingId" -> {
           val id = call.argument<String>("id") ?: return
           val adTrackingEnabled = call.argument<Boolean>("adTrackingEnabled") ?: return
-          Appboy.getInstance(context).setGoogleAdvertisingId(id, adTrackingEnabled)
+          Braze.getInstance(context).setGoogleAdvertisingId(id, adTrackingEnabled)
         }
         "wipeData" -> {
-          Appboy.wipeData(context)
+          Braze.wipeData(context)
         }
         "requestLocationInitialization" -> {
           AppboyLocationService.requestInitialization(context);
         }
         "enableSDK" -> {
-          Appboy.enableSdk(context)
+          Braze.enableSdk(context)
         }
         "disableSDK" -> {
-          Appboy.disableSdk(context)
+          Braze.disableSdk(context)
         }
         else -> result.notImplemented()
       }
     } catch (e: IOException) {
       result.error("IOException encountered", call.method, e)
     }
+  }
+
+  //--
+  // Private methods
+  //--
+
+  /**
+   * Attempts to fetch the current user and then runs a block on it
+   */
+  private fun Braze.runOnUser(block: (user: BrazeUser) -> Unit) {
+    this.getCurrentUser(object : SimpleValueCallback<BrazeUser>() {
+      override fun onSuccess(user: BrazeUser) {
+        super.onSuccess(user)
+        block(user)
+      }
+    })
   }
 
   private fun getSubscriptionType(type: String): NotificationSubscriptionType? {

@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package braze.com.brazepluginexample
 
 import android.os.Bundle

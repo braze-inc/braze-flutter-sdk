@@ -119,7 +119,7 @@ NSMutableArray<FlutterMethodChannel *> *_channels = nil;
     [Appboy sharedInstance].user.dateOfBirth = dateOfBirth;
   } else if ([method isEqualToString:@"setEmail"]) {
     NSString *email = arguments[@"email"];
-    [Appboy sharedInstance].user.email = email;
+    [Appboy sharedInstance].user.email = (![email isKindOfClass:[NSNull class]]) ? email : nil;
   } else if ([method isEqualToString:@"setPhoneNumber"]) {
     NSString *phoneNumber = arguments[@"phoneNumber"];
     [Appboy sharedInstance].user.phone = phoneNumber;

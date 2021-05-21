@@ -1,25 +1,21 @@
 package braze.com.brazepluginexample
 
 import android.view.View
-
-import io.flutter.embedding.android.FlutterActivity
-import io.flutter.embedding.engine.FlutterEngine
-import io.flutter.plugins.GeneratedPluginRegistrant
-
 import com.appboy.Appboy
 import com.appboy.AppboyLifecycleCallbackListener
 import com.appboy.events.ContentCardsUpdatedEvent
 import com.appboy.events.IEventSubscriber
-import com.appboy.models.cards.Card
 import com.appboy.models.IInAppMessage
-import com.appboy.models.IInAppMessageImmersive
 import com.appboy.models.MessageButton
+import com.appboy.models.cards.Card
 import com.appboy.ui.inappmessage.AppboyInAppMessageManager
 import com.appboy.ui.inappmessage.InAppMessageCloser
 import com.appboy.ui.inappmessage.InAppMessageOperation
 import com.appboy.ui.inappmessage.listeners.IInAppMessageManagerListener
-
 import com.braze.brazeplugin.BrazePlugin
+import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugins.GeneratedPluginRegistrant
 
 class MainActivity: FlutterActivity() {
   private var mContentCardsUpdatedSubscriber: IEventSubscriber<ContentCardsUpdatedEvent>? = null

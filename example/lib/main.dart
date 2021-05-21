@@ -139,8 +139,8 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                     content: new Text("Custom event $customEvent."),
                   ));
                 } else {
-                  _braze.logCustomEventWithProperties(
-                      customEvent, {customPropertyKey: customPropertyValue});
+                  _braze.logCustomEvent(
+                      customEvent, properties: {customPropertyKey: customPropertyValue});
                   ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
                     content: new Text(
                         'Custom event $customEvent with properties {"$customPropertyKey":"$customPropertyValue"}.'),
@@ -153,10 +153,10 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
               onPressed: () {
                 var props = {"k1": "v1", "k2": 2, "k3": 3.5, "k4": false};
                 _braze.logCustomEvent("eventName");
-                _braze.logCustomEventWithProperties("eventNameProps", props);
+                _braze.logCustomEvent("eventNameProps", properties: props);
                 _braze.logPurchase("productId", "USD", 3.50, 2);
-                _braze.logPurchaseWithProperties(
-                    "productIdProps", "USD", 2.50, 4, props);
+                _braze.logPurchase(
+                    "productIdProps", "USD", 2.50, 4, properties: props);
                 ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
                   content: new Text("Logged events and purchases"),
                 ));
@@ -206,6 +206,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                 _braze.removeFromCustomAttributeArray("arrayAttribute", "a");
                 _braze.unsetCustomUserAttribute("stringAttribute2");
                 _braze.incrementCustomUserAttribute("intAttribute", 2);
+                _braze.setEmail(null);
                 ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
                   content: new Text("Unset/increment attributes"),
                 ));

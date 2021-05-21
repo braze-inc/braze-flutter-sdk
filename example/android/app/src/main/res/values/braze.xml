@@ -8,12 +8,8 @@
     <bool translatable="false" name="com_appboy_firebase_cloud_messaging_registration_enabled">true</bool>
     <string translatable="false" name="com_appboy_firebase_cloud_messaging_sender_id">901477453852</string>
 
-    <!-- Fresco Library Usage -->
-    <!-- When set to false, the UI code will not use views from Fresco library. By default, this setting
-      is false. -->
-    <bool name="com_appboy_enable_fresco_library_use">true</bool>
-
     <bool name="com_appboy_handle_push_deep_links_automatically">true</bool>
     <bool name="com_appboy_inapp_show_inapp_messages_automatically">true</bool>
     <integer name="com_appboy_trigger_action_minimum_time_interval_seconds">1</integer>
+    <integer name="com_appboy_logger_initial_log_level">0</integer>
 </resources>

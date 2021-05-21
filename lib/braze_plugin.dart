@@ -4,8 +4,8 @@ import 'package:flutter/services.dart';
 
 class BrazePlugin {
   static const MethodChannel _channel = const MethodChannel('braze_plugin');
-  Function(BrazeInAppMessage) _brazeInAppMessageHandler;
-  Function(List<BrazeContentCard>) _brazeContentCardHandler;
+  Function(BrazeInAppMessage)? _brazeInAppMessageHandler;
+  Function(List<BrazeContentCard>)? _brazeContentCardHandler;
 
   BrazePlugin() {
     _channel.setMethodCallHandler(_handleBrazeData);
@@ -77,13 +77,6 @@ class BrazePlugin {
     _channel.invokeMethod('logInAppMessageButtonClicked', params);
   }
 
-  /// Gets the install tracking id
-  Future<String> getInstallTrackingId() {
-    return _channel
-        .invokeMethod('getInstallTrackingId')
-        .then<String>((dynamic result) => result);
-  }
-
   /// Add alias for current user
   void addAlias(String aliasName, String aliasLabel) {
     final Map<String, dynamic> params = <String, dynamic>{
@@ -94,14 +87,16 @@ class BrazePlugin {
   }
 
   /// Logs a custom event to Braze
-  void logCustomEvent(String eventName) {
+  void logCustomEvent(String eventName, {Map<String, dynamic>? properties}) {
     final Map<String, dynamic> params = <String, dynamic>{
-      "eventName": eventName
+      "eventName": eventName,
+      "properties": properties
     };
     _channel.invokeMethod('logCustomEvent', params);
   }
 
   /// Logs a custom event to Braze
+  @Deprecated('Use logCustomEvent(eventName, properties: properties) instead.')
   void logCustomEventWithProperties(
       String eventName, Map<String, dynamic> properties) {
     final Map<String, dynamic> params = <String, dynamic>{
@@ -113,17 +108,19 @@ class BrazePlugin {
 
   /// Logs a purchase event to Braze
   void logPurchase(
-      String productId, String currencyCode, double price, int quantity) {
+      String productId, String currencyCode, double price, int quantity, {Map<String, dynamic>? properties}) {
     final Map<String, dynamic> params = <String, dynamic>{
       "productId": productId,
       "currencyCode": currencyCode,
       "price": price,
-      "quantity": quantity
+      "quantity": quantity,
+      "properties": properties
     };
     _channel.invokeMethod('logPurchase', params);
   }
 
   /// Logs a purchase event to Braze
+  @Deprecated('Use logPurchase(productId, currencyCode, price, quantity, properties: properties) instead.')
   void logPurchaseWithProperties(String productId, String currencyCode,
       double price, int quantity, Map<String, dynamic> properties) {
     final Map<String, dynamic> params = <String, dynamic>{
@@ -233,8 +230,9 @@ class BrazePlugin {
     _callStringMethod('setLastName', 'lastName', lastName);
   }
 
-  /// Sets the email default user attribute
-  void setEmail(String email) {
+  /// Sets the email default user attribute.
+  /// Pass in `null` to unset the user's email.
+  void setEmail(String? email) {
     _callStringMethod('setEmail', 'email', email);
   }
 
@@ -280,7 +278,7 @@ class BrazePlugin {
 
   /// Sets attribution data
   void setAttributionData(
-      String network, String campaign, String adGroup, String creative) {
+      String? network, String? campaign, String? adGroup, String? creative) {
     final Map<String, dynamic> params = <String, dynamic>{
       'network': network,
       'campaign': campaign,
@@ -350,6 +348,13 @@ class BrazePlugin {
     _channel.invokeMethod('setEmailNotificationSubscriptionType', params);
   }
 
+  /// Gets the install tracking id
+  Future<String> getInstallTrackingId() {
+    return _channel
+        .invokeMethod('getInstallTrackingId')
+        .then<String>((dynamic result) => result);
+  }
+
   /// Sets Google Advertising Id for the current user
   /// No-op on iOS.
   void setGoogleAdvertisingId(String id, bool adTrackingEnabled) {
@@ -360,7 +365,7 @@ class BrazePlugin {
     _channel.invokeMethod('setGoogleAdvertisingId', params);
   }
 
-  void _callStringMethod(String methodName, String paramName, String value) {
+  void _callStringMethod(String methodName, String paramName, String? value) {
     final Map<String, dynamic> params = <String, dynamic>{paramName: value};
     _channel.invokeMethod(methodName, params);
   }
@@ -369,9 +374,10 @@ class BrazePlugin {
     switch (call.method) {
       case "handleBrazeInAppMessage":
         final Map<dynamic, dynamic> argumentsMap = call.arguments;
-        String inAppMessageString = argumentsMap['inAppMessage'];
-        if (_brazeInAppMessageHandler is Function(BrazeInAppMessage)) {
-          _brazeInAppMessageHandler(BrazeInAppMessage(inAppMessageString));
+        String? inAppMessageString = argumentsMap['inAppMessage'];
+        final brazeInAppMessageHandler = this._brazeInAppMessageHandler;
+        if (brazeInAppMessageHandler != null) {
+          brazeInAppMessageHandler(BrazeInAppMessage(inAppMessageString!));
         } else {
           print("Braze in-app message callback not present. Doing nothing.");
         }
@@ -382,8 +388,9 @@ class BrazePlugin {
         for (dynamic card in argumentsMap['contentCards']) {
           brazeCards.add(BrazeContentCard(card));
         }
-        if (_brazeContentCardHandler is Function(List<BrazeContentCard>)) {
-          _brazeContentCardHandler(brazeCards);
+        final brazeContentCardHandler = this._brazeContentCardHandler;
+        if (brazeContentCardHandler != null) {
+          brazeContentCardHandler(brazeCards);
         } else {
           print("Braze content card callback not present. Doing nothing.");
         }
