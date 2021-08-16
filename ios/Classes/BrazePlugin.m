@@ -40,6 +40,8 @@ NSMutableArray<FlutterMethodChannel *> *_channels = nil;
     UIWindow *keyWindow = [[UIApplication sharedApplication] keyWindow];
     UIViewController *mainViewController = keyWindow.rootViewController;
     [mainViewController presentViewController:contentCardsModal animated:YES completion:nil];
+  } else if ([method isEqualToString:@"logContentCardsDisplayed"]) {
+    [[Appboy sharedInstance] logContentCardsDisplayed];
   } else if ([method isEqualToString:@"logContentCardClicked"]) {
     NSString *contentCardJSONString = arguments[@"contentCardString"];
     ABKContentCard *contentCard = [[ABKContentCard alloc] init];

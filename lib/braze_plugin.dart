@@ -27,6 +27,11 @@ class BrazePlugin {
     _channel.invokeMethod('changeUser', params);
   }
 
+  /// Logs that Content Cards have been displayed
+  void logContentCardsDisplayed() {
+    _channel.invokeMethod('logContentCardsDisplayed');
+  }
+
   /// Logs a click for the provided Content Card data
   void logContentCardClicked(BrazeContentCard contentCard) {
     final Map<String, dynamic> params = <String, dynamic>{
@@ -108,7 +113,8 @@ class BrazePlugin {
 
   /// Logs a purchase event to Braze
   void logPurchase(
-      String productId, String currencyCode, double price, int quantity, {Map<String, dynamic>? properties}) {
+      String productId, String currencyCode, double price, int quantity,
+      {Map<String, dynamic>? properties}) {
     final Map<String, dynamic> params = <String, dynamic>{
       "productId": productId,
       "currencyCode": currencyCode,
@@ -120,7 +126,8 @@ class BrazePlugin {
   }
 
   /// Logs a purchase event to Braze
-  @Deprecated('Use logPurchase(productId, currencyCode, price, quantity, properties: properties) instead.')
+  @Deprecated(
+      'Use logPurchase(productId, currencyCode, price, quantity, properties: properties) instead.')
   void logPurchaseWithProperties(String productId, String currencyCode,
       double price, int quantity, Map<String, dynamic> properties) {
     final Map<String, dynamic> params = <String, dynamic>{

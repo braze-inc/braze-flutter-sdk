@@ -17,8 +17,8 @@ import com.appboy.enums.Month
 import com.appboy.enums.NotificationSubscriptionType
 import com.appboy.events.SimpleValueCallback
 import com.appboy.models.cards.Card
-import com.appboy.models.IInAppMessage
-import com.appboy.models.IInAppMessageImmersive
+import com.braze.models.inappmessage.IInAppMessage
+import com.braze.models.inappmessage.IInAppMessageImmersive
 import com.appboy.models.outgoing.AppboyProperties
 import com.appboy.models.outgoing.AttributionData
 import com.appboy.services.AppboyLocationService
@@ -163,6 +163,9 @@ class BrazePlugin: MethodCallHandler, FlutterPlugin, ActivityAware {
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             this.context.startActivity(intent)
           }
+        }
+        "logContentCardsDisplayed" -> {
+          Braze.getInstance(context).logContentCardsDisplayed()
         }
         "logContentCardClicked" -> {
           val contentCardString = call.argument<String>("contentCardString")

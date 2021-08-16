@@ -56,6 +56,17 @@ void main() {
     ]);
   });
 
+  test('should call logContentCardsDisplayed', () {
+    BrazePlugin _braze = new BrazePlugin();
+    _braze.logContentCardsDisplayed();
+    expect(log, <Matcher>[
+      isMethodCall(
+        'logContentCardsDisplayed',
+        arguments: null,
+      ),
+    ]);
+  });
+
   test('should call logContentCardClicked', () {
     BrazePlugin _braze = new BrazePlugin();
     String _data = '{"someJson":"data"}';
@@ -252,7 +263,8 @@ void main() {
     double _price = 4.2;
     int _quantity = 42;
     Map<String, dynamic> _properties = {'someKey': 'someValue'};
-    _braze.logPurchase(_productId, _currencyCode, _price, _quantity, properties: _properties);
+    _braze.logPurchase(_productId, _currencyCode, _price, _quantity,
+        properties: _properties);
     expect(log, <Matcher>[
       isMethodCall(
         'logPurchase',

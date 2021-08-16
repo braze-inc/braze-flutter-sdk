@@ -139,8 +139,8 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                     content: new Text("Custom event $customEvent."),
                   ));
                 } else {
-                  _braze.logCustomEvent(
-                      customEvent, properties: {customPropertyKey: customPropertyValue});
+                  _braze.logCustomEvent(customEvent,
+                      properties: {customPropertyKey: customPropertyValue});
                   ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
                     content: new Text(
                         'Custom event $customEvent with properties {"$customPropertyKey":"$customPropertyValue"}.'),
@@ -155,8 +155,8 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                 _braze.logCustomEvent("eventName");
                 _braze.logCustomEvent("eventNameProps", properties: props);
                 _braze.logPurchase("productId", "USD", 3.50, 2);
-                _braze.logPurchase(
-                    "productIdProps", "USD", 2.50, 4, properties: props);
+                _braze.logPurchase("productIdProps", "USD", 2.50, 4,
+                    properties: props);
                 ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
                   content: new Text("Logged events and purchases"),
                 ));
@@ -248,8 +248,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
               onPressed: () {
                 _braze.setGoogleAdvertisingId("dummy-id", false);
                 ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-                  content: new Text("Set Google Advertising ID.")
-                ));
+                    content: new Text("Set Google Advertising ID.")));
               },
             ),
             TextButton(
@@ -303,6 +302,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                       content: new Text("Empty Content Cards update received."),
                     ));
                   }
+                  _braze.logContentCardsDisplayed();
                   contentCards.forEach((contentCard) {
                     print("Received card: " + contentCard.toString());
                     _braze.logContentCardClicked(contentCard);

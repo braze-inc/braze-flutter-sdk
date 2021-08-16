@@ -1,17 +1,17 @@
 package braze.com.brazepluginexample
 
 import android.view.View
-import com.appboy.Appboy
-import com.appboy.AppboyLifecycleCallbackListener
-import com.appboy.events.ContentCardsUpdatedEvent
 import com.appboy.events.IEventSubscriber
-import com.appboy.models.IInAppMessage
-import com.appboy.models.MessageButton
 import com.appboy.models.cards.Card
-import com.appboy.ui.inappmessage.AppboyInAppMessageManager
-import com.appboy.ui.inappmessage.InAppMessageCloser
-import com.appboy.ui.inappmessage.InAppMessageOperation
-import com.appboy.ui.inappmessage.listeners.IInAppMessageManagerListener
+import com.braze.Braze
+import com.braze.BrazeActivityLifecycleCallbackListener
+import com.braze.events.ContentCardsUpdatedEvent
+import com.braze.models.inappmessage.IInAppMessage
+import com.braze.models.inappmessage.MessageButton
+import com.braze.ui.inappmessage.BrazeInAppMessageManager
+import com.braze.ui.inappmessage.InAppMessageCloser
+import com.braze.ui.inappmessage.InAppMessageOperation
+import com.braze.ui.inappmessage.listeners.IInAppMessageManagerListener
 import com.braze.brazeplugin.BrazePlugin
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -22,29 +22,25 @@ class MainActivity: FlutterActivity() {
 
   override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
     GeneratedPluginRegistrant.registerWith(flutterEngine)
-    this.getApplication().registerActivityLifecycleCallbacks(AppboyLifecycleCallbackListener())
+    this.getApplication().registerActivityLifecycleCallbacks(BrazeActivityLifecycleCallbackListener())
     this.subscribeToContentCardsUpdatedEvent()
 
-    AppboyInAppMessageManager.getInstance().setCustomInAppMessageManagerListener(
+    BrazeInAppMessageManager.getInstance().setCustomInAppMessageManagerListener(
             BrazeInAppMessageManagerListener())
-    Appboy.getInstance(this).logCustomEvent("flutter_sample_opened")
+    Braze.getInstance(this).logCustomEvent("flutter_sample_opened")
   }
 
   private fun subscribeToContentCardsUpdatedEvent() {
-    Appboy.getInstance(this).removeSingleSubscription(mContentCardsUpdatedSubscriber, ContentCardsUpdatedEvent::class.java)
+    Braze.getInstance(this).removeSingleSubscription(mContentCardsUpdatedSubscriber, ContentCardsUpdatedEvent::class.java)
     mContentCardsUpdatedSubscriber = IEventSubscriber { event ->
       val allCards = event.allCards as ArrayList<Card>
       BrazePlugin.processContentCards(allCards)
     }
-    Appboy.getInstance(this).subscribeToContentCardsUpdates(mContentCardsUpdatedSubscriber)
-    Appboy.getInstance(this).requestContentCardsRefresh(true)
+    Braze.getInstance(this).subscribeToContentCardsUpdates(mContentCardsUpdatedSubscriber)
+    Braze.getInstance(this).requestContentCardsRefresh(true)
   }
 
   class BrazeInAppMessageManagerListener() : IInAppMessageManagerListener {
-    override fun onInAppMessageReceived(inAppMessage: IInAppMessage): Boolean {
-      return false
-    }
-
     override fun beforeInAppMessageDisplayed(inAppMessage: IInAppMessage): InAppMessageOperation {
       BrazePlugin.processInAppMessage(inAppMessage)
       return InAppMessageOperation.DISPLAY_NOW

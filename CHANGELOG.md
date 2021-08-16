@@ -1,3 +1,12 @@
+## 2.1.0
+
+##### Breaking
+- The native iOS bridge uses [Braze iOS SDK 4.3.2](https://github.com/Appboy/appboy-ios-sdk/blob/master/CHANGELOG.md#432).
+- The native Android bridge uses [Braze Android SDK 15.0.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#1500).
+
+##### Added
+- Adds `logContentCardsDisplayed()` to manually log an impression when displaying Content Cards in a custom UI.
+
 ## 2.0.0
 
 ##### Breaking

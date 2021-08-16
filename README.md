@@ -24,9 +24,9 @@ a specialized package that allows integrators to use certain Braze APIs from Flu
 
 #### iOS
 
-1) Call `Appboy.startWithApiKey()` in your `AppDelegate`'s `didFinishLaunchingWithOptions` delegate method as specified in our [public documentation](https://www.braze.com/docs/developer_guide/platform_integration_guides/ios/initial_sdk_setup/initial_sdk_setup/#step-4-updating-your-app-delegate).
+1) Call `Appboy.startWithApiKey()` in your `AppDelegate`'s `didFinishLaunchingWithOptions` delegate method as specified in our [integration steps](https://www.braze.com/docs/developer_guide/platform_integration_guides/ios/initial_sdk_setup/cocoapods/#step-4-updating-your-app-delegate) (via Cocoapods).
 
-2) Set your custom endpoint as specified in our [public documentation](https://www.braze.com/docs/developer_guide/platform_integration_guides/ios/initial_sdk_setup/initial_sdk_setup/#step-5-specify-your-custom-endpoint-or-data-cluster). We recommend the `Info.plist` approach.
+2) Set your custom endpoint as specified in our [public documentation](https://www.braze.com/docs/developer_guide/platform_integration_guides/ios/initial_sdk_setup/cocoapods/#step-5-specify-your-data-cluster). We recommend the `Info.plist` approach.
 
 #### In-app messages
 
@@ -62,4 +62,4 @@ On Android, you will additionally need to implement and register an `IEventSubsc
 
 On iOS, you will additionally need to create an `NSNotificationCenter` listener for `ABKContentCardsProcessedNotification` events as described in our [public documentation](https://www.braze.com/docs/developer_guide/platform_integration_guides/ios/content_cards/data_model/). Your `ABKContentCardsProcessedNotification` callback implementation must call `BrazePlugin.processContentCards(contentCards)`. For an example, see `AppDelegate.swift` in our example app.
 
-To log analytics using your `BrazeContentCard`, pass the instance into the `logContentCardClicked`, `logContentCardImpression`, and `logContentCardDismissed` methods available on the main plugin interface.
+To log analytics using your `BrazeContentCard`, pass the instance into the `logContentCardClicked`, `logContentCardImpression`, and `logContentCardDismissed` methods available on the main plugin interface. When using a custom UI, you can also log that the Content Cards feed itself was displayed with `logContentCardsDisplayed`.
