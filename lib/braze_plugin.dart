@@ -7,6 +7,9 @@ class BrazePlugin {
   Function(BrazeInAppMessage)? _brazeInAppMessageHandler;
   Function(List<BrazeContentCard>)? _brazeContentCardHandler;
 
+  final List<BrazeInAppMessage> _queuedInAppMessages = [];
+  final List<BrazeContentCard> _queuedContentCards = [];
+
   BrazePlugin() {
     _channel.setMethodCallHandler(_handleBrazeData);
   }
@@ -14,11 +17,19 @@ class BrazePlugin {
   /// Sets a callback to receive in-app message data from Braze
   void setBrazeInAppMessageCallback(Function(BrazeInAppMessage) callback) {
     _brazeInAppMessageHandler = callback;
+
+    _queuedInAppMessages.forEach((message) => callback(message));
+    _queuedInAppMessages.clear();
   }
 
   /// Sets a callback to receive Content Card data from Braze
   void setBrazeContentCardsCallback(Function(List<BrazeContentCard>) callback) {
     _brazeContentCardHandler = callback;
+
+    if (_queuedContentCards.isNotEmpty) {
+      callback(_queuedContentCards);
+      _queuedContentCards.clear();
+    }
   }
 
   /// Changes the current Braze userId
@@ -316,30 +327,29 @@ class BrazePlugin {
     switch (call.method) {
       case "handleBrazeInAppMessage":
         final Map<dynamic, dynamic> argumentsMap = call.arguments;
-        String? inAppMessageString = argumentsMap['inAppMessage'];
-        final brazeInAppMessageHandler = this._brazeInAppMessageHandler;
-        if (brazeInAppMessageHandler != null) {
-          brazeInAppMessageHandler(BrazeInAppMessage(inAppMessageString!));
+        final inAppMessage = BrazeInAppMessage(argumentsMap['inAppMessage']!);
+        if (_brazeInAppMessageHandler != null) {
+          _brazeInAppMessageHandler!(inAppMessage);
         } else {
-          print("Braze in-app message callback not present. Doing nothing.");
+          _queuedInAppMessages.add(inAppMessage);
         }
-        return new Future.value("");
+        return Future<void>.value();
       case "handleBrazeContentCards":
         final Map<dynamic, dynamic> argumentsMap = call.arguments;
         List<BrazeContentCard> brazeCards = [];
         for (dynamic card in argumentsMap['contentCards']) {
           brazeCards.add(BrazeContentCard(card));
         }
-        final brazeContentCardHandler = this._brazeContentCardHandler;
-        if (brazeContentCardHandler != null) {
-          brazeContentCardHandler(brazeCards);
+
+        if (_brazeContentCardHandler != null) {
+          _brazeContentCardHandler!(brazeCards);
         } else {
-          print("Braze content card callback not present. Doing nothing.");
+          _queuedContentCards.addAll(brazeCards);
         }
-        return new Future.value("");
+        return Future<void>.value();
       default:
         print("Unknown method " + call.method + " called. Doing nothing.");
-        return new Future.value("");
+        return Future<void>.value();
     }
   }
 }
