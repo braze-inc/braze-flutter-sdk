@@ -34,47 +34,36 @@ class BrazePlugin {
 
   /// Logs a click for the provided Content Card data
   void logContentCardClicked(BrazeContentCard contentCard) {
-    final Map<String, dynamic> params = <String, dynamic>{
-      "contentCardString": contentCard.contentCardJsonString
-    };
+    final Map<String, dynamic> params = <String, dynamic>{"contentCardString": contentCard.contentCardJsonString};
     _channel.invokeMethod('logContentCardClicked', params);
   }
 
   /// Logs a click for the provided Content Card data
   void logContentCardImpression(BrazeContentCard contentCard) {
-    final Map<String, dynamic> params = <String, dynamic>{
-      "contentCardString": contentCard.contentCardJsonString
-    };
+    final Map<String, dynamic> params = <String, dynamic>{"contentCardString": contentCard.contentCardJsonString};
     _channel.invokeMethod('logContentCardImpression', params);
   }
 
   /// Logs dismissal for the provided Content Card data
   void logContentCardDismissed(BrazeContentCard contentCard) {
-    final Map<String, dynamic> params = <String, dynamic>{
-      "contentCardString": contentCard.contentCardJsonString
-    };
+    final Map<String, dynamic> params = <String, dynamic>{"contentCardString": contentCard.contentCardJsonString};
     _channel.invokeMethod('logContentCardDismissed', params);
   }
 
   /// Logs a click for the provided in-app message data
   void logInAppMessageClicked(BrazeInAppMessage inAppMessage) {
-    final Map<String, dynamic> params = <String, dynamic>{
-      "inAppMessageString": inAppMessage.inAppMessageJsonString
-    };
+    final Map<String, dynamic> params = <String, dynamic>{"inAppMessageString": inAppMessage.inAppMessageJsonString};
     _channel.invokeMethod('logInAppMessageClicked', params);
   }
 
   /// Logs an impression for the provided in-app message data
   void logInAppMessageImpression(BrazeInAppMessage inAppMessage) {
-    final Map<String, dynamic> params = <String, dynamic>{
-      "inAppMessageString": inAppMessage.inAppMessageJsonString
-    };
+    final Map<String, dynamic> params = <String, dynamic>{"inAppMessageString": inAppMessage.inAppMessageJsonString};
     _channel.invokeMethod('logInAppMessageImpression', params);
   }
 
   /// Logs a button click for the provided in-app message button data
-  void logInAppMessageButtonClicked(
-      BrazeInAppMessage inAppMessage, int buttonId) {
+  void logInAppMessageButtonClicked(BrazeInAppMessage inAppMessage, int buttonId) {
     final Map<String, dynamic> params = <String, dynamic>{
       "inAppMessageString": inAppMessage.inAppMessageJsonString,
       "buttonId": buttonId
@@ -84,36 +73,25 @@ class BrazePlugin {
 
   /// Add alias for current user
   void addAlias(String aliasName, String aliasLabel) {
-    final Map<String, dynamic> params = <String, dynamic>{
-      'aliasName': aliasName,
-      'aliasLabel': aliasLabel
-    };
+    final Map<String, dynamic> params = <String, dynamic>{'aliasName': aliasName, 'aliasLabel': aliasLabel};
     _channel.invokeMethod('addAlias', params);
   }
 
   /// Logs a custom event to Braze
   void logCustomEvent(String eventName, {Map<String, dynamic>? properties}) {
-    final Map<String, dynamic> params = <String, dynamic>{
-      "eventName": eventName,
-      "properties": properties
-    };
+    final Map<String, dynamic> params = <String, dynamic>{"eventName": eventName, "properties": properties};
     _channel.invokeMethod('logCustomEvent', params);
   }
 
   /// Logs a custom event to Braze
   @Deprecated('Use logCustomEvent(eventName, properties: properties) instead.')
-  void logCustomEventWithProperties(
-      String eventName, Map<String, dynamic> properties) {
-    final Map<String, dynamic> params = <String, dynamic>{
-      "eventName": eventName,
-      "properties": properties
-    };
+  void logCustomEventWithProperties(String eventName, Map<String, dynamic> properties) {
+    final Map<String, dynamic> params = <String, dynamic>{"eventName": eventName, "properties": properties};
     _channel.invokeMethod('logCustomEvent', params);
   }
 
   /// Logs a purchase event to Braze
-  void logPurchase(
-      String productId, String currencyCode, double price, int quantity,
+  void logPurchase(String productId, String currencyCode, double price, int quantity,
       {Map<String, dynamic>? properties}) {
     final Map<String, dynamic> params = <String, dynamic>{
       "productId": productId,
@@ -126,10 +104,9 @@ class BrazePlugin {
   }
 
   /// Logs a purchase event to Braze
-  @Deprecated(
-      'Use logPurchase(productId, currencyCode, price, quantity, properties: properties) instead.')
-  void logPurchaseWithProperties(String productId, String currencyCode,
-      double price, int quantity, Map<String, dynamic> properties) {
+  @Deprecated('Use logPurchase(productId, currencyCode, price, quantity, properties: properties) instead.')
+  void logPurchaseWithProperties(
+      String productId, String currencyCode, double price, int quantity, Map<String, dynamic> properties) {
     final Map<String, dynamic> params = <String, dynamic>{
       "productId": productId,
       "currencyCode": currencyCode,
@@ -142,83 +119,55 @@ class BrazePlugin {
 
   /// Adds an element to a custom attribute array
   void addToCustomAttributeArray(String key, String value) {
-    final Map<String, dynamic> params = <String, dynamic>{
-      'key': key,
-      'value': value
-    };
+    final Map<String, dynamic> params = <String, dynamic>{'key': key, 'value': value};
     _channel.invokeMethod('addToCustomAttributeArray', params);
   }
 
   /// Removes an element from a custom attribute array
   void removeFromCustomAttributeArray(String key, String value) {
-    final Map<String, dynamic> params = <String, dynamic>{
-      'key': key,
-      'value': value
-    };
+    final Map<String, dynamic> params = <String, dynamic>{'key': key, 'value': value};
     _channel.invokeMethod('removeFromCustomAttributeArray', params);
   }
 
   /// Sets a string typed custom attribute
   void setStringCustomUserAttribute(String key, String value) {
-    final Map<String, dynamic> params = <String, dynamic>{
-      'key': key,
-      'value': value
-    };
+    final Map<String, dynamic> params = <String, dynamic>{'key': key, 'value': value};
     _channel.invokeMethod('setStringCustomUserAttribute', params);
   }
 
   /// Sets a double typed custom attribute
   void setDoubleCustomUserAttribute(String key, double value) {
-    final Map<String, dynamic> params = <String, dynamic>{
-      'key': key,
-      'value': value
-    };
+    final Map<String, dynamic> params = <String, dynamic>{'key': key, 'value': value};
     _channel.invokeMethod('setDoubleCustomUserAttribute', params);
   }
 
   /// Sets a boolean typed custom attribute
   void setBoolCustomUserAttribute(String key, bool value) {
-    final Map<String, dynamic> params = <String, dynamic>{
-      'key': key,
-      'value': value
-    };
+    final Map<String, dynamic> params = <String, dynamic>{'key': key, 'value': value};
     _channel.invokeMethod('setBoolCustomUserAttribute', params);
   }
 
   /// Sets a integer typed custom attribute
   void setIntCustomUserAttribute(String key, int value) {
-    final Map<String, dynamic> params = <String, dynamic>{
-      'key': key,
-      'value': value
-    };
+    final Map<String, dynamic> params = <String, dynamic>{'key': key, 'value': value};
     _channel.invokeMethod('setIntCustomUserAttribute', params);
   }
 
   /// Increments an integer typed custom attribute
   void incrementCustomUserAttribute(String key, int value) {
-    final Map<String, dynamic> params = <String, dynamic>{
-      'key': key,
-      'value': value
-    };
+    final Map<String, dynamic> params = <String, dynamic>{'key': key, 'value': value};
     _channel.invokeMethod('incrementCustomUserAttribute', params);
   }
 
   /// Sets a location custom attribute
   void setLocationCustomAttribute(String key, double lat, double long) {
-    final Map<String, dynamic> params = <String, dynamic>{
-      'key': key,
-      'lat': lat,
-      'long': long
-    };
+    final Map<String, dynamic> params = <String, dynamic>{'key': key, 'lat': lat, 'long': long};
     _channel.invokeMethod('setLocationCustomAttribute', params);
   }
 
   /// Sets a date custom attribute
   void setDateCustomUserAttribute(String key, DateTime value) {
-    final Map<String, dynamic> params = <String, dynamic>{
-      'key': key,
-      'value': value.millisecondsSinceEpoch ~/ 1000
-    };
+    final Map<String, dynamic> params = <String, dynamic>{'key': key, 'value': value.millisecondsSinceEpoch ~/ 1000};
     _channel.invokeMethod('setDateCustomUserAttribute', params);
   }
 
@@ -245,11 +194,7 @@ class BrazePlugin {
 
   /// Sets the dob default user attribute
   void setDateOfBirth(int year, int month, int day) {
-    final Map<String, dynamic> params = <String, dynamic>{
-      'year': year,
-      'month': month,
-      'day': day
-    };
+    final Map<String, dynamic> params = <String, dynamic>{'year': year, 'month': month, 'day': day};
     _channel.invokeMethod('setDateOfBirth', params);
   }
 
@@ -284,8 +229,7 @@ class BrazePlugin {
   }
 
   /// Sets attribution data
-  void setAttributionData(
-      String? network, String? campaign, String? adGroup, String? creative) {
+  void setAttributionData(String? network, String? campaign, String? adGroup, String? creative) {
     final Map<String, dynamic> params = <String, dynamic>{
       'network': network,
       'campaign': campaign,
@@ -341,34 +285,25 @@ class BrazePlugin {
 
   /// Sets push subscription state for the current user
   void setPushNotificationSubscriptionType(SubscriptionType type) {
-    final Map<String, dynamic> params = <String, dynamic>{
-      'type': type.toString()
-    };
+    final Map<String, dynamic> params = <String, dynamic>{'type': type.toString()};
     _channel.invokeMethod('setPushNotificationSubscriptionType', params);
   }
 
   /// Sets email subscription state for the current user
   void setEmailNotificationSubscriptionType(SubscriptionType type) {
-    final Map<String, dynamic> params = <String, dynamic>{
-      'type': type.toString()
-    };
+    final Map<String, dynamic> params = <String, dynamic>{'type': type.toString()};
     _channel.invokeMethod('setEmailNotificationSubscriptionType', params);
   }
 
   /// Gets the install tracking id
   Future<String> getInstallTrackingId() {
-    return _channel
-        .invokeMethod('getInstallTrackingId')
-        .then<String>((dynamic result) => result);
+    return _channel.invokeMethod('getInstallTrackingId').then<String>((dynamic result) => result);
   }
 
   /// Sets Google Advertising Id for the current user
   /// No-op on iOS.
   void setGoogleAdvertisingId(String id, bool adTrackingEnabled) {
-    final Map<String, dynamic> params = <String, dynamic>{
-      "id": id,
-      "adTrackingEnabled": adTrackingEnabled
-    };
+    final Map<String, dynamic> params = <String, dynamic>{"id": id, "adTrackingEnabled": adTrackingEnabled};
     _channel.invokeMethod('setGoogleAdvertisingId', params);
   }
 
@@ -680,10 +615,7 @@ class BrazeInAppMessage {
     var clickActionJson = inAppMessageJson["click_action"];
     if (clickActionJson is String) {
       for (ClickAction action in ClickAction.values) {
-        if (action
-            .toString()
-            .toLowerCase()
-            .endsWith(clickActionJson.toLowerCase())) {
+        if (action.toString().toLowerCase().endsWith(clickActionJson.toLowerCase())) {
           clickAction = action;
         }
       }
@@ -691,10 +623,7 @@ class BrazeInAppMessage {
     var dismissTypeJson = inAppMessageJson["message_close"];
     if (dismissTypeJson is String) {
       for (DismissType type in DismissType.values) {
-        if (type
-            .toString()
-            .toLowerCase()
-            .endsWith(dismissTypeJson.toLowerCase())) {
+        if (type.toString().toLowerCase().endsWith(dismissTypeJson.toLowerCase())) {
           dismissType = type;
         }
       }
@@ -702,10 +631,7 @@ class BrazeInAppMessage {
     var messageTypeJson = inAppMessageJson["type"];
     if (messageTypeJson is String) {
       for (MessageType type in MessageType.values) {
-        if (type
-            .toString()
-            .toLowerCase()
-            .endsWith(messageTypeJson.toLowerCase())) {
+        if (type.toString().toLowerCase().endsWith(messageTypeJson.toLowerCase())) {
           messageType = type;
         }
       }
@@ -764,10 +690,7 @@ class BrazeButton {
     var clickActionJson = buttonJson["click_action"];
     if (clickActionJson is String) {
       for (ClickAction action in ClickAction.values) {
-        if (action
-            .toString()
-            .toLowerCase()
-            .endsWith(clickActionJson.toLowerCase())) {
+        if (action.toString().toLowerCase().endsWith(clickActionJson.toLowerCase())) {
           clickAction = action;
         }
       }
