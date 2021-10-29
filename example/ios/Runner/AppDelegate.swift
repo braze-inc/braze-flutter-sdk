@@ -11,7 +11,7 @@ import braze_plugin
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
 
-    Appboy.start(withApiKey: "c64bd03c-9486-4a15-8153-d813abc64037",
+    Appboy.start(withApiKey: "9292484d-3b10-4e67-971d-ff0c0d518e21",
                  in:application,
                  withLaunchOptions:launchOptions,
                  withAppboyOptions: [ABKMinimumTriggerTimeIntervalKey : 1])

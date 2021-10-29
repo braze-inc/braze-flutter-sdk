@@ -25,11 +25,16 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
   String _enabled = "";
   String _ccCallbackEnabled = "DISABLED";
   String _iamCallbackEnabled = "DISABLED";
-  BrazePlugin _braze = new BrazePlugin();
+  BrazePlugin _braze;
   final userIdController = TextEditingController();
   final customEventNameController = TextEditingController();
   final customEventPropertyKeyController = TextEditingController();
   final customEventPropertyValueController = TextEditingController();
+
+  void initState() {
+    _braze = new BrazePlugin(customConfigs: {replayCallbacksConfigKey: true});
+    super.initState();
+  }
 
   @override
   void dispose() {
@@ -181,6 +186,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                     SubscriptionType.opted_in);
                 _braze.setEmailNotificationSubscriptionType(
                     SubscriptionType.opted_in);
+                _braze.addToSubscriptionGroup("sampleGroup");
                 _braze.setAttributionData(
                     "network1", "campaign1", "adgroup1", "creative1");
                 _braze.setFirstName("firstName");
@@ -206,6 +212,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                 _braze.removeFromCustomAttributeArray("arrayAttribute", "a");
                 _braze.unsetCustomUserAttribute("stringAttribute2");
                 _braze.incrementCustomUserAttribute("intAttribute", 2);
+                _braze.removeFromSubscriptionGroup("sampleGroup");
                 _braze.setEmail(null);
                 ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
                   content: new Text("Unset/increment attributes"),

@@ -2,23 +2,50 @@ import 'dart:async';
 import 'dart:convert' as json;
 import 'package:flutter/services.dart';
 
+/* Custom configuration keys */
+const String replayCallbacksConfigKey = 'ReplayCallbacksKey';
+
 class BrazePlugin {
   static const MethodChannel _channel = const MethodChannel('braze_plugin');
   Function(BrazeInAppMessage)? _brazeInAppMessageHandler;
   Function(List<BrazeContentCard>)? _brazeContentCardHandler;
+  Map<String, bool>? _brazeCustomConfigs;
 
-  BrazePlugin() {
+  final List<BrazeInAppMessage> _queuedInAppMessages = [];
+  final List<BrazeContentCard> _queuedContentCards = [];
+
+  BrazePlugin(
+      {Function(BrazeInAppMessage)? inAppMessageHandler,
+      Function(List<BrazeContentCard>)? contentCardsHandler,
+      Map<String, bool>? customConfigs}) {
+    // Set up the plugin settings before setting the method call handler
+    _brazeInAppMessageHandler = inAppMessageHandler;
+    _brazeContentCardHandler = contentCardsHandler;
+    _brazeCustomConfigs = customConfigs;
+
     _channel.setMethodCallHandler(_handleBrazeData);
   }
 
   /// Sets a callback to receive in-app message data from Braze
   void setBrazeInAppMessageCallback(Function(BrazeInAppMessage) callback) {
     _brazeInAppMessageHandler = callback;
+
+    if (_replayCallbacksConfigEnabled() && _queuedInAppMessages.isNotEmpty) {
+      print("Replaying callback on previously queued Braze in-app messages.");
+      _queuedInAppMessages.forEach((message) => callback(message));
+      _queuedInAppMessages.clear();
+    }
   }
 
   /// Sets a callback to receive Content Card data from Braze
   void setBrazeContentCardsCallback(Function(List<BrazeContentCard>) callback) {
     _brazeContentCardHandler = callback;
+
+    if (_replayCallbacksConfigEnabled() && _queuedContentCards.isNotEmpty) {
+      print("Replaying callback on previously queued Braze content cards.");
+      callback(_queuedContentCards);
+      _queuedContentCards.clear();
+    }
   }
 
   /// Changes the current Braze userId
@@ -40,7 +67,7 @@ class BrazePlugin {
     _channel.invokeMethod('logContentCardClicked', params);
   }
 
-  /// Logs a click for the provided Content Card data
+  /// Logs an impression for the provided Content Card data
   void logContentCardImpression(BrazeContentCard contentCard) {
     final Map<String, dynamic> params = <String, dynamic>{
       "contentCardString": contentCard.contentCardJsonString
@@ -95,8 +122,11 @@ class BrazePlugin {
   void logCustomEvent(String eventName, {Map<String, dynamic>? properties}) {
     final Map<String, dynamic> params = <String, dynamic>{
       "eventName": eventName,
-      "properties": properties
     };
+    if (properties != null) {
+      // Omits entry when properties is null
+      params["properties"] = properties;
+    }
     _channel.invokeMethod('logCustomEvent', params);
   }
 
@@ -120,8 +150,11 @@ class BrazePlugin {
       "currencyCode": currencyCode,
       "price": price,
       "quantity": quantity,
-      "properties": properties
     };
+    if (properties != null) {
+      // Omits entry when properties is null
+      params["properties"] = properties;
+    }
     _channel.invokeMethod('logPurchase', params);
   }
 
@@ -355,6 +388,20 @@ class BrazePlugin {
     _channel.invokeMethod('setEmailNotificationSubscriptionType', params);
   }
 
+  /// Adds the user to a Subscription Group using the group's UUID provided
+  /// in the Braze dashboard.
+  void addToSubscriptionGroup(String groupId) {
+    final Map<String, dynamic> params = <String, dynamic>{'groupId': groupId};
+    _channel.invokeMethod('addToSubscriptionGroup', params);
+  }
+
+  /// Removes the user from a Subscription Group using the group's UUID provided
+  /// in the Braze dashboard.
+  void removeFromSubscriptionGroup(String groupId) {
+    final Map<String, dynamic> params = <String, dynamic>{'groupId': groupId};
+    _channel.invokeMethod('removeFromSubscriptionGroup', params);
+  }
+
   /// Gets the install tracking id
   Future<String> getInstallTrackingId() {
     return _channel
@@ -382,30 +429,50 @@ class BrazePlugin {
       case "handleBrazeInAppMessage":
         final Map<dynamic, dynamic> argumentsMap = call.arguments;
         String? inAppMessageString = argumentsMap['inAppMessage'];
-        final brazeInAppMessageHandler = this._brazeInAppMessageHandler;
-        if (brazeInAppMessageHandler != null) {
-          brazeInAppMessageHandler(BrazeInAppMessage(inAppMessageString!));
-        } else {
-          print("Braze in-app message callback not present. Doing nothing.");
+        if (inAppMessageString == null) {
+          print("Invalid input. Missing value for key 'inAppMessage'.");
+          return Future<void>.value();
         }
-        return new Future.value("");
+        final inAppMessage = BrazeInAppMessage(inAppMessageString);
+        if (_brazeInAppMessageHandler != null) {
+          _brazeInAppMessageHandler!(inAppMessage);
+        } else if (_replayCallbacksConfigEnabled()) {
+          print("Braze in-app message callback not present. Adding to queue.");
+          _queuedInAppMessages.add(inAppMessage);
+        }
+        return Future<void>.value();
+
       case "handleBrazeContentCards":
         final Map<dynamic, dynamic> argumentsMap = call.arguments;
         List<BrazeContentCard> brazeCards = [];
         for (dynamic card in argumentsMap['contentCards']) {
           brazeCards.add(BrazeContentCard(card));
         }
-        final brazeContentCardHandler = this._brazeContentCardHandler;
-        if (brazeContentCardHandler != null) {
-          brazeContentCardHandler(brazeCards);
-        } else {
-          print("Braze content card callback not present. Doing nothing.");
+        if (brazeCards.isEmpty) {
+          print("Braze content cards response is empty. Doing nothing.");
+          return Future<void>.value();
         }
-        return new Future.value("");
+
+        if (_brazeContentCardHandler != null) {
+          _brazeContentCardHandler!(brazeCards);
+        } else if (_replayCallbacksConfigEnabled()) {
+          print(
+              "Braze content card callback not present. Removing any queued cards and adding only the recent refresh.");
+          _queuedContentCards.clear();
+          _queuedContentCards.addAll(brazeCards);
+        }
+        return Future<void>.value();
+
       default:
-        print("Unknown method " + call.method + " called. Doing nothing.");
-        return new Future.value("");
+        print("Unknown method ${call.method} called. Doing nothing.");
+        return Future<void>.value();
     }
+  }
+
+  /* Braze Plugin custom configurations */
+
+  bool _replayCallbacksConfigEnabled() {
+    return _brazeCustomConfigs?[replayCallbacksConfigKey] == true;
   }
 }
 

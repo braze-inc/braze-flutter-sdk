@@ -187,7 +187,7 @@ void main() {
     ]);
   });
 
-  test('should call logCustomEvent', () {
+  test('should call logCustomEvent with no properties', () {
     BrazePlugin _braze = new BrazePlugin();
     String _eventName = 'someEvent';
     _braze.logCustomEvent(_eventName);
@@ -196,7 +196,6 @@ void main() {
         'logCustomEvent',
         arguments: <String, dynamic>{
           'eventName': _eventName,
-          'properties': null,
         },
       ),
     ]);
@@ -235,7 +234,7 @@ void main() {
     ]);
   });
 
-  test('should call logPurchase', () {
+  test('should call logPurchase with no properties', () {
     BrazePlugin _braze = new BrazePlugin();
     String _productId = 'someProduct';
     String _currencyCode = 'someCurrencyCode';
@@ -250,7 +249,6 @@ void main() {
           'currencyCode': _currencyCode,
           'price': _price,
           'quantity': _quantity,
-          'properties': null
         },
       ),
     ]);
@@ -706,6 +704,30 @@ void main() {
       isMethodCall(
         'setEmailNotificationSubscriptionType',
         arguments: <String, dynamic>{'type': _type.toString()},
+      ),
+    ]);
+  });
+
+  test('should call addToSubscriptionGroup', () {
+    BrazePlugin _braze = new BrazePlugin();
+    String _groupId = 'someGroupId';
+    _braze.addToSubscriptionGroup(_groupId);
+    expect(log, <Matcher>[
+      isMethodCall(
+        'addToSubscriptionGroup',
+        arguments: <String, dynamic>{'groupId': _groupId},
+      ),
+    ]);
+  });
+
+  test('should call removeFromSubscriptionGroup', () {
+    BrazePlugin _braze = new BrazePlugin();
+    String _groupId = 'someGroupId';
+    _braze.removeFromSubscriptionGroup(_groupId);
+    expect(log, <Matcher>[
+      isMethodCall(
+        'removeFromSubscriptionGroup',
+        arguments: <String, dynamic>{'groupId': _groupId},
       ),
     ]);
   });

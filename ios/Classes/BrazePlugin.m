@@ -136,6 +136,12 @@ NSMutableArray<FlutterMethodChannel *> *_channels = nil;
     NSString *type = arguments[@"type"];
     ABKNotificationSubscriptionType emailNotificationSubscriptionType = [BrazePlugin getSubscriptionType:type];
     [Appboy sharedInstance].user.emailNotificationSubscriptionType = emailNotificationSubscriptionType;
+  } else if ([method isEqualToString:@"addToSubscriptionGroup"]) {
+    NSString *groupId = arguments[@"groupId"];
+    [[Appboy sharedInstance].user addToSubscriptionGroupWithGroupId:groupId];
+  } else if ([method isEqualToString:@"removeFromSubscriptionGroup"]) {
+    NSString *groupId = arguments[@"groupId"];
+    [[Appboy sharedInstance].user removeFromSubscriptionGroupWithGroupId:groupId];
   } else if ([method isEqualToString:@"setStringCustomUserAttribute"]) {
     NSString *key = arguments[@"key"];
     NSString *value = arguments[@"value"];

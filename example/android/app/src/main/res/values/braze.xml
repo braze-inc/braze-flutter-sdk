@@ -1,15 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- General configuration -->
-    <!-- The API key is not shown to the user and thus we don't require that it be translated. -->
-    <string translatable="false" name="com_appboy_api_key">9b314504-1626-4910-b594-728be6ad4779</string>
-    <string translatable="false" name="com_appboy_server_target">STAGING</string>
+    <string translatable="false" name="com_braze_api_key">0fc32ae3-88b4-48b8-91f4-a0e2003b08ec</string>
+    <string translatable="false" name="com_braze_server_target">STAGING</string>
 
-    <bool translatable="false" name="com_appboy_firebase_cloud_messaging_registration_enabled">true</bool>
-    <string translatable="false" name="com_appboy_firebase_cloud_messaging_sender_id">901477453852</string>
+    <bool translatable="false" name="com_braze_firebase_cloud_messaging_registration_enabled">true</bool>
+    <string translatable="false" name="com_braze_firebase_cloud_messaging_sender_id">901477453852</string>
 
-    <bool name="com_appboy_handle_push_deep_links_automatically">true</bool>
-    <bool name="com_appboy_inapp_show_inapp_messages_automatically">true</bool>
-    <integer name="com_appboy_trigger_action_minimum_time_interval_seconds">1</integer>
-    <integer name="com_appboy_logger_initial_log_level">0</integer>
+    <bool name="com_braze_handle_push_deep_links_automatically">true</bool>
+    <integer name="com_braze_trigger_action_minimum_time_interval_seconds">1</integer>
+    <integer name="com_braze_logger_initial_log_level">0</integer>
 </resources>

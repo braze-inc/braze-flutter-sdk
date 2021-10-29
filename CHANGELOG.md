@@ -1,3 +1,25 @@
+## 2.2.0
+
+##### Breaking
+- The native Android bridge uses [Braze Android SDK 16.0.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#1600).
+- The native iOS bridge uses [Braze iOS SDK 4.4.0](https://github.com/Appboy/appboy-ios-sdk/blob/master/CHANGELOG.md#440).
+- Streamlines the Android integration process to not involve any manual writing of code to automatically register for sessions, in-app messages, or Content Card updates from the native SDK.
+  - To migrate, remove any manual calls to `registerActivityLifecycleCallbacks()`, `subscribeToContentCardsUpdates()`, and `setCustomInAppMessageManagerListener()`.
+  - To disable this feature, set the boolean `com_braze_flutter_enable_automatic_integration_initializer` to `false` in your `braze.xml` configuration.
+
+##### Added
+- Adds the ability to set the in-app message callback and content cards callback in the constructor of `BrazePlugin`.
+- Adds the option to store any in-app messages or content cards received before their callback is available and replay them once the corresponding callback is set.
+  - To enable this feature, add this entry into the `customConfigs` map in the BrazePlugin constructor:
+    ```
+    replayCallbacksConfigKey : true
+    ```
+  - Thank you @JordyLangen for the contribution!
+- Adds `BrazePlugin.addToSubscriptionGroup()` and `BrazePlugin.removeFromSubscriptionGroup()` to manage SMS/Email Subscription Groups.
+
+##### Fixed
+- Fixes an issue in the iOS bridge where custom events without any properties would not be logged correctly.
+
 ## 2.1.0
 
 ##### Breaking

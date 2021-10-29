@@ -11,7 +11,8 @@
       android:hardwareAccelerated="true"
       android:launchMode="singleTop"
       android:theme="@style/LaunchTheme"
-      android:windowSoftInputMode="adjustResize">
+      android:windowSoftInputMode="adjustResize"
+      android:exported="true">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />
@@ -21,16 +22,13 @@
         android:value="2" />
     </activity>
     <activity
-      android:name="com.appboy.ui.AppboyWebViewActivity"
-      android:theme="@android:style/Theme" />
-    <activity
       android:name=".EmbeddingV1Activity"
       android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection|fontScale"
       android:hardwareAccelerated="true"
       android:theme="@style/LaunchTheme"
       android:windowSoftInputMode="adjustResize" />
     <service
-      android:name="com.appboy.AppboyFirebaseMessagingService"
+      android:name="com.braze.push.BrazeFirebaseMessagingService"
       android:exported="false">
       <intent-filter>
         <action android:name="com.google.firebase.MESSAGING_EVENT" />
