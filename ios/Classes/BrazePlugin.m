@@ -28,7 +28,17 @@ NSMutableArray<FlutterMethodChannel *> *_channels = nil;
 
   if ([method isEqualToString:@"changeUser"]) {
     NSString *userId = arguments[@"userId"];
-    [[Appboy sharedInstance] changeUser:userId];
+    if ([[arguments allKeys] containsObject:@"sdkAuthSignature"]) {
+      NSString *sdkAuthSignature = arguments[@"sdkAuthSignature"];
+      [[Appboy sharedInstance] changeUser:userId sdkAuthSignature:sdkAuthSignature];
+    } else {
+      [[Appboy sharedInstance] changeUser:userId];
+    }
+  } else if ([method isEqualToString:@"setSdkAuthenticationSignature"]) {
+    if ([[arguments allKeys] containsObject:@"sdkAuthSignature"]) {
+      NSString *sdkAuthSignature = arguments[@"sdkAuthSignature"];
+      [[Appboy sharedInstance] setSdkAuthenticationSignature:sdkAuthSignature];
+    }
   } else if ([method isEqualToString:@"getInstallTrackingId"]) {
     NSString *deviceId = [[Appboy sharedInstance] getDeviceId];
     result(deviceId);
