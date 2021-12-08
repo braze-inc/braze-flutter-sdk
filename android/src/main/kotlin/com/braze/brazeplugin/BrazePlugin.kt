@@ -151,7 +151,18 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
             when (call.method) {
                 "changeUser" -> {
                     val userId = call.argument<String>("userId")
-                    Braze.getInstance(context).changeUser(userId)
+                    val sdkAuthSignature = call.argument<String>("sdkAuthSignature")
+                    if (sdkAuthSignature != null) {
+                        Braze.getInstance(context).changeUser(userId, sdkAuthSignature)
+                    } else {
+                        Braze.getInstance(context).changeUser(userId)
+                    }
+                }
+                "setSdkAuthenticationSignature" -> {
+                    val sdkAuthSignature = call.argument<String>("sdkAuthSignature")
+                    if (sdkAuthSignature != null) {
+                        Braze.getInstance(context).setSdkAuthenticationSignature(sdkAuthSignature)
+                    }
                 }
                 "requestContentCardsRefresh" -> {
                     Braze.getInstance(context).requestContentCardsRefresh(false)

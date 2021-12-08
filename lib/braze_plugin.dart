@@ -49,9 +49,21 @@ class BrazePlugin {
   }
 
   /// Changes the current Braze userId
-  void changeUser(String userId) {
-    final Map<String, dynamic> params = <String, dynamic>{"userId": userId};
+  /// Invokes SDK Authentication version when sdkAuthSignature
+  /// Docs: https://www.braze.com/docs/developer_guide/platform_wide/sdk_authentication/
+  void changeUser(String userId, String? sdkAuthSignature) {
+    final Map<String, dynamic> params = <String, dynamic>{
+      "userId": userId,
+      "sdkAuthSignature": sdkAuthSignature
+    };
     _channel.invokeMethod('changeUser', params);
+  }
+
+  void setSdkAuthenticationSignature(String? sdkAuthSignature) {
+    final Map<String, dynamic> params = <String, dynamic>{
+      "sdkAuthSignature": sdkAuthSignature
+    };
+    _channel.invokeMethod('setSdkAuthenticationSignature', params);
   }
 
   /// Logs that Content Cards have been displayed
