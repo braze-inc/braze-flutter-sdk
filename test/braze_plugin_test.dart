@@ -2,18 +2,18 @@ import 'dart:convert' as json;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:braze_plugin/braze_plugin.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
+  TestWidgetsFlutterBinding.ensureInitialized();
 
   final List<MethodCall> log = <MethodCall>[];
   final String mockInstallTrackingId = '_test_install_tracking_id_';
 
   setUpAll(() async {
-    MethodChannel('braze_plugin')
-        .setMockMethodCallHandler((MethodCall methodCall) async {
+    TestDefaultBinaryMessengerBinding.instance!.defaultBinaryMessenger
+        .setMockMethodCallHandler(MethodChannel('braze_plugin'),
+            (MethodCall methodCall) async {
       log.add(methodCall);
       // If needed to mock return values:
       switch (methodCall.method) {
@@ -217,6 +217,37 @@ void main() {
     ]);
   });
 
+  test('should call logCustomEvent with nested properties', () {
+    BrazePlugin _braze = new BrazePlugin();
+    String _eventName = 'someEvent';
+    Map<String, dynamic> _properties = {
+      'map_key': {'foo': 'bar'},
+      'array_key': ['string', 123, false],
+      'nested_map': {
+        'inner_array': ['hello', 'world', 123.45, true],
+        'inner_map': {'double': 101.1}
+      },
+      'nested_array': [
+        [
+          'obj',
+          {'key': 'value'},
+          ['element', 'element2', 50],
+          12
+        ]
+      ]
+    };
+    _braze.logCustomEvent(_eventName, properties: _properties);
+    expect(log, <Matcher>[
+      isMethodCall(
+        'logCustomEvent',
+        arguments: <String, dynamic>{
+          'eventName': _eventName,
+          'properties': _properties,
+        },
+      ),
+    ]);
+  });
+
   test('should call logCustomEventWithProperties', () {
     BrazePlugin _braze = new BrazePlugin();
     String _eventName = 'someEvent';
@@ -272,6 +303,44 @@ void main() {
           'price': _price,
           'quantity': _quantity,
           'properties': _properties
+        },
+      ),
+    ]);
+  });
+
+  test('should call logPurchase with nested properties', () {
+    BrazePlugin _braze = new BrazePlugin();
+    String _productId = 'someProduct';
+    String _currencyCode = 'someCurrencyCode';
+    double _price = 4.2;
+    int _quantity = 42;
+    Map<String, dynamic> _properties = {
+      'map_key': {'foo': 'bar'},
+      'array_key': ['string', 123, false],
+      'nested_map': {
+        'inner_array': ['hello', 'world', 123.45, true],
+        'inner_map': {'double': 101.1}
+      },
+      'nested_array': [
+        [
+          'obj',
+          {'key': 'value'},
+          ['element', 'element2', 50],
+          12
+        ]
+      ]
+    };
+    _braze.logPurchase(_productId, _currencyCode, _price, _quantity,
+        properties: _properties);
+    expect(log, <Matcher>[
+      isMethodCall(
+        'logPurchase',
+        arguments: <String, dynamic>{
+          'productId': _productId,
+          'currencyCode': _currencyCode,
+          'price': _price,
+          'quantity': _quantity,
+          'properties': _properties,
         },
       ),
     ]);

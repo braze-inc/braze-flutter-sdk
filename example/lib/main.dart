@@ -155,17 +155,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
             ),
             TextButton(
               child: const Text('LOG PRESET EVENTS AND PURCHASES'),
-              onPressed: () {
-                var props = {"k1": "v1", "k2": 2, "k3": 3.5, "k4": false};
-                _braze.logCustomEvent("eventName");
-                _braze.logCustomEvent("eventNameProps", properties: props);
-                _braze.logPurchase("productId", "USD", 3.50, 2);
-                _braze.logPurchase("productIdProps", "USD", 2.50, 4,
-                    properties: props);
-                ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-                  content: new Text("Logged events and purchases"),
-                ));
-              },
+              onPressed: () => _pressedLogPresetEventsAndPurchasesButton(),
             ),
             TextButton(
               child: const Text('SET PRESET ATTRIBUTES'),
@@ -408,5 +398,52 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
         );
       },
     );
+  }
+
+  void _pressedLogPresetEventsAndPurchasesButton() {
+    var props = {"k1": "v1", "k2": 2, "k3": 3.5, "k4": false};
+    _braze.logCustomEvent("eventName");
+    _braze.logCustomEvent("eventNameProps", properties: props);
+    _braze.logPurchase("productId", "USD", 3.50, 2);
+    _braze.logPurchase("productIdProps", "USD", 2.50, 4, properties: props);
+
+    // Native layer should gracefully handle null properties
+    props['keyWithNullValue'] = null;
+    _braze.logCustomEvent("eventWithNullElementInProps", properties: props);
+    _braze.logPurchase("purchaseWithNullElementInProps", "EUR", 1.23, 6,
+        properties: props);
+
+    // Nested properties
+    Map<String, dynamic> nestedProps = {
+      'map_key': {'foo': 'bar'},
+      'array_key': ['string', 123, false],
+      'nested_map': {
+        'inner_array': ['hello', 'world', 123.45, true],
+        'inner_map': {'double': 101.1}
+      },
+      'nested_array': [
+        [
+          'obj',
+          {'key': 'value'},
+          ['element', 'element2', 50],
+          12
+        ]
+      ]
+    };
+    _braze.logCustomEvent('nestedEvent', properties: nestedProps);
+    _braze.logPurchase('nestedProductId', 'EUR', 1.50, 6,
+        properties: nestedProps);
+
+    // Reject when properties is larger than 50KB
+    String largeValue = 'AB' * 50 * 1024;
+    Map<String, dynamic> largeProperties = {'largePayload': largeValue};
+    _braze.logCustomEvent('event_propertiesTooLarge',
+        properties: largeProperties);
+    _braze.logPurchase('purchase_propertiesTooLarge', 'EUR', 13.3, 7,
+        properties: largeProperties);
+
+    ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+      content: new Text("Logged preset events and purchases"),
+    ));
   }
 }

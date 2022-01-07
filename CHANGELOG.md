@@ -1,3 +1,23 @@
+## 2.3.0
+
+##### Breaking
+- The native Android bridge uses [Braze Android SDK 17.0.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#1700).
+- The minimum supported Android SDK version is 19.
+- Removes support for Android V1 Embedding APIs. Please reference [the Flutter migration guide](https://flutter.dev/docs/development/packages-and-plugins/plugin-api-migration) to update to the V2 APIs.
+
+##### Added
+- Custom events and purchases now support nested properties.
+  - In addition to integers, floats, booleans, dates, or strings, a JSON object can be provided containing dictionaries of arrays or nested dictionaries. All properties combined can be up to 50 KB in total length.
+- Adds the ability to restrict the Android automatic integration from natively displaying in-app messages.
+  - To enable this feature, add this to your `braze.xml` configuration: 
+  ```
+  <string name="com_braze_flutter_automatic_integration_iam_operation">DISCARD</string>
+  ```
+  - The available options are `DISPLAY_NOW` or `DISCARD`. If this entry is ommitted, the default is `DISPLAY_NOW`.
+
+##### Changed
+- The native iOS bridge uses [Braze iOS SDK 4.4.1](https://github.com/Appboy/appboy-ios-sdk/blob/master/CHANGELOG.md#441).
+
 ## 2.2.0
 
 ##### Breaking

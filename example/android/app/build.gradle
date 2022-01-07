@@ -39,7 +39,7 @@ android {
 
     defaultConfig {
         applicationId "braze.com.brazepluginexample"
-        minSdkVersion 16
+        minSdkVersion 19
         compileSdkVersion 31
         targetSdkVersion 31
         versionCode flutterVersionCode.toInteger()
@@ -55,6 +55,16 @@ android {
             signingConfig signingConfigs.debug
         }
     }
+
+    kotlinOptions {
+        freeCompilerArgs = ['-Xjvm-default=all']
+        jvmTarget = "1.8"
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
 flutter {
@@ -69,7 +79,7 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
     implementation 'androidx.multidex:multidex:2.0.0'
 
-    implementation "com.appboy:android-sdk-ui:16.0.0"
+    implementation "com.appboy:android-sdk-ui:17.0.0"
     implementation "com.google.firebase:firebase-messaging:+"
 }
 apply plugin: 'com.google.gms.google-services'

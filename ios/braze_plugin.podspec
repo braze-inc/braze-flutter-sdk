@@ -3,7 +3,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'braze_plugin'
-  s.version          = '2.2.0'
+  s.version          = '2.3.0'
   s.summary          = 'Braze plugin for Flutter.'
   s.description      = <<-DESC
 Braze plugin for Flutter.
@@ -15,7 +15,7 @@ Braze plugin for Flutter.
   s.source_files = 'Classes/**/*'
   s.public_header_files = 'Classes/**/*.h'
   s.dependency 'Flutter'
-  s.dependency 'Appboy-iOS-SDK', '~> 4.4.0'
+  s.dependency 'Appboy-iOS-SDK', '~> 4.4.1'
 
   s.ios.deployment_target = '9.0'
 end

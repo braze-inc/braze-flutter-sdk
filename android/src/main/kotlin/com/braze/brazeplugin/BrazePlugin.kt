@@ -26,6 +26,7 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
+import org.json.JSONObject
 import java.math.BigDecimal
 import java.util.*
 
@@ -58,22 +59,10 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
     }
 
     companion object {
-        val TAG = BrazeLogger.getBrazeLogTag(BrazePlugin::class.java)
+        val TAG: String = BrazeLogger.getBrazeLogTag(BrazePlugin::class.java)
 
         // Contains all plugins that have been initialized and are attached to a Flutter engine.
-        // If using Embedding V1 APIs, there can only be one plugin in this list.
         var activePlugins = mutableListOf<BrazePlugin>()
-
-        /**
-         * Registers the plugin with the v1 embedding API for backward compatibility.
-         */
-        @JvmStatic
-        @Suppress("unused", "deprecation")
-        fun registerWith(registrar: io.flutter.plugin.common.PluginRegistry.Registrar) {
-            val pluginInstance = BrazePlugin()
-            pluginInstance.activity = registrar.activity()
-            pluginInstance.initPlugin(registrar.context(), registrar.messenger())
-        }
 
         //--
         // Braze public APIs
@@ -145,7 +134,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
         this.activity = binding.activity
         if (IntegrationInitializer.isUninitialized && flutterCachedConfiguration.isAutomaticInitializationEnabled()) {
             BrazeLogger.i(TAG, "Running Flutter BrazePlugin automatic initialization")
-            this.activity?.application?.let { IntegrationInitializer.initializePlugin(it) }
+            this.activity?.application?.let { IntegrationInitializer.initializePlugin(it, flutterCachedConfiguration) }
         }
     }
 
@@ -445,29 +434,11 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
     }
 
     private fun convertToBrazeProperties(arguments: Map<String, *>?): BrazeProperties {
-        val properties = BrazeProperties()
         if (arguments == null) {
-            return properties
+            return BrazeProperties()
         }
-        for (key in arguments.keys) {
-            when (val value = arguments[key]) {
-                is Int -> {
-                    properties.addProperty(key, value)
-                }
-                is String -> {
-                    properties.addProperty(key, value)
-                }
-                is Double -> {
-                    properties.addProperty(key, value)
-                }
-                is Boolean -> {
-                    properties.addProperty(key, value)
-                }
-                is Long -> {
-                    properties.addProperty(key, value.toInt())
-                }
-            }
-        }
-        return properties
+
+        val jsonObject = JSONObject(arguments)
+        return BrazeProperties(jsonObject)
     }
 }

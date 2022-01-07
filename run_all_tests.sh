@@ -7,7 +7,7 @@ flutter drive \
   --driver=test_driver/integration_test.dart \
   --target=integration_test/braze_plugin_integration_test.dart
 
-echo "\n-> Testing Android V1 and V2 Embedding..."
+echo "\n-> Testing Android Embedding..."
 flutter build apk
 cd android
 ./gradlew app:connectedAndroidTest -Ptarget=`pwd`/../integration_test/braze_plugin_integration_test.dart
