@@ -296,4 +296,27 @@ NSMutableArray<FlutterMethodChannel *> *_channels = nil;
   }
 }
 
++ (void)processSdkAuthenticationError:(ABKSdkAuthenticationError *)sdkAuthenticationError {
+  NSDictionary *dictionary = @{ 
+    @"code": @(sdkAuthenticationError.code),
+    @"reason": sdkAuthenticationError.reason != NULL ? sdkAuthenticationError.reason : @"reason",
+    @"userId": sdkAuthenticationError.userId != NULL ? sdkAuthenticationError.userId : @"userId",
+    @"signature": sdkAuthenticationError.signature
+  };
+
+  NSError *error;
+  NSData *sdkAuthenticationErrorData = [NSJSONSerialization dataWithJSONObject:dictionary
+                                          options:kNilOptions
+                                          error:&error];
+
+  NSString *sdkAuthenticationErrorString = [[NSString alloc] initWithData:sdkAuthenticationErrorData encoding:NSUTF8StringEncoding];
+  NSDictionary *arguments = @{
+    @"sdkAuthenticationError" : sdkAuthenticationErrorString
+  };
+
+  for (FlutterMethodChannel *channel in _channels) {
+    [channel invokeMethod:@"handleSdkAuthenticationError" arguments:arguments];
+  }
+}
+
 @end

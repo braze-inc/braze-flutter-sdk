@@ -10,6 +10,7 @@ import com.appboy.enums.Gender
 import com.appboy.enums.Month
 import com.appboy.enums.NotificationSubscriptionType
 import com.appboy.events.SimpleValueCallback
+import com.appboy.events.BrazeSdkAuthenticationErrorEvent
 import com.appboy.models.cards.Card
 import com.appboy.models.outgoing.AttributionData
 import com.braze.Braze
@@ -29,6 +30,7 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import org.json.JSONObject
 import java.math.BigDecimal
 import java.util.*
+import org.json.JSONObject
 
 class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
     private lateinit var context: Context
@@ -112,6 +114,36 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 if (plugin.activity != null) {
                     plugin.activity?.runOnUiThread {
                         plugin.channel.invokeMethod("handleBrazeContentCards", contentCardMap)
+                    }
+                }
+            }
+        }
+
+        /**
+         * Used to pass in SDK Authentication Error data from the Braze
+         * SDK native layer to the Flutter layer
+         */
+        @JvmStatic
+        fun processSdkAuthenticationError(errorEvent: BrazeSdkAuthenticationErrorEvent) {
+            if (activePlugins.isEmpty()) {
+                BrazeLogger.w(TAG, "There are no active Braze Plugins. Not calling 'handleSdkAuthenticationError'.")
+                return
+            }
+
+            val errorEventMap = hashMapOf(
+                    "code" to errorEvent.getErrorCode().toString(),
+                    "reason" to errorEvent.getErrorReason(),
+                    "userId" to errorEvent.getUserId(),
+                    "signature" to errorEvent.getSignature()
+            )
+
+            val sdkAuthenticationErrorMap: HashMap<String, String> =
+                hashMapOf("sdkAuthenticationError" to JSONObject(errorEventMap.toString()).toString())
+
+            for (plugin in activePlugins) {
+                if (plugin.activity != null) {
+                    plugin.activity?.runOnUiThread {
+                        plugin.channel.invokeMethod("handleSdkAuthenticationError", sdkAuthenticationErrorMap)
                     }
                 }
             }

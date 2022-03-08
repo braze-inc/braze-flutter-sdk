@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert' as json;
+
 import 'package:flutter/services.dart';
 
 /* Custom configuration keys */
@@ -8,6 +9,7 @@ const String replayCallbacksConfigKey = 'ReplayCallbacksKey';
 class BrazePlugin {
   static const MethodChannel _channel = const MethodChannel('braze_plugin');
   Function(BrazeInAppMessage)? _brazeInAppMessageHandler;
+  Function(BrazeSdkAuthenticationError)? _brazeSdkAuthenticationErrorHandler;
   Function(List<BrazeContentCard>)? _brazeContentCardHandler;
   Map<String, bool>? _brazeCustomConfigs;
 
@@ -16,10 +18,12 @@ class BrazePlugin {
 
   BrazePlugin(
       {Function(BrazeInAppMessage)? inAppMessageHandler,
+      Function(BrazeSdkAuthenticationError)? brazeSdkAuthenticationErrorHandler,
       Function(List<BrazeContentCard>)? contentCardsHandler,
       Map<String, bool>? customConfigs}) {
     // Set up the plugin settings before setting the method call handler
     _brazeInAppMessageHandler = inAppMessageHandler;
+    _brazeSdkAuthenticationErrorHandler = brazeSdkAuthenticationErrorHandler;
     _brazeContentCardHandler = contentCardsHandler;
     _brazeCustomConfigs = customConfigs;
 
@@ -35,6 +39,12 @@ class BrazePlugin {
       _queuedInAppMessages.forEach((message) => callback(message));
       _queuedInAppMessages.clear();
     }
+  }
+
+  /// Sets a callback to receive in-app message data from Braze
+  void setBrazeSdkAuthenticationErrorCallback(
+      Function(BrazeSdkAuthenticationError) callback) {
+    _brazeSdkAuthenticationErrorHandler = callback;
   }
 
   /// Sets a callback to receive Content Card data from Braze
@@ -474,6 +484,22 @@ class BrazePlugin {
           _queuedContentCards.addAll(brazeCards);
         }
         return Future<void>.value();
+      case "handleSdkAuthenticationError":
+        final Map<dynamic, dynamic> argumentsMap = call.arguments;
+        String? sdkAuthenticationErrorString =
+            argumentsMap['sdkAuthenticationError'];
+        if (sdkAuthenticationErrorString == null) {
+          print(
+              "Invalid input. Missing value for key 'sdkAuthenticationError'.");
+          return Future<void>.value();
+        }
+        final sdkAuthenticationError =
+            BrazeSdkAuthenticationError(sdkAuthenticationErrorString);
+        if (_brazeSdkAuthenticationErrorHandler != null) {
+          _brazeSdkAuthenticationErrorHandler!(sdkAuthenticationError);
+        }
+
+        return Future<void>.value();
 
       default:
         print("Unknown method ${call.method} called. Doing nothing.");
@@ -867,5 +893,45 @@ class BrazeButton {
         clickAction.toString() +
         " useWebView:" +
         useWebView.toString();
+  }
+}
+
+class BrazeSdkAuthenticationError {
+  int code = 0;
+  String reason = "";
+  String userId = "";
+  String signature = "";
+
+  /// Sdk Authentication Error json
+  String brazeSdkAuthenticationErrorString = "";
+
+  BrazeSdkAuthenticationError(String _data) {
+    brazeSdkAuthenticationErrorString = _data;
+    var brazeSdkAuthenticationErrorJson = json.jsonDecode(_data);
+
+    var codeJson = brazeSdkAuthenticationErrorJson["code"];
+    if (codeJson is int) {
+      code = codeJson;
+    }
+
+    var reasonJson = brazeSdkAuthenticationErrorJson["reason"];
+    if (reasonJson is String) {
+      reason = reasonJson;
+    }
+
+    var userIdJson = brazeSdkAuthenticationErrorJson["userId"];
+    if (userIdJson is String) {
+      userId = userIdJson;
+    }
+
+    var signatureJson = brazeSdkAuthenticationErrorJson["signature"];
+    if (signatureJson is String) {
+      signature = signatureJson;
+    }
+  }
+
+  @override
+  String toString() {
+    return brazeSdkAuthenticationErrorString;
   }
 }
