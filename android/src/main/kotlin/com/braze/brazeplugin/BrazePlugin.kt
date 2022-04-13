@@ -30,7 +30,6 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import org.json.JSONObject
 import java.math.BigDecimal
 import java.util.*
-import org.json.JSONObject
 
 class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
     private lateinit var context: Context
