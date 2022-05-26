@@ -14,7 +14,7 @@ class FlutterCachedConfiguration(context: Context, useCache: Boolean) : CachedCo
     fun isAutomaticInitializationEnabled(): Boolean = getBooleanValue(ENABLE_AUTOMATIC_INTEGRATION_INITIALIZER, true)
 
     fun automaticIntegrationInAppMessageOperation(): InAppMessageOperation {
-        val value = getStringValue(AUTOMATIC_INTEGRATION_IAM_OPERATION, "").uppercase()
+        val value = getStringValue(AUTOMATIC_INTEGRATION_IAM_OPERATION, "")?.uppercase()
         return IAM_OPERATION_ENUM_MAP[value] ?: InAppMessageOperation.DISPLAY_NOW
     }
 }

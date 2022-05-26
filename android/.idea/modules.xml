@@ -3,6 +3,9 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/braze_plugin.iml" filepath="$PROJECT_DIR$/.idea/modules/braze_plugin.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/braze_plugin.androidTest.iml" filepath="$PROJECT_DIR$/.idea/modules/braze_plugin.androidTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/braze_plugin.main.iml" filepath="$PROJECT_DIR$/.idea/modules/braze_plugin.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/braze_plugin.unitTest.iml" filepath="$PROJECT_DIR$/.idea/modules/braze_plugin.unitTest.iml" />
     </modules>
   </component>
 </project>

@@ -1,7 +1,5 @@
 package com.braze.brazeplugin
 
-// Android V2 embedding
-
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -181,7 +179,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 "logContentCardDismissed" -> {
                     val contentCardString = call.argument<String>("contentCardString")
                     if (contentCardString != null) {
-                        Braze.getInstance(context).deserializeContentCard(contentCardString)?.setIsDismissed(true)
+                        Braze.getInstance(context).deserializeContentCard(contentCardString)?.isDismissed = true
                     }
                 }
                 "logInAppMessageClicked" -> {
@@ -208,6 +206,10 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 "addAlias" -> {
                     val aliasName = call.argument<String>("aliasName")
                     val aliasLabel = call.argument<String>("aliasLabel")
+                    if (aliasName == null || aliasLabel == null) {
+                        BrazeLogger.w(TAG, "Unexpected null parameter(s) in `addAlias`.")
+                        return;
+                    }
                     Braze.getInstance(context).runOnUser { user -> user.addAlias(aliasName, aliasLabel) }
                 }
                 "logCustomEvent" -> {
@@ -233,67 +235,123 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 "addToCustomAttributeArray" -> {
                     val key = call.argument<String>("key")
                     val value = call.argument<String>("value")
+                    if (key == null || value == null) {
+                        BrazeLogger.w(TAG, "Unexpected null parameter(s) in `addToCustomAttributeArray`.")
+                        return;
+                    }
                     Braze.getInstance(context).runOnUser { user -> user.addToCustomAttributeArray(key, value) }
                 }
                 "removeFromCustomAttributeArray" -> {
                     val key = call.argument<String>("key")
                     val value = call.argument<String>("value")
+                    if (key == null || value == null) {
+                        BrazeLogger.w(TAG, "Unexpected null parameter(s) in `removeFromCustomAttributeArray`.")
+                        return;
+                    }
                     Braze.getInstance(context).runOnUser { user -> user.removeFromCustomAttributeArray(key, value) }
                 }
                 "setStringCustomUserAttribute" -> {
                     val key = call.argument<String>("key")
                     val value = call.argument<String>("value")
+                    if (key == null || value == null) {
+                        BrazeLogger.w(TAG, "Unexpected null parameter(s) in `setStringCustomUserAttribute`.")
+                        return;
+                    }
                     Braze.getInstance(context).runOnUser { user -> user.setCustomUserAttribute(key, value) }
                 }
                 "setDoubleCustomUserAttribute" -> {
                     val key = call.argument<String>("key")
                     val value = call.argument<Double>("value") ?: 0.0
+                    if (key == null) {
+                        BrazeLogger.w(TAG, "Unexpected null key in `setDoubleCustomUserAttribute`")
+                        return;
+                    }
                     Braze.getInstance(context).runOnUser { user -> user.setCustomUserAttribute(key, value) }
                 }
                 "setDateCustomUserAttribute" -> {
                     val key = call.argument<String>("key")
                     val value = (call.argument<Int>("value") ?: 0).toLong()
+                    if (key == null) {
+                        BrazeLogger.w(TAG, "Unexpected null key in `setDateCustomUserAttribute`.")
+                        return;
+                    }
                     Braze.getInstance(context).runOnUser { user -> user.setCustomUserAttributeToSecondsFromEpoch(key, value) }
                 }
                 "setIntCustomUserAttribute" -> {
                     val key = call.argument<String>("key")
                     val value = call.argument<Int>("value") ?: 0
+                    if (key == null) {
+                        BrazeLogger.w(TAG, "Unexpected null key in `setIntCustomUserAttribute`.")
+                        return;
+                    }
                     Braze.getInstance(context).runOnUser { user -> user.setCustomUserAttribute(key, value) }
                 }
                 "incrementCustomUserAttribute" -> {
                     val key = call.argument<String>("key")
                     val value = call.argument<Int>("value") ?: 0
+                    if (key == null) {
+                        BrazeLogger.w(TAG, "Unexpected null key in `incrementCustomUserAttribute`.")
+                        return;
+                    }
                     Braze.getInstance(context).runOnUser { user -> user.incrementCustomUserAttribute(key, value) }
                 }
                 "setBoolCustomUserAttribute" -> {
                     val key = call.argument<String>("key")
                     val value = call.argument<Boolean>("value") ?: false
+                    if (key == null) {
+                        BrazeLogger.w(TAG, "Unexpected null key in `setBoolCustomUserAttribute`.")
+                        return;
+                    }
                     Braze.getInstance(context).runOnUser { user -> user.setCustomUserAttribute(key, value) }
                 }
                 "unsetCustomUserAttribute" -> {
                     val key = call.argument<String>("key")
+                    if (key == null) {
+                        BrazeLogger.w(TAG, "Unexpected null key in `unsetCustomUserAttribute`.")
+                        return;
+                    }
                     Braze.getInstance(context).runOnUser { user -> user.unsetCustomUserAttribute(key) }
                 }
                 "setPushNotificationSubscriptionType" -> {
                     val type = getSubscriptionType(call.argument<String>("type") ?: "")
+                    if (type == null) {
+                        BrazeLogger.w(TAG, "Unexpected null type in `setPushNotificationSubscriptionType`.")
+                        return;
+                    }
                     Braze.getInstance(context).runOnUser { user -> user.setPushNotificationSubscriptionType(type) }
                 }
                 "setEmailNotificationSubscriptionType" -> {
                     val type = getSubscriptionType(call.argument<String>("type") ?: "")
+                    if (type == null) {
+                        BrazeLogger.w(TAG, "Unexpected null type in `setEmailNotificationSubscriptionType`.")
+                        return;
+                    }
                     Braze.getInstance(context).runOnUser { user -> user.setEmailNotificationSubscriptionType(type) }
                 }
                 "addToSubscriptionGroup" -> {
                     val groupId = call.argument<String>("groupId")
+                    if (groupId == null) {
+                        BrazeLogger.w(TAG, "Unexpected null groupId in `addToSubscriptionGroup`.")
+                        return;
+                    }
                     Braze.getInstance(context).runOnUser { user -> user.addToSubscriptionGroup(groupId) }
                 }
                 "removeFromSubscriptionGroup" -> {
                     val groupId = call.argument<String>("groupId")
+                    if (groupId == null) {
+                        BrazeLogger.w(TAG, "Unexpected null groupId in `removeFromSubscriptionGroup`.")
+                        return;
+                    }
                     Braze.getInstance(context).runOnUser { user -> user.removeFromSubscriptionGroup(groupId) }
                 }
                 "setLocationCustomAttribute" -> {
                     val key = call.argument<String>("key")
                     val lat = call.argument<Double>("lat") ?: 0.0
                     val long = call.argument<Double>("long") ?: 0.0
+                    if (key == null) {
+                        BrazeLogger.w(TAG, "Unexpected null key in `setLocationCustomAttribute`.")
+                        return;
+                    }
                     Braze.getInstance(context).runOnUser { user -> user.setLocationCustomAttribute(key, lat, long) }
                 }
                 "requestImmediateDataFlush" -> {
@@ -366,12 +424,12 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val campaign = call.argument<String>("campaign")
                     val adGroup = call.argument<String>("adGroup")
                     val creative = call.argument<String>("creative")
+                    if (network == null || campaign == null || adGroup == null || creative == null) {
+                        BrazeLogger.w(TAG, "Unexpected null parameter(s) in `setAttributionData`.")
+                        return;
+                    }
                     val attributionData = AttributionData(network, campaign, adGroup, creative)
                     Braze.getInstance(context).runOnUser { user -> user.setAttributionData(attributionData) }
-                }
-                "setAvatarImageUrl" -> {
-                    val avatarImageUrl = call.argument<String>("avatarImageUrl")
-                    Braze.getInstance(context).runOnUser { user -> user.setAvatarImageUrl(avatarImageUrl) }
                 }
                 "registerAndroidPushToken" -> {
                     val pushToken = call.argument<String>("pushToken")
@@ -429,8 +487,13 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
         }
     }
 
-    private fun getMonth(month: Int): Month? {
-        return Month.getMonth(month - 1)
+    private fun getMonth(month: Int): Month {
+        val month = Month.getMonth(month - 1)
+        if (month == null) {
+            BrazeLogger.w(TAG, "Invalid `null` month. Defaulting to January.")
+            return Month.JANUARY
+        }
+        return month
     }
 
     private fun convertToBrazeProperties(arguments: Map<String, *>?): BrazeProperties {

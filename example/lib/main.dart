@@ -188,8 +188,6 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                 _braze.setCountry("JP");
                 _braze.setHomeCity("homeCity");
                 _braze.setPhoneNumber("123456789");
-                _braze.setAvatarImageUrl("https://raw.githubusercontent.com/"
-                    "Appboy/appboy-react-sdk/master/braze-logo.png");
                 _braze.addAlias("alias-name-1", "alias-label-1");
                 ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
                   content: new Text("Logged attributes"),

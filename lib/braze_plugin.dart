@@ -311,11 +311,6 @@ class BrazePlugin {
     _callStringMethod('setPhoneNumber', 'phoneNumber', phoneNumber);
   }
 
-  /// Sets the avatar image url default user attribute
-  void setAvatarImageUrl(String avatarImageUrl) {
-    _callStringMethod('setAvatarImageUrl', 'avatarImageUrl', avatarImageUrl);
-  }
-
   /// Sets attribution data
   void setAttributionData(
       String? network, String? campaign, String? adGroup, String? creative) {

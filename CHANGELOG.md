@@ -1,3 +1,12 @@
+## 2.4.0
+
+##### Breaking
+- The native Android bridge uses [Braze Android SDK 20.0.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#2000).
+- Removes `setAvatarImageUrl()`.
+
+##### Changed
+- The native iOS bridge uses [Braze iOS SDK 4.4.3](https://github.com/Appboy/appboy-ios-sdk/blob/master/CHANGELOG.md#443).
+
 ## 2.3.0
 
 ##### Breaking

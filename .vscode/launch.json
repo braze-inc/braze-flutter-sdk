@@ -7,7 +7,8 @@
         {
             "name": "braze_plugin",
             "request": "launch",
-            "type": "dart"
+            "type": "dart",
+            "flutterMode": "debug"
         },
         {
             "name": "braze_plugin (profile mode)",

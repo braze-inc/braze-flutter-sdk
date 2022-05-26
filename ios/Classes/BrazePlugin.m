@@ -81,6 +81,7 @@ NSMutableArray<FlutterMethodChannel *> *_channels = nil;
     NSString *eventName = arguments[@"eventName"];
     NSDictionary *properties = arguments[@"properties"];
     [Appboy sharedInstance].sdkFlavor = FLUTTER;
+    [[Appboy sharedInstance] addSdkMetadata:@[ABKSdkMetadataFlutter]];
     [[Appboy sharedInstance] logCustomEvent:eventName withProperties:properties];
   } else if ([method isEqualToString:@"logPurchase"] || [method isEqualToString:@"logCustomEventWithProperties"]) {
    NSString *productId = arguments[@"productId"];
@@ -125,9 +126,6 @@ NSMutableArray<FlutterMethodChannel *> *_channels = nil;
   } else if ([method isEqualToString:@"setPhoneNumber"]) {
     NSString *phoneNumber = arguments[@"phoneNumber"];
     [Appboy sharedInstance].user.phone = phoneNumber;
-  } else if ([method isEqualToString:@"setAvatarImageUrl"]) {
-    NSString *avatarImageUrl = arguments[@"avatarImageUrl"];
-    [Appboy sharedInstance].user.avatarImageURL = avatarImageUrl;
   } else if ([method isEqualToString:@"setPushNotificationSubscriptionType"]) {
     NSString *type = arguments[@"type"];
     ABKNotificationSubscriptionType pushNotificationSubscriptionType = [BrazePlugin getSubscriptionType:type];

@@ -617,19 +617,6 @@ void main() {
     ]);
   });
 
-  test('should call setAvatarImageUrl', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _avatarImageUrl =
-        'https://raw.githubusercontent.com/Appboy/appboy-react-sdk/master/braze-logo.png';
-    _braze.setAvatarImageUrl(_avatarImageUrl);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setAvatarImageUrl',
-        arguments: <String, dynamic>{'avatarImageUrl': _avatarImageUrl},
-      ),
-    ]);
-  });
-
   test('should call setAttributionData', () {
     BrazePlugin _braze = new BrazePlugin();
     String _network = 'someNetwork';
