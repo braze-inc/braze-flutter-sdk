@@ -7,6 +7,9 @@
  */
 NSMutableArray<FlutterMethodChannel *> *_channels = nil;
 
+@interface BrazePlugin () <ABKSdkAuthenticationDelegate>
+@end
+
 @implementation BrazePlugin
 
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar> *)registrar {
@@ -28,7 +31,19 @@ NSMutableArray<FlutterMethodChannel *> *_channels = nil;
 
   if ([method isEqualToString:@"changeUser"]) {
     NSString *userId = arguments[@"userId"];
-    [[Appboy sharedInstance] changeUser:userId];
+    if ([[arguments allKeys] containsObject:@"sdkAuthSignature"]) {
+      NSString *sdkAuthSignature = arguments[@"sdkAuthSignature"];
+      [[Appboy sharedInstance] changeUser:userId sdkAuthSignature:sdkAuthSignature];
+    } else {
+      [[Appboy sharedInstance] changeUser:userId];
+    }
+  } else if ([method isEqualToString:@"setSdkAuthenticationSignature"]) {
+    if ([[arguments allKeys] containsObject:@"sdkAuthSignature"]) {
+      NSString *sdkAuthSignature = arguments[@"sdkAuthSignature"];
+      [[Appboy sharedInstance] setSdkAuthenticationSignature:sdkAuthSignature];
+    }
+  } else if ([method isEqualToString:@"setSdkAuthenticationDelegate"]) {
+    [Appboy sharedInstance].sdkAuthenticationDelegate = self;
   } else if ([method isEqualToString:@"getInstallTrackingId"]) {
     NSString *deviceId = [[Appboy sharedInstance] getDeviceId];
     result(deviceId);
@@ -40,8 +55,6 @@ NSMutableArray<FlutterMethodChannel *> *_channels = nil;
     UIWindow *keyWindow = [[UIApplication sharedApplication] keyWindow];
     UIViewController *mainViewController = keyWindow.rootViewController;
     [mainViewController presentViewController:contentCardsModal animated:YES completion:nil];
-  } else if ([method isEqualToString:@"logContentCardsDisplayed"]) {
-    [[Appboy sharedInstance] logContentCardsDisplayed];
   } else if ([method isEqualToString:@"logContentCardClicked"]) {
     NSString *contentCardJSONString = arguments[@"contentCardString"];
     ABKContentCard *contentCard = [[ABKContentCard alloc] init];
@@ -202,6 +215,24 @@ NSMutableArray<FlutterMethodChannel *> *_channels = nil;
     [Appboy wipeDataAndDisableForAppRun];
   } else if ([method isEqualToString:@"requestLocationInitialization"]) {
     // This is an Android only feature, do nothing.
+  } else if ([method isEqualToString:@"setLastKnownLocation"]) {
+    double latitude = [arguments[@"latitude"] doubleValue];
+    double longitude = [arguments[@"longitude"] doubleValue];
+    double accuracy = [arguments[@"accuracy"] doubleValue];
+    // Nullable fields
+    NSNumber *altitude = arguments[@"altitude"];
+    NSNumber *verticalAccuracy = arguments[@"verticalAccuracy"];
+    if (altitude && (verticalAccuracy && [verticalAccuracy doubleValue] > 0.0)) {
+      [[Appboy sharedInstance].user setLastKnownLocationWithLatitude:latitude
+                                                           longitude:longitude
+                                                  horizontalAccuracy:accuracy
+                                                            altitude:[altitude doubleValue]
+                                                    verticalAccuracy:[verticalAccuracy doubleValue]];
+    } else {
+      [[Appboy sharedInstance].user setLastKnownLocationWithLatitude:latitude
+                                                           longitude:longitude
+                                                  horizontalAccuracy:accuracy];
+    }
   } else if ([method isEqualToString:@"enableSDK"]) {
     [Appboy requestEnableSDKOnNextAppRun];
   } else if ([method isEqualToString:@"disableSDK"]) {
@@ -281,6 +312,32 @@ NSMutableArray<FlutterMethodChannel *> *_channels = nil;
 
   for (FlutterMethodChannel *channel in _channels) {
     [channel invokeMethod:@"handleBrazeContentCards" arguments:arguments];
+  }
+}
+
+#pragma mark - ABKSdkAuthenticationDelegate
+
+- (void)handleSdkAuthenticationError:(ABKSdkAuthenticationError *)sdkAuthenticationError {
+  NSDictionary *dictionary = @{
+    @"code": @(sdkAuthenticationError.code),
+    @"reason": sdkAuthenticationError.reason != NULL ? sdkAuthenticationError.reason : @"reason",
+    @"userId": sdkAuthenticationError.userId != NULL ? sdkAuthenticationError.userId : @"userId",
+    @"signature": sdkAuthenticationError.signature
+  };
+
+  NSError *error;
+  NSData *sdkAuthErrorData = [NSJSONSerialization dataWithJSONObject:dictionary
+                                                             options:0
+                                                               error:&error];
+
+  NSString *sdkAuthErrorString = [[NSString alloc] initWithData:sdkAuthErrorData
+                                                       encoding:NSUTF8StringEncoding];
+  NSDictionary *arguments = @{
+    @"sdkAuthenticationError" : sdkAuthErrorString
+  };
+
+  for (FlutterMethodChannel *channel in _channels) {
+    [channel invokeMethod:@"handleSdkAuthenticationError" arguments:arguments];
   }
 }
 

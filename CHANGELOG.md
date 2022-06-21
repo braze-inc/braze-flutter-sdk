@@ -1,3 +1,15 @@
+## 2.5.0
+
+##### Breaking
+- The native Android bridge uses [Braze Android SDK 21.0.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#2100).
+- Removes `logContentCardsDisplayed()`. This method was not part of the recommended Content Cards integration and can be safely removed.
+
+##### Added
+- Adds support for the [SDK Authentication](https://www.braze.com/docs/developer_guide/platform_wide/sdk_authentication/) feature.
+  - To handle authentication errors, use `setBrazeSdkAuthenticationErrorCallback()`, and use `setSdkAuthenticationSignature()` to update the signature. When calling `changeUser()`, be sure to pass in the `sdkAuthSignature` parameter.
+  - Thanks @spaluchiewicz for contributing to this feature!
+- Adds `setLastKnownLocation()` to set the last known location for the user.
+
 ## 2.4.0
 
 ##### Breaking

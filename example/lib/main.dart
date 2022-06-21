@@ -1,4 +1,5 @@
 import 'dart:io' show Platform;
+import 'package:braze_plugin_example/jwt_generator.dart';
 import 'package:flutter/material.dart';
 
 import 'package:braze_plugin/braze_plugin.dart';
@@ -33,6 +34,16 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
 
   void initState() {
     _braze = new BrazePlugin(customConfigs: {replayCallbacksConfigKey: true});
+
+    _braze.setBrazeSdkAuthenticationErrorCallback(
+        (BrazeSdkAuthenticationError error) async {
+      print('Received an SDK Auth error: $error');
+
+      String newSignature = await JwtGenerator.create(_userId);
+      print('Setting new signature: $newSignature, userId: $_userId');
+      _braze.setSdkAuthenticationSignature(newSignature);
+    });
+
     super.initState();
   }
 
@@ -90,9 +101,10 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
             ),
             TextButton(
               child: const Text('CHANGE USER'),
-              onPressed: () {
+              onPressed: () async {
                 String userId = userIdController.text;
-                _braze.changeUser(userId);
+                _braze.changeUser(userId,
+                    sdkAuthSignature: await JwtGenerator.create(userId));
                 this.setState(() {
                   _userId = userId;
                 });
@@ -217,9 +229,20 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
               },
             ),
             TextButton(
-              child: const Text('REQUEST LOCATION INITIALIZATION'),
+              child: const Text('SET LAST KNOWN LOCATION'),
               onPressed: () {
+                print(
+                    'Requesting location initialization (no-op on iOS) and setting last known location');
                 _braze.requestLocationInitialization();
+                _braze.setLastKnownLocation(
+                    latitude: 40.7128,
+                    longitude: 74.0060,
+                    altitude: 23.0,
+                    accuracy: 25.0,
+                    verticalAccuracy: 19.0);
+                ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                  content: new Text('Set Last Known Location'),
+                ));
               },
             ),
             TextButton(
@@ -297,7 +320,6 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                       content: new Text("Empty Content Cards update received."),
                     ));
                   }
-                  _braze.logContentCardsDisplayed();
                   contentCards.forEach((contentCard) {
                     print("Received card: " + contentCard.toString());
                     _braze.logContentCardClicked(contentCard);

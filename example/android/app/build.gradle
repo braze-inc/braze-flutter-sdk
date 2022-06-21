@@ -10,7 +10,7 @@ def flutterRoot = localProperties.getProperty('flutter.sdk')
 if (flutterRoot == null) {
     flutterRoot = System.env.FLUTTER_ROOT
     if (flutterRoot == null) {
-        throw new GradleException("Flutter SDK not found. Define location with flutter.sdk in the local.properties file.")
+        throw new FileNotFoundException("Flutter SDK not found. Define location with flutter.sdk in the local.properties file.")
     }
 }
 
@@ -33,9 +33,6 @@ android {
         main.java.srcDirs += 'src/main/kotlin'
     }
 
-    lintOptions {
-        disable 'InvalidPackage'
-    }
 
     defaultConfig {
         applicationId "braze.com.brazepluginexample"
@@ -65,6 +62,10 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    lint {
+        disable 'InvalidPackage'
+    }
+    namespace 'braze.com.brazepluginexample'
 }
 
 flutter {
@@ -79,7 +80,7 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
     implementation 'androidx.multidex:multidex:2.0.0'
 
-    implementation "com.appboy:android-sdk-ui:20.0.0"
+    implementation "com.appboy:android-sdk-ui:21.0.0"
     implementation "com.google.firebase:firebase-messaging:+"
 }
 apply plugin: 'com.google.gms.google-services'

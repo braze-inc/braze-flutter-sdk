@@ -8,6 +8,7 @@ const String replayCallbacksConfigKey = 'ReplayCallbacksKey';
 class BrazePlugin {
   static const MethodChannel _channel = const MethodChannel('braze_plugin');
   Function(BrazeInAppMessage)? _brazeInAppMessageHandler;
+  Function(BrazeSdkAuthenticationError)? _brazeSdkAuthenticationErrorHandler;
   Function(List<BrazeContentCard>)? _brazeContentCardHandler;
   Map<String, bool>? _brazeCustomConfigs;
 
@@ -16,10 +17,12 @@ class BrazePlugin {
 
   BrazePlugin(
       {Function(BrazeInAppMessage)? inAppMessageHandler,
+      Function(BrazeSdkAuthenticationError)? brazeSdkAuthenticationErrorHandler,
       Function(List<BrazeContentCard>)? contentCardsHandler,
       Map<String, bool>? customConfigs}) {
     // Set up the plugin settings before setting the method call handler
     _brazeInAppMessageHandler = inAppMessageHandler;
+    _brazeSdkAuthenticationErrorHandler = brazeSdkAuthenticationErrorHandler;
     _brazeContentCardHandler = contentCardsHandler;
     _brazeCustomConfigs = customConfigs;
 
@@ -37,6 +40,13 @@ class BrazePlugin {
     }
   }
 
+  /// Sets a callback to receive in-app message data from Braze
+  void setBrazeSdkAuthenticationErrorCallback(
+      Function(BrazeSdkAuthenticationError) callback) {
+    _channel.invokeMethod('setSdkAuthenticationDelegate');
+    _brazeSdkAuthenticationErrorHandler = callback;
+  }
+
   /// Sets a callback to receive Content Card data from Braze
   void setBrazeContentCardsCallback(Function(List<BrazeContentCard>) callback) {
     _brazeContentCardHandler = callback;
@@ -49,14 +59,23 @@ class BrazePlugin {
   }
 
   /// Changes the current Braze userId
-  void changeUser(String userId) {
-    final Map<String, dynamic> params = <String, dynamic>{"userId": userId};
+  /// If [sdkAuthSignature] is present, passes that token to the native layer.
+  /// See the Braze public docs for more info around the SDK Authentication feature
+  void changeUser(String userId, {String? sdkAuthSignature}) {
+    final Map<String, dynamic> params = <String, dynamic>{
+      "userId": userId,
+    };
+    if (sdkAuthSignature != null) {
+      params["sdkAuthSignature"] = sdkAuthSignature;
+    }
     _channel.invokeMethod('changeUser', params);
   }
 
-  /// Logs that Content Cards have been displayed
-  void logContentCardsDisplayed() {
-    _channel.invokeMethod('logContentCardsDisplayed');
+  void setSdkAuthenticationSignature(String? sdkAuthSignature) {
+    final Map<String, dynamic> params = <String, dynamic>{
+      "sdkAuthSignature": sdkAuthSignature
+    };
+    _channel.invokeMethod('setSdkAuthenticationSignature', params);
   }
 
   /// Logs a click for the provided Content Card data
@@ -355,6 +374,26 @@ class BrazePlugin {
     _channel.invokeMethod('requestLocationInitialization');
   }
 
+  void setLastKnownLocation(
+      {required double latitude,
+      required double longitude,
+      double? altitude,
+      double? accuracy,
+      double? verticalAccuracy}) {
+    final Map<String, dynamic> params = <String, dynamic>{
+      'latitude': latitude,
+      'longitude': longitude,
+      'accuracy': accuracy ?? 0.0,
+    };
+    if (altitude != null) {
+      params["altitude"] = altitude;
+    }
+    if (verticalAccuracy != null) {
+      params["verticalAccuracy"] = verticalAccuracy;
+    }
+    _channel.invokeMethod('setLastKnownLocation', params);
+  }
+
   /// Enables the SDK. Please consult iOS and Android-specific
   /// implementation details before using.
   void enableSDK() {
@@ -455,6 +494,25 @@ class BrazePlugin {
               "Braze content card callback not present. Removing any queued cards and adding only the recent refresh.");
           _queuedContentCards.clear();
           _queuedContentCards.addAll(brazeCards);
+        }
+        return Future<void>.value();
+
+      case "handleSdkAuthenticationError":
+        final Map<dynamic, dynamic> argumentsMap = call.arguments;
+        String? sdkAuthenticationErrorString =
+            argumentsMap['sdkAuthenticationError'];
+        if (sdkAuthenticationErrorString == null) {
+          print(
+              "Invalid input. Missing value for key 'sdkAuthenticationError'.");
+          return Future<void>.value();
+        }
+
+        final sdkAuthenticationError =
+            BrazeSdkAuthenticationError(sdkAuthenticationErrorString);
+        if (_brazeSdkAuthenticationErrorHandler != null) {
+          _brazeSdkAuthenticationErrorHandler!(sdkAuthenticationError);
+        } else {
+          print("Braze SDK Authentication error callback not present.");
         }
         return Future<void>.value();
 
@@ -850,5 +908,45 @@ class BrazeButton {
         clickAction.toString() +
         " useWebView:" +
         useWebView.toString();
+  }
+}
+
+class BrazeSdkAuthenticationError {
+  int code = 0;
+  String reason = "";
+  String userId = "";
+  String signature = "";
+
+  /// Sdk Authentication Error json
+  String brazeSdkAuthenticationErrorString = "";
+
+  BrazeSdkAuthenticationError(String _data) {
+    brazeSdkAuthenticationErrorString = _data;
+    var brazeSdkAuthenticationErrorJson = json.jsonDecode(_data);
+
+    var codeJson = brazeSdkAuthenticationErrorJson["code"];
+    if (codeJson is int) {
+      code = codeJson;
+    }
+
+    var reasonJson = brazeSdkAuthenticationErrorJson["reason"];
+    if (reasonJson is String) {
+      reason = reasonJson;
+    }
+
+    var userIdJson = brazeSdkAuthenticationErrorJson["userId"];
+    if (userIdJson is String) {
+      userId = userIdJson;
+    }
+
+    var signatureJson = brazeSdkAuthenticationErrorJson["signature"];
+    if (signatureJson is String) {
+      signature = signatureJson;
+    }
+  }
+
+  @override
+  String toString() {
+    return brazeSdkAuthenticationErrorString;
   }
 }

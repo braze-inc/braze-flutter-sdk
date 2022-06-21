@@ -14,7 +14,8 @@ import braze_plugin
     Appboy.start(withApiKey: "9292484d-3b10-4e67-971d-ff0c0d518e21",
                  in:application,
                  withLaunchOptions:launchOptions,
-                 withAppboyOptions: [ABKMinimumTriggerTimeIntervalKey : 1])
+                 withAppboyOptions: [ABKMinimumTriggerTimeIntervalKey : 1,
+                                     ABKEnableSDKAuthenticationKey : true])
     Appboy.sharedInstance()!.inAppMessageController.delegate = self
 
     NotificationCenter.default.addObserver(self, selector: #selector(contentCardsUpdated), name:NSNotification.Name.ABKContentCardsProcessed, object: nil)

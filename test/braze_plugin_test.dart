@@ -56,13 +56,30 @@ void main() {
     ]);
   });
 
-  test('should call logContentCardsDisplayed', () {
+  test('should call changeUser with sdkAuthSignature', () {
     BrazePlugin _braze = new BrazePlugin();
-    _braze.logContentCardsDisplayed();
+    String _testUser = 'thistestuser';
+    String _sdkAuthSignature = 'sdkauthsignature';
+    _braze.changeUser(_testUser, sdkAuthSignature: _sdkAuthSignature);
     expect(log, <Matcher>[
       isMethodCall(
-        'logContentCardsDisplayed',
-        arguments: null,
+        'changeUser',
+        arguments: <String, dynamic>{
+          'userId': _testUser,
+          'sdkAuthSignature': _sdkAuthSignature
+        },
+      ),
+    ]);
+  });
+
+  test('should call setSdkAuthenticationSignature', () {
+    BrazePlugin _braze = new BrazePlugin();
+    String _sdkAuthSignature = 'sdkauthsignature';
+    _braze.setSdkAuthenticationSignature(_sdkAuthSignature);
+    expect(log, <Matcher>[
+      isMethodCall(
+        'setSdkAuthenticationSignature',
+        arguments: <String, dynamic>{'sdkAuthSignature': _sdkAuthSignature},
       ),
     ]);
   });
@@ -714,6 +731,52 @@ void main() {
       isMethodCall(
         'requestLocationInitialization',
         arguments: null,
+      ),
+    ]);
+  });
+
+  test('should call setLastKnownLocation with all params', () {
+    BrazePlugin _braze = new BrazePlugin();
+    _braze.setLastKnownLocation(
+        latitude: 12,
+        longitude: 34.5,
+        altitude: 6,
+        accuracy: 78,
+        verticalAccuracy: 90.12);
+    expect(log, <Matcher>[
+      isMethodCall(
+        'setLastKnownLocation',
+        arguments: <String, dynamic>{
+          'latitude': 12,
+          'longitude': 34.5,
+          'altitude': 6,
+          'accuracy': 78,
+          'verticalAccuracy': 90.12,
+        },
+      ),
+    ]);
+  });
+
+  test('should call setLastKnownLocation with without optional params', () {
+    BrazePlugin _braze = new BrazePlugin();
+    _braze.setLastKnownLocation(latitude: 12, longitude: 34.5);
+    _braze.setLastKnownLocation(latitude: 12, longitude: 34.5, accuracy: 6);
+    expect(log, <Matcher>[
+      isMethodCall(
+        'setLastKnownLocation',
+        arguments: <String, dynamic>{
+          'latitude': 12,
+          'longitude': 34.5,
+          'accuracy': 0,
+        },
+      ),
+      isMethodCall(
+        'setLastKnownLocation',
+        arguments: <String, dynamic>{
+          'latitude': 12,
+          'longitude': 34.5,
+          'accuracy': 6,
+        },
       ),
     ]);
   });

@@ -3,7 +3,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'braze_plugin'
-  s.version          = '2.4.0'
+  s.version          = '2.5.0'
   s.summary          = 'Braze plugin for Flutter.'
   s.description      = <<-DESC
 Braze plugin for Flutter.

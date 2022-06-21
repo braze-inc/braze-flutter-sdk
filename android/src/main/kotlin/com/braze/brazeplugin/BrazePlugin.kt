@@ -12,10 +12,13 @@ import com.appboy.models.cards.Card
 import com.appboy.models.outgoing.AttributionData
 import com.braze.Braze
 import com.braze.BrazeUser
+import com.braze.events.BrazeSdkAuthenticationErrorEvent
 import com.braze.models.inappmessage.IInAppMessage
 import com.braze.models.inappmessage.IInAppMessageImmersive
 import com.braze.models.outgoing.BrazeProperties
 import com.braze.support.BrazeLogger
+import com.braze.support.BrazeLogger.brazelog
+import com.braze.support.BrazeLogger.Priority.W
 import com.braze.ui.activities.ContentCardsActivity
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -45,6 +48,10 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
         this.context = context
         this.channel = channel
         activePlugins.add(this)
+
+        Braze.getInstance(context).subscribeToSdkAuthenticationFailures { message: BrazeSdkAuthenticationErrorEvent ->
+            this.handleSdkAuthenticationError(message)
+        }
     }
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -81,10 +88,8 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 hashMapOf("inAppMessage" to inAppMessage.forJsonPut().toString())
 
             for (plugin in activePlugins) {
-                if (plugin.activity != null) {
-                    plugin.activity?.runOnUiThread {
-                        plugin.channel.invokeMethod("handleBrazeInAppMessage", inAppMessageMap)
-                    }
+                plugin.activity?.runOnUiThread {
+                    plugin.channel.invokeMethod("handleBrazeInAppMessage", inAppMessageMap)
                 }
             }
         }
@@ -107,10 +112,8 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
             val contentCardMap: HashMap<String, ArrayList<String>> = hashMapOf("contentCards" to cardStringList)
 
             for (plugin in activePlugins) {
-                if (plugin.activity != null) {
-                    plugin.activity?.runOnUiThread {
-                        plugin.channel.invokeMethod("handleBrazeContentCards", contentCardMap)
-                    }
+                plugin.activity?.runOnUiThread {
+                    plugin.channel.invokeMethod("handleBrazeContentCards", contentCardMap)
                 }
             }
         }
@@ -149,7 +152,18 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
             when (call.method) {
                 "changeUser" -> {
                     val userId = call.argument<String>("userId")
-                    Braze.getInstance(context).changeUser(userId)
+                    val sdkAuthSignature = call.argument<String>("sdkAuthSignature")
+                    if (sdkAuthSignature == null) {
+                        Braze.getInstance(context).changeUser(userId)
+                    } else {
+                        Braze.getInstance(context).changeUser(userId, sdkAuthSignature)
+                    }
+                }
+                "setSdkAuthenticationSignature" -> {
+                    val sdkAuthSignature = call.argument<String>("sdkAuthSignature")
+                    if (sdkAuthSignature != null) {
+                        Braze.getInstance(context).setSdkAuthenticationSignature(sdkAuthSignature)
+                    }
                 }
                 "requestContentCardsRefresh" -> {
                     Braze.getInstance(context).requestContentCardsRefresh(false)
@@ -160,9 +174,6 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                         this.context.startActivity(intent)
                     }
-                }
-                "logContentCardsDisplayed" -> {
-                    Braze.getInstance(context).logContentCardsDisplayed()
                 }
                 "logContentCardClicked" -> {
                     val contentCardString = call.argument<String>("contentCardString")
@@ -449,11 +460,25 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 "requestLocationInitialization" -> {
                     Braze.getInstance(context).requestLocationInitialization()
                 }
+                "setLastKnownLocation" -> {
+                    val latitude = call.argument<Double>("latitude")
+                    val longitude = call.argument<Double>("longitude")
+                    val accuracy = call.argument<Double>("accuracy")
+                    val altitude = call.argument<Double?>("altitude")
+                    if (latitude == null || longitude == null) {
+                        BrazeLogger.w(TAG, "Unexpected null parameter(s) in `setLastKnownLocation`.")
+                        return;
+                    }
+                    Braze.getInstance(context).runOnUser { user -> user.setLastKnownLocation(latitude, longitude, altitude, accuracy) }
+                }
                 "enableSDK" -> {
                     Braze.enableSdk(context)
                 }
                 "disableSDK" -> {
                     Braze.disableSdk(context)
+                }
+                "setSdkAuthenticationDelegate" -> {
+                    // No-op on Android
                 }
                 else -> result.notImplemented()
             }
@@ -465,6 +490,28 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
     //--
     // Private methods
     //--
+
+    private fun handleSdkAuthenticationError(errorEvent: BrazeSdkAuthenticationErrorEvent) {
+        if (activePlugins.isEmpty()) {
+            brazelog(W) { "There are no active Braze Plugins. Not calling 'handleSdkAuthenticationError'." }
+            return
+        }
+
+        val errorEventMap = hashMapOf(
+            "code" to errorEvent.errorCode.toString(),
+            "reason" to errorEvent.errorReason,
+            "userId" to errorEvent.userId,
+        )
+
+        val sdkAuthenticationErrorMap: HashMap<String, String> =
+            hashMapOf("sdkAuthenticationError" to JSONObject(errorEventMap.toString()).toString())
+
+        for (plugin in activePlugins) {
+            plugin.activity?.runOnUiThread {
+                plugin.channel.invokeMethod("handleSdkAuthenticationError", sdkAuthenticationErrorMap)
+            }
+        }
+    }
 
     /**
      * Attempts to fetch the current user and then runs a block on it
