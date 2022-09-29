@@ -7,12 +7,12 @@ import androidx.annotation.NonNull
 import com.appboy.enums.Gender
 import com.appboy.enums.Month
 import com.appboy.enums.NotificationSubscriptionType
-import com.appboy.events.SimpleValueCallback
 import com.appboy.models.cards.Card
 import com.appboy.models.outgoing.AttributionData
 import com.braze.Braze
 import com.braze.BrazeUser
 import com.braze.events.BrazeSdkAuthenticationErrorEvent
+import com.braze.events.SimpleValueCallback
 import com.braze.models.inappmessage.IInAppMessage
 import com.braze.models.inappmessage.IInAppMessageImmersive
 import com.braze.models.outgoing.BrazeProperties
@@ -444,7 +444,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 }
                 "registerAndroidPushToken" -> {
                     val pushToken = call.argument<String>("pushToken")
-                    Braze.getInstance(context).registerPushToken(pushToken)
+                    Braze.getInstance(context).registeredPushToken = pushToken
                 }
                 "getInstallTrackingId" -> {
                     result.success(Braze.getInstance(context).deviceId)

@@ -3,15 +3,17 @@ import Appboy_iOS_SDK
 import Flutter
 import braze_plugin
 
+let apiKey = "9292484d-3b10-4e67-971d-ff0c0d518e21"
+
 @UIApplicationMain
 @objc class AppDelegate: FlutterAppDelegate, ABKInAppMessageControllerDelegate {
 
   override func application(_ application: UIApplication,
-    didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?
+                            didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
 
-    Appboy.start(withApiKey: "9292484d-3b10-4e67-971d-ff0c0d518e21",
+    Appboy.start(withApiKey: apiKey,
                  in:application,
                  withLaunchOptions:launchOptions,
                  withAppboyOptions: [ABKMinimumTriggerTimeIntervalKey : 1,
@@ -24,10 +26,10 @@ import braze_plugin
   }
 
   func before(inAppMessageDisplayed inAppMessage: ABKInAppMessage) -> ABKInAppMessageDisplayChoice {
-    NSLog("Received IAM from Braze in beforeInAppMessageDisplayed delegate.")
+    print("Received in-app message from Braze in beforeInAppMessageDisplayed delegate.")
 
     // Pass in-app data to the Flutter layer.
-    BrazePlugin.process(inAppMessage)
+    BrazePlugin.processInAppMessage(inAppMessage)
 
     // Note: return ABKInAppMessageDisplayChoice.discardInAppMessage if you would like
     // to prevent the Braze SDK from displaying the message natively.
@@ -35,13 +37,13 @@ import braze_plugin
   }
 
   @objc private func contentCardsUpdated(_ notification: Notification) {
-    if let updateIsSuccessful = notification.userInfo?[ABKContentCardsProcessedIsSuccessfulKey] as? Bool {
-      if (updateIsSuccessful) {
-        let contentCards = Appboy.sharedInstance()?.contentCardsController.contentCards.compactMap { $0 as? ABKContentCard }
-
-        // Pass in-app data to the Flutter layer.
-        BrazePlugin.processContentCards(contentCards)
-      }
+    guard (notification.userInfo?[ABKContentCardsProcessedIsSuccessfulKey] as? Bool) == true,
+           let appboy = Appboy.sharedInstance() else {
+      return
     }
+    
+    // Pass in-app data to the Flutter layer.
+    let contentCards = appboy.contentCardsController.contentCards.compactMap { $0 as? ABKContentCard }
+    BrazePlugin.processContentCards(contentCards)
   }
 }

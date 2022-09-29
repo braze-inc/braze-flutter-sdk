@@ -80,7 +80,7 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
     implementation 'androidx.multidex:multidex:2.0.0'
 
-    implementation "com.appboy:android-sdk-ui:21.0.0"
+    implementation "com.appboy:android-sdk-ui:23.2.0"
     implementation "com.google.firebase:firebase-messaging:+"
 }
 apply plugin: 'com.google.gms.google-services'

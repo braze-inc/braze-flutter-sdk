@@ -2,10 +2,10 @@ package com.braze.brazeplugin
 
 import android.app.Application
 import android.content.Context
-import com.appboy.events.IEventSubscriber
 import com.braze.Braze
 import com.braze.BrazeActivityLifecycleCallbackListener
 import com.braze.events.ContentCardsUpdatedEvent
+import com.braze.events.IEventSubscriber
 import com.braze.models.inappmessage.IInAppMessage
 import com.braze.support.BrazeLogger.brazelog
 import com.braze.ui.inappmessage.BrazeInAppMessageManager
@@ -30,7 +30,7 @@ object IntegrationInitializer {
     private fun subscribeToContentCardsUpdatedEvent(ctx: Context) {
         Braze.getInstance(ctx).removeSingleSubscription(contentCardsUpdatedSubscriber, ContentCardsUpdatedEvent::class.java)
         contentCardsUpdatedSubscriber = IEventSubscriber { BrazePlugin.processContentCards(it.allCards) }
-        Braze.getInstance(ctx).subscribeToContentCardsUpdates(contentCardsUpdatedSubscriber)
+        contentCardsUpdatedSubscriber?.let { Braze.getInstance(ctx).subscribeToContentCardsUpdates(it) }
         Braze.getInstance(ctx).requestContentCardsRefresh(true)
     }
 

@@ -7,29 +7,62 @@ const String replayCallbacksConfigKey = 'ReplayCallbacksKey';
 
 class BrazePlugin {
   static const MethodChannel _channel = const MethodChannel('braze_plugin');
-  Function(BrazeInAppMessage)? _brazeInAppMessageHandler;
-  Function(BrazeSdkAuthenticationError)? _brazeSdkAuthenticationErrorHandler;
-  Function(List<BrazeContentCard>)? _brazeContentCardHandler;
   Map<String, bool>? _brazeCustomConfigs;
+  Function(BrazeSdkAuthenticationError)? _brazeSdkAuthenticationErrorHandler;
 
+  Function(BrazeInAppMessage)? _brazeInAppMessageHandler;
   final List<BrazeInAppMessage> _queuedInAppMessages = [];
+
+  Function(List<BrazeContentCard>)? _brazeContentCardHandler;
   final List<BrazeContentCard> _queuedContentCards = [];
+
+  /// Broadcast stream to listen for in-app messages.
+  StreamController<BrazeInAppMessage> inAppMessageStreamController =
+      StreamController<BrazeInAppMessage>.broadcast();
+
+  /// Broadcast stream to listen for content cards.
+  StreamController<List<BrazeContentCard>> contentCardsStreamController =
+      StreamController<List<BrazeContentCard>>.broadcast();
 
   BrazePlugin(
       {Function(BrazeInAppMessage)? inAppMessageHandler,
       Function(BrazeSdkAuthenticationError)? brazeSdkAuthenticationErrorHandler,
       Function(List<BrazeContentCard>)? contentCardsHandler,
       Map<String, bool>? customConfigs}) {
-    // Set up the plugin settings before setting the method call handler
     _brazeInAppMessageHandler = inAppMessageHandler;
     _brazeSdkAuthenticationErrorHandler = brazeSdkAuthenticationErrorHandler;
     _brazeContentCardHandler = contentCardsHandler;
     _brazeCustomConfigs = customConfigs;
 
+    // Called after setting up plugin settings
     _channel.setMethodCallHandler(_handleBrazeData);
   }
 
-  /// Sets a callback to receive in-app message data from Braze
+  /// Subscribes to the stream of in-app messages and calls [onEvent] when it
+  /// receives an in-app message.
+  StreamSubscription subscribeToInAppMessages(
+      void onEvent(BrazeInAppMessage inAppMessage)) {
+    StreamSubscription subscription =
+        inAppMessageStreamController.stream.listen((inAppMessage) {
+      onEvent(inAppMessage);
+    });
+    return subscription;
+  }
+
+  /// Subscribes to the stream of content cards and calls [onEvent] when it
+  /// receives the list of content cards.
+  StreamSubscription subscribeToContentCards(
+      void onEvent(List<BrazeContentCard> contentCard)) {
+    StreamSubscription subscription =
+        contentCardsStreamController.stream.listen((contentCard) {
+      onEvent(contentCard);
+    });
+    return subscription;
+  }
+
+  /// Sets a callback to receive in-app message data from Braze.
+  @Deprecated(
+      'Use subscribeToInAppMessages(void onEvent(List<BrazeContentCard> contentCard)) instead.')
   void setBrazeInAppMessageCallback(Function(BrazeInAppMessage) callback) {
     _brazeInAppMessageHandler = callback;
 
@@ -40,14 +73,16 @@ class BrazePlugin {
     }
   }
 
-  /// Sets a callback to receive in-app message data from Braze
+  /// Sets a callback to receive in-app message data from Braze.
   void setBrazeSdkAuthenticationErrorCallback(
       Function(BrazeSdkAuthenticationError) callback) {
     _channel.invokeMethod('setSdkAuthenticationDelegate');
     _brazeSdkAuthenticationErrorHandler = callback;
   }
 
-  /// Sets a callback to receive Content Card data from Braze
+  /// Sets a callback to receive Content Card data from Braze.
+  @Deprecated(
+      'Use subscribeToContentCards(void onEvent(List<BrazeContentCard> contentCard)) instead.')
   void setBrazeContentCardsCallback(Function(List<BrazeContentCard>) callback) {
     _brazeContentCardHandler = callback;
 
@@ -58,9 +93,10 @@ class BrazePlugin {
     }
   }
 
-  /// Changes the current Braze userId
+  /// Changes the current Braze userId.
   /// If [sdkAuthSignature] is present, passes that token to the native layer.
-  /// See the Braze public docs for more info around the SDK Authentication feature
+  ///
+  /// See the Braze public docs for more info around the SDK Authentication feature.
   void changeUser(String userId, {String? sdkAuthSignature}) {
     final Map<String, dynamic> params = <String, dynamic>{
       "userId": userId,
@@ -78,7 +114,7 @@ class BrazePlugin {
     _channel.invokeMethod('setSdkAuthenticationSignature', params);
   }
 
-  /// Logs a click for the provided Content Card data
+  /// Logs a click for the provided Content Card data.
   void logContentCardClicked(BrazeContentCard contentCard) {
     final Map<String, dynamic> params = <String, dynamic>{
       "contentCardString": contentCard.contentCardJsonString
@@ -86,7 +122,7 @@ class BrazePlugin {
     _channel.invokeMethod('logContentCardClicked', params);
   }
 
-  /// Logs an impression for the provided Content Card data
+  /// Logs an impression for the provided Content Card data.
   void logContentCardImpression(BrazeContentCard contentCard) {
     final Map<String, dynamic> params = <String, dynamic>{
       "contentCardString": contentCard.contentCardJsonString
@@ -94,7 +130,7 @@ class BrazePlugin {
     _channel.invokeMethod('logContentCardImpression', params);
   }
 
-  /// Logs dismissal for the provided Content Card data
+  /// Logs dismissal for the provided Content Card data.
   void logContentCardDismissed(BrazeContentCard contentCard) {
     final Map<String, dynamic> params = <String, dynamic>{
       "contentCardString": contentCard.contentCardJsonString
@@ -102,7 +138,7 @@ class BrazePlugin {
     _channel.invokeMethod('logContentCardDismissed', params);
   }
 
-  /// Logs a click for the provided in-app message data
+  /// Logs a click for the provided in-app message data.
   void logInAppMessageClicked(BrazeInAppMessage inAppMessage) {
     final Map<String, dynamic> params = <String, dynamic>{
       "inAppMessageString": inAppMessage.inAppMessageJsonString
@@ -110,7 +146,7 @@ class BrazePlugin {
     _channel.invokeMethod('logInAppMessageClicked', params);
   }
 
-  /// Logs an impression for the provided in-app message data
+  /// Logs an impression for the provided in-app message data.
   void logInAppMessageImpression(BrazeInAppMessage inAppMessage) {
     final Map<String, dynamic> params = <String, dynamic>{
       "inAppMessageString": inAppMessage.inAppMessageJsonString
@@ -118,7 +154,7 @@ class BrazePlugin {
     _channel.invokeMethod('logInAppMessageImpression', params);
   }
 
-  /// Logs a button click for the provided in-app message button data
+  /// Logs a button click for the provided in-app message button data.
   void logInAppMessageButtonClicked(
       BrazeInAppMessage inAppMessage, int buttonId) {
     final Map<String, dynamic> params = <String, dynamic>{
@@ -128,7 +164,7 @@ class BrazePlugin {
     _channel.invokeMethod('logInAppMessageButtonClicked', params);
   }
 
-  /// Add alias for current user
+  /// Add alias for current user.
   void addAlias(String aliasName, String aliasLabel) {
     final Map<String, dynamic> params = <String, dynamic>{
       'aliasName': aliasName,
@@ -137,7 +173,7 @@ class BrazePlugin {
     _channel.invokeMethod('addAlias', params);
   }
 
-  /// Logs a custom event to Braze
+  /// Logs a custom event to Braze.
   void logCustomEvent(String eventName, {Map<String, dynamic>? properties}) {
     final Map<String, dynamic> params = <String, dynamic>{
       "eventName": eventName,
@@ -149,7 +185,7 @@ class BrazePlugin {
     _channel.invokeMethod('logCustomEvent', params);
   }
 
-  /// Logs a custom event to Braze
+  /// Logs a custom event to Braze.
   @Deprecated('Use logCustomEvent(eventName, properties: properties) instead.')
   void logCustomEventWithProperties(
       String eventName, Map<String, dynamic> properties) {
@@ -160,7 +196,7 @@ class BrazePlugin {
     _channel.invokeMethod('logCustomEvent', params);
   }
 
-  /// Logs a purchase event to Braze
+  /// Logs a purchase event to Braze.
   void logPurchase(
       String productId, String currencyCode, double price, int quantity,
       {Map<String, dynamic>? properties}) {
@@ -177,7 +213,7 @@ class BrazePlugin {
     _channel.invokeMethod('logPurchase', params);
   }
 
-  /// Logs a purchase event to Braze
+  /// Logs a purchase event to Braze.
   @Deprecated(
       'Use logPurchase(productId, currencyCode, price, quantity, properties: properties) instead.')
   void logPurchaseWithProperties(String productId, String currencyCode,
@@ -192,7 +228,7 @@ class BrazePlugin {
     _channel.invokeMethod('logPurchase', params);
   }
 
-  /// Adds an element to a custom attribute array
+  /// Adds an element to a custom attribute array.
   void addToCustomAttributeArray(String key, String value) {
     final Map<String, dynamic> params = <String, dynamic>{
       'key': key,
@@ -201,7 +237,7 @@ class BrazePlugin {
     _channel.invokeMethod('addToCustomAttributeArray', params);
   }
 
-  /// Removes an element from a custom attribute array
+  /// Removes an element from a custom attribute array.
   void removeFromCustomAttributeArray(String key, String value) {
     final Map<String, dynamic> params = <String, dynamic>{
       'key': key,
@@ -210,7 +246,7 @@ class BrazePlugin {
     _channel.invokeMethod('removeFromCustomAttributeArray', params);
   }
 
-  /// Sets a string typed custom attribute
+  /// Sets a string typed custom attribute.
   void setStringCustomUserAttribute(String key, String value) {
     final Map<String, dynamic> params = <String, dynamic>{
       'key': key,
@@ -219,7 +255,7 @@ class BrazePlugin {
     _channel.invokeMethod('setStringCustomUserAttribute', params);
   }
 
-  /// Sets a double typed custom attribute
+  /// Sets a double typed custom attribute.
   void setDoubleCustomUserAttribute(String key, double value) {
     final Map<String, dynamic> params = <String, dynamic>{
       'key': key,
@@ -228,7 +264,7 @@ class BrazePlugin {
     _channel.invokeMethod('setDoubleCustomUserAttribute', params);
   }
 
-  /// Sets a boolean typed custom attribute
+  /// Sets a boolean typed custom attribute.
   void setBoolCustomUserAttribute(String key, bool value) {
     final Map<String, dynamic> params = <String, dynamic>{
       'key': key,
@@ -237,7 +273,7 @@ class BrazePlugin {
     _channel.invokeMethod('setBoolCustomUserAttribute', params);
   }
 
-  /// Sets a integer typed custom attribute
+  /// Sets a integer typed custom attribute.
   void setIntCustomUserAttribute(String key, int value) {
     final Map<String, dynamic> params = <String, dynamic>{
       'key': key,
@@ -246,7 +282,7 @@ class BrazePlugin {
     _channel.invokeMethod('setIntCustomUserAttribute', params);
   }
 
-  /// Increments an integer typed custom attribute
+  /// Increments an integer typed custom attribute.
   void incrementCustomUserAttribute(String key, int value) {
     final Map<String, dynamic> params = <String, dynamic>{
       'key': key,
@@ -255,7 +291,7 @@ class BrazePlugin {
     _channel.invokeMethod('incrementCustomUserAttribute', params);
   }
 
-  /// Sets a location custom attribute
+  /// Sets a location custom attribute.
   void setLocationCustomAttribute(String key, double lat, double long) {
     final Map<String, dynamic> params = <String, dynamic>{
       'key': key,
@@ -265,7 +301,7 @@ class BrazePlugin {
     _channel.invokeMethod('setLocationCustomAttribute', params);
   }
 
-  /// Sets a date custom attribute
+  /// Sets a date custom attribute.
   void setDateCustomUserAttribute(String key, DateTime value) {
     final Map<String, dynamic> params = <String, dynamic>{
       'key': key,
@@ -274,17 +310,17 @@ class BrazePlugin {
     _channel.invokeMethod('setDateCustomUserAttribute', params);
   }
 
-  /// Unsets a custom attribute
+  /// Unsets a custom attribute.
   void unsetCustomUserAttribute(String key) {
     _callStringMethod('unsetCustomUserAttribute', 'key', key);
   }
 
-  /// Sets the first name default user attribute
+  /// Sets the first name default user attribute.
   void setFirstName(String firstName) {
     _callStringMethod('setFirstName', 'firstName', firstName);
   }
 
-  /// Sets the last name default user attribute
+  /// Sets the last name default user attribute.
   void setLastName(String lastName) {
     _callStringMethod('setLastName', 'lastName', lastName);
   }
@@ -295,7 +331,7 @@ class BrazePlugin {
     _callStringMethod('setEmail', 'email', email);
   }
 
-  /// Sets the dob default user attribute
+  /// Sets the dob default user attribute.
   void setDateOfBirth(int year, int month, int day) {
     final Map<String, dynamic> params = <String, dynamic>{
       'year': year,
@@ -305,32 +341,32 @@ class BrazePlugin {
     _channel.invokeMethod('setDateOfBirth', params);
   }
 
-  /// Sets the gender default user attribute
+  /// Sets the gender default user attribute.
   void setGender(String gender) {
     _callStringMethod('setGender', 'gender', gender);
   }
 
-  /// Sets the language default user attribute
+  /// Sets the language default user attribute.
   void setLanguage(String language) {
     _callStringMethod('setLanguage', 'language', language);
   }
 
-  /// Sets the country default user attribute
+  /// Sets the country default user attribute.
   void setCountry(String country) {
     _callStringMethod('setCountry', 'country', country);
   }
 
-  /// Sets the home city default user attribute
+  /// Sets the home city default user attribute.
   void setHomeCity(String homeCity) {
     _callStringMethod('setHomeCity', 'homeCity', homeCity);
   }
 
-  /// Sets the phone number default user attribute
+  /// Sets the phone number default user attribute.
   void setPhoneNumber(String phoneNumber) {
     _callStringMethod('setPhoneNumber', 'phoneNumber', phoneNumber);
   }
 
-  /// Sets attribution data
+  /// Sets attribution data.
   void setAttributionData(
       String? network, String? campaign, String? adGroup, String? creative) {
     final Map<String, dynamic> params = <String, dynamic>{
@@ -342,13 +378,13 @@ class BrazePlugin {
     _channel.invokeMethod('setAttributionData', params);
   }
 
-  /// Registers a push token for the current Android device with Braze
-  /// No-op on iOS.
+  /// Registers a push token for the current Android device with Braze.
+  /// - No-op on iOS.
   void registerAndroidPushToken(String pushToken) {
     _callStringMethod('registerAndroidPushToken', 'pushToken', pushToken);
   }
 
-  /// Requests an immediate data flush
+  /// Requests an immediate data flush.
   void requestImmediateDataFlush() {
     _channel.invokeMethod('requestImmediateDataFlush');
   }
@@ -359,21 +395,22 @@ class BrazePlugin {
     _channel.invokeMethod('wipeData');
   }
 
-  /// Refreshes Content Cards
+  /// Refreshes Content Cards.
   void requestContentCardsRefresh() {
     _channel.invokeMethod('requestContentCardsRefresh');
   }
 
-  /// Launches Content Card Feed
+  /// Launches Content Card Feed.
   void launchContentCards() {
     _channel.invokeMethod('launchContentCards');
   }
 
-  /// Requests location initialization
+  /// Requests location initialization.
   void requestLocationInitialization() {
     _channel.invokeMethod('requestLocationInitialization');
   }
 
+  /// Sets the last known location.
   void setLastKnownLocation(
       {required double latitude,
       required double longitude,
@@ -406,7 +443,7 @@ class BrazePlugin {
     _channel.invokeMethod('disableSDK');
   }
 
-  /// Sets push subscription state for the current user
+  /// Sets push subscription state for the current user.
   void setPushNotificationSubscriptionType(SubscriptionType type) {
     final Map<String, dynamic> params = <String, dynamic>{
       'type': type.toString()
@@ -414,7 +451,7 @@ class BrazePlugin {
     _channel.invokeMethod('setPushNotificationSubscriptionType', params);
   }
 
-  /// Sets email subscription state for the current user
+  /// Sets email subscription state for the current user.
   void setEmailNotificationSubscriptionType(SubscriptionType type) {
     final Map<String, dynamic> params = <String, dynamic>{
       'type': type.toString()
@@ -436,15 +473,15 @@ class BrazePlugin {
     _channel.invokeMethod('removeFromSubscriptionGroup', params);
   }
 
-  /// Gets the install tracking id
+  /// Gets the install tracking id.
   Future<String> getInstallTrackingId() {
     return _channel
         .invokeMethod('getInstallTrackingId')
         .then<String>((dynamic result) => result);
   }
 
-  /// Sets Google Advertising Id for the current user
-  /// No-op on iOS.
+  /// Sets Google Advertising Id for the current user.
+  /// - No-op on iOS.
   void setGoogleAdvertisingId(String id, bool adTrackingEnabled) {
     final Map<String, dynamic> params = <String, dynamic>{
       "id": id,
@@ -474,6 +511,9 @@ class BrazePlugin {
           print("Braze in-app message callback not present. Adding to queue.");
           _queuedInAppMessages.add(inAppMessage);
         }
+
+        // Add valid in-app message to the stream.
+        inAppMessageStreamController.add(inAppMessage);
         return Future<void>.value();
 
       case "handleBrazeContentCards":
@@ -495,6 +535,9 @@ class BrazePlugin {
           _queuedContentCards.clear();
           _queuedContentCards.addAll(brazeCards);
         }
+
+        // Add valid list of content cards to the stream.
+        contentCardsStreamController.add(brazeCards);
         return Future<void>.value();
 
       case "handleSdkAuthenticationError":

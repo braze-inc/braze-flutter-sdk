@@ -52,5 +52,5 @@ android {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    implementation "com.appboy:android-sdk-ui:21.0.0"
+    implementation "com.appboy:android-sdk-ui:23.2.0"
 }

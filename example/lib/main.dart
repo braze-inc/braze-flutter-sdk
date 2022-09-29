@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:braze_plugin_example/jwt_generator.dart';
 import 'package:flutter/material.dart';
@@ -24,13 +25,15 @@ class BrazeFunctions extends StatefulWidget {
 class BrazeFunctionsState extends State<BrazeFunctions> {
   String _userId = "";
   String _enabled = "";
-  String _ccCallbackEnabled = "DISABLED";
-  String _iamCallbackEnabled = "DISABLED";
+  String _ccStreamSubscription = "DISABLED";
+  String _iamStreamSubscription = "DISABLED";
   BrazePlugin _braze;
   final userIdController = TextEditingController();
   final customEventNameController = TextEditingController();
   final customEventPropertyKeyController = TextEditingController();
   final customEventPropertyValueController = TextEditingController();
+  StreamSubscription inAppMessageStreamSubscription;
+  StreamSubscription contentCardsStreamSubscription;
 
   void initState() {
     _braze = new BrazePlugin(customConfigs: {replayCallbacksConfigKey: true});
@@ -53,6 +56,10 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
     customEventNameController.dispose();
     customEventPropertyKeyController.dispose();
     customEventPropertyValueController.dispose();
+
+    /// Stop listening to streams
+    inAppMessageStreamSubscription.cancel();
+    contentCardsStreamSubscription.cancel();
     super.dispose();
   }
 
@@ -90,8 +97,11 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
           padding: const EdgeInsets.all(20.0),
           children: <Widget>[
             Center(child: Text("SDK Status: $_enabled")),
-            Center(child: Text("IAM Callback Status: $_iamCallbackEnabled")),
-            Center(child: Text("CC Callback Status: $_ccCallbackEnabled")),
+            Center(
+                child:
+                    Text("IAM Stream Subscription: $_iamStreamSubscription")),
+            Center(
+                child: Text("CC Stream Subscription: $_ccStreamSubscription")),
             Center(child: Text("User Id: $_userId")),
             TextField(
               autocorrect: false,
@@ -272,25 +282,29 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
             TextButton(
               child: const Text('SET IN-APP MESSAGE CALLBACK'),
               onPressed: () {
-                this.setState(() {
-                  _iamCallbackEnabled = 'ENABLED';
-                });
+                // ignore: deprecated_member_use
                 _braze.setBrazeInAppMessageCallback(
                     (BrazeInAppMessage inAppMessage) {
-                  print("Received message: " + inAppMessage.toString());
-                  _braze.logInAppMessageImpression(inAppMessage);
-                  ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-                    content: new Text("Received message and logging clicks: " +
-                        inAppMessage.toString()),
-                  ));
-                  _braze.logInAppMessageClicked(inAppMessage);
-                  inAppMessage.buttons.forEach((button) {
-                    _braze.logInAppMessageButtonClicked(
-                        inAppMessage, button.id);
-                  });
+                  _inAppMessageReceived(inAppMessage, prefix: "CALLBACK");
                 });
                 ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
                   content: new Text("In-app message callback set. "
+                      "In-app message data will appear in snackbars."),
+                ));
+              },
+            ),
+            TextButton(
+              child: const Text('SET LISTENER FOR IN-APP MESSAGE STREAM'),
+              onPressed: () {
+                this.setState(() {
+                  _iamStreamSubscription = 'ENABLED';
+                });
+                inAppMessageStreamSubscription = _braze
+                    .subscribeToInAppMessages((BrazeInAppMessage inAppMessage) {
+                  _inAppMessageReceived(inAppMessage, prefix: "STREAM");
+                });
+                ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                  content: new Text("Listening to in-app message stream. "
                       "In-app message data will appear in snackbars."),
                 ));
               },
@@ -310,29 +324,29 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
             TextButton(
               child: const Text('SET CONTENT CARDS CALLBACK'),
               onPressed: () {
-                this.setState(() {
-                  _ccCallbackEnabled = 'ENABLED';
-                });
+                // ignore: deprecated_member_use
                 _braze.setBrazeContentCardsCallback(
                     (List<BrazeContentCard> contentCards) {
-                  if (contentCards.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-                      content: new Text("Empty Content Cards update received."),
-                    ));
-                  }
-                  contentCards.forEach((contentCard) {
-                    print("Received card: " + contentCard.toString());
-                    _braze.logContentCardClicked(contentCard);
-                    _braze.logContentCardImpression(contentCard);
-                    // _braze.logContentCardDismissed(contentCard);
-                    ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-                      content:
-                          new Text("Received card: " + contentCard.toString()),
-                    ));
-                  });
+                  _contentCardsReceived(contentCards, prefix: "CALLBACK");
                 });
                 ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-                  content: new Text("Content Cards callback set. "
+                  content: new Text("Content Cards Callback set. "
+                      "Content Card data will appear in snackbars."),
+                ));
+              },
+            ),
+            TextButton(
+              child: const Text('SET LISTENER FOR CONTENT CARDS STREAM'),
+              onPressed: () {
+                this.setState(() {
+                  _ccStreamSubscription = 'ENABLED';
+                });
+                contentCardsStreamSubscription = _braze.subscribeToContentCards(
+                    (List<BrazeContentCard> contentCards) {
+                  _contentCardsReceived(contentCards, prefix: "STREAM");
+                });
+                ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                  content: new Text("Listening to content cards stream. "
                       "Content Card data will appear in snackbars."),
                 ));
               },
@@ -418,6 +432,37 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
         );
       },
     );
+  }
+
+  void _inAppMessageReceived(BrazeInAppMessage inAppMessage, {String prefix}) {
+    print("[$prefix] Received message: ${inAppMessage.toString()}");
+    _braze.logInAppMessageImpression(inAppMessage);
+    ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+      content: new Text(
+          "[$prefix] Received message and logging clicks: ${inAppMessage.toString()}"),
+    ));
+    _braze.logInAppMessageClicked(inAppMessage);
+    inAppMessage.buttons.forEach((button) {
+      _braze.logInAppMessageButtonClicked(inAppMessage, button.id);
+    });
+  }
+
+  void _contentCardsReceived(List<BrazeContentCard> contentCards,
+      {String prefix}) {
+    if (contentCards.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+        content: new Text("Empty Content Cards update received."),
+      ));
+      return;
+    }
+    contentCards.forEach((contentCard) {
+      print("[$prefix] Received card: " + contentCard.toString());
+      _braze.logContentCardClicked(contentCard);
+      _braze.logContentCardImpression(contentCard);
+      ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+        content: new Text("[$prefix] Received card: ${contentCard.toString()}"),
+      ));
+    });
   }
 
   void _pressedLogPresetEventsAndPurchasesButton() {

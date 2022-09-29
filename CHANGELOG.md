@@ -1,3 +1,18 @@
+## 2.6.0
+
+##### Breaking
+- The native Android bridge uses [Braze Android SDK 23.2.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#2320).
+- The native iOS bridge uses [Braze iOS SDK 4.5.1](https://github.com/Appboy/appboy-ios-sdk/blob/master/CHANGELOG.md#451).
+- `process(inAppMessage)` is renamed to `processInAppMessage(inAppMessage)` in the iOS layer.
+
+##### Added
+- Adds the ability to subscribe to data for in-app messages and content cards via streams.
+  - Use the methods `subscribeToInAppMessages()` and `subscribeToContentCards()`, respectively.
+
+##### Changed
+- Updates the iOS layer to use Swift. `BrazePlugin.h` and `BrazePlugin.m` are now consolidated to `BrazePlugin.swift`.
+- Deprecates `setBrazeInAppMessageCallback()` and `setBrazeContentCardsCallback()` in favor of the subscribing via streams.
+
 ## 2.5.0
 
 ##### Breaking
@@ -229,7 +244,7 @@ with
 
 ##### Added
 - Added the following new field to `BrazeInAppMessage`: `zippedAssetsUrl`.
-  - Note that a known issue in the iOS plugin prevents HTML IAMs from working reliably with the Dart in-app message callback. Android is not affected.
+  - Note that a known issue in the iOS plugin prevents HTML in-app messages from working reliably with the Dart in-app message callback. Android is not affected.
 
 ## 0.3.0
 
