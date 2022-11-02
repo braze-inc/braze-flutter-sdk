@@ -41,22 +41,32 @@ class BrazePlugin {
   /// Subscribes to the stream of in-app messages and calls [onEvent] when it
   /// receives an in-app message.
   StreamSubscription subscribeToInAppMessages(
-      void onEvent(BrazeInAppMessage inAppMessage)) {
+      Function onEvent(BrazeInAppMessage inAppMessage)) {
+    if (_replayCallbacksConfigEnabled() && _queuedInAppMessages.isNotEmpty) {
+      print(
+          "Replaying stream onEvent for previously queued Braze in-app messages.");
+      _queuedInAppMessages.forEach((message) => onEvent(message));
+      _queuedInAppMessages.clear();
+    }
+
     StreamSubscription subscription =
-        inAppMessageStreamController.stream.listen((inAppMessage) {
-      onEvent(inAppMessage);
-    });
+        inAppMessageStreamController.stream.listen(onEvent);
     return subscription;
   }
 
   /// Subscribes to the stream of content cards and calls [onEvent] when it
   /// receives the list of content cards.
   StreamSubscription subscribeToContentCards(
-      void onEvent(List<BrazeContentCard> contentCard)) {
+      Function onEvent(List<BrazeContentCard> contentCard)) {
+    if (_replayCallbacksConfigEnabled() && _queuedContentCards.isNotEmpty) {
+      print(
+          "Replaying stream onEvent for previously queued Braze content cards.");
+      onEvent(_queuedContentCards);
+      _queuedContentCards.clear();
+    }
+
     StreamSubscription subscription =
-        contentCardsStreamController.stream.listen((contentCard) {
-      onEvent(contentCard);
-    });
+        contentCardsStreamController.stream.listen(onEvent);
     return subscription;
   }
 

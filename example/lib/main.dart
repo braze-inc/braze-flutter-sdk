@@ -302,6 +302,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                 inAppMessageStreamSubscription = _braze
                     .subscribeToInAppMessages((BrazeInAppMessage inAppMessage) {
                   _inAppMessageReceived(inAppMessage, prefix: "STREAM");
+                  return;
                 });
                 ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
                   content: new Text("Listening to in-app message stream. "
@@ -344,6 +345,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                 contentCardsStreamSubscription = _braze.subscribeToContentCards(
                     (List<BrazeContentCard> contentCards) {
                   _contentCardsReceived(contentCards, prefix: "STREAM");
+                  return;
                 });
                 ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
                   content: new Text("Listening to content cards stream. "

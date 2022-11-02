@@ -1,3 +1,13 @@
+## 2.6.1
+
+##### Added
+- Adds support to replay the `onEvent` method for queued in-app messages and content cards when subscribing via streams.
+  - This feature must be enabled by setting `replayCallbacksConfigKey: true` in `customConfigs` for the `BrazePlugin`.
+
+##### Changed
+- The native Android bridge uses [Braze Android SDK 23.3.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#2330).
+- Updates the parameter type for `subscribeToInAppMessages()` and `subscribeToContentCards()` to accept a `Function` instead of a `void`.
+
 ## 2.6.0
 
 ##### Breaking

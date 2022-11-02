@@ -1,3 +1,7 @@
 {
-    "java.configuration.updateBuildConfiguration": "automatic"
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "lldb.library": "/Applications/Xcode-14.0.app/Contents/SharedFrameworks/LLDB.framework/Versions/A/LLDB",
+    "githubPullRequests.ignoredPullRequestBranches": [
+        "develop"
+    ]
 }
