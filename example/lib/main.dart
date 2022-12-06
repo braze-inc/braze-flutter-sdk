@@ -238,6 +238,83 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                 ));
               },
             ),
+            SectionHeader("In-app Messages"),
+            TextButton(
+              child: const Text('SET IN-APP MESSAGE CALLBACK'),
+              onPressed: () {
+                // ignore: deprecated_member_use
+                _braze.setBrazeInAppMessageCallback(
+                    (BrazeInAppMessage inAppMessage) {
+                  _inAppMessageReceived(inAppMessage, prefix: "CALLBACK");
+                });
+                ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                  content: new Text("In-app message callback set. "
+                      "In-app message data will appear in snackbars."),
+                ));
+              },
+            ),
+            TextButton(
+              child: const Text('SUBSCRIBE VIA IN-APP MESSAGE STREAM'),
+              onPressed: () {
+                this.setState(() {
+                  _iamStreamSubscription = 'ENABLED';
+                });
+                inAppMessageStreamSubscription = _braze
+                    .subscribeToInAppMessages((BrazeInAppMessage inAppMessage) {
+                  _inAppMessageReceived(inAppMessage, prefix: "STREAM");
+                  return;
+                });
+                ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                  content: new Text("Listening to in-app message stream. "
+                      "In-app message data will appear in snackbars."),
+                ));
+              },
+            ),
+            SectionHeader("Content Cards"),
+            TextButton(
+              child: const Text('REFRESH CONTENT CARDS'),
+              onPressed: () {
+                _braze.requestContentCardsRefresh();
+              },
+            ),
+            TextButton(
+              child: const Text('LAUNCH CONTENT CARDS'),
+              onPressed: () {
+                _braze.launchContentCards();
+              },
+            ),
+            TextButton(
+              child: const Text('SET CONTENT CARDS CALLBACK'),
+              onPressed: () {
+                // ignore: deprecated_member_use
+                _braze.setBrazeContentCardsCallback(
+                    (List<BrazeContentCard> contentCards) {
+                  _contentCardsReceived(contentCards, prefix: "CALLBACK");
+                });
+                ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                  content: new Text("Content Cards Callback set. "
+                      "Content Card data will appear in snackbars."),
+                ));
+              },
+            ),
+            TextButton(
+              child: const Text('SUBSCRIBE VIA CONTENT CARDS STREAM'),
+              onPressed: () {
+                this.setState(() {
+                  _ccStreamSubscription = 'ENABLED';
+                });
+                contentCardsStreamSubscription = _braze.subscribeToContentCards(
+                    (List<BrazeContentCard> contentCards) {
+                  _contentCardsReceived(contentCards, prefix: "STREAM");
+                  return;
+                });
+                ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                  content: new Text("Listening to content cards stream. "
+                      "Content Card data will appear in snackbars."),
+                ));
+              },
+            ),
+            SectionHeader("Other"),
             TextButton(
               child: const Text('SET LAST KNOWN LOCATION'),
               onPressed: () {
@@ -277,80 +354,6 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                 _braze.setGoogleAdvertisingId("dummy-id", false);
                 ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
                     content: new Text("Set Google Advertising ID.")));
-              },
-            ),
-            TextButton(
-              child: const Text('SET IN-APP MESSAGE CALLBACK'),
-              onPressed: () {
-                // ignore: deprecated_member_use
-                _braze.setBrazeInAppMessageCallback(
-                    (BrazeInAppMessage inAppMessage) {
-                  _inAppMessageReceived(inAppMessage, prefix: "CALLBACK");
-                });
-                ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-                  content: new Text("In-app message callback set. "
-                      "In-app message data will appear in snackbars."),
-                ));
-              },
-            ),
-            TextButton(
-              child: const Text('SET LISTENER FOR IN-APP MESSAGE STREAM'),
-              onPressed: () {
-                this.setState(() {
-                  _iamStreamSubscription = 'ENABLED';
-                });
-                inAppMessageStreamSubscription = _braze
-                    .subscribeToInAppMessages((BrazeInAppMessage inAppMessage) {
-                  _inAppMessageReceived(inAppMessage, prefix: "STREAM");
-                  return;
-                });
-                ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-                  content: new Text("Listening to in-app message stream. "
-                      "In-app message data will appear in snackbars."),
-                ));
-              },
-            ),
-            TextButton(
-              child: const Text('REFRESH CONTENT CARDS'),
-              onPressed: () {
-                _braze.requestContentCardsRefresh();
-              },
-            ),
-            TextButton(
-              child: const Text('LAUNCH CONTENT CARDS'),
-              onPressed: () {
-                _braze.launchContentCards();
-              },
-            ),
-            TextButton(
-              child: const Text('SET CONTENT CARDS CALLBACK'),
-              onPressed: () {
-                // ignore: deprecated_member_use
-                _braze.setBrazeContentCardsCallback(
-                    (List<BrazeContentCard> contentCards) {
-                  _contentCardsReceived(contentCards, prefix: "CALLBACK");
-                });
-                ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-                  content: new Text("Content Cards Callback set. "
-                      "Content Card data will appear in snackbars."),
-                ));
-              },
-            ),
-            TextButton(
-              child: const Text('SET LISTENER FOR CONTENT CARDS STREAM'),
-              onPressed: () {
-                this.setState(() {
-                  _ccStreamSubscription = 'ENABLED';
-                });
-                contentCardsStreamSubscription = _braze.subscribeToContentCards(
-                    (List<BrazeContentCard> contentCards) {
-                  _contentCardsReceived(contentCards, prefix: "STREAM");
-                  return;
-                });
-                ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-                  content: new Text("Listening to content cards stream. "
-                      "Content Card data will appear in snackbars."),
-                ));
               },
             ),
             TextButton(
@@ -436,21 +439,28 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
     );
   }
 
-  void _inAppMessageReceived(BrazeInAppMessage inAppMessage, {String prefix}) {
+  void _inAppMessageReceived(BrazeInAppMessage inAppMessage,
+      {String prefix, bool automaticallyInteract = false}) {
     print("[$prefix] Received message: ${inAppMessage.toString()}");
-    _braze.logInAppMessageImpression(inAppMessage);
     ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-      content: new Text(
-          "[$prefix] Received message and logging clicks: ${inAppMessage.toString()}"),
+      content:
+          new Text("[$prefix] Received message: ${inAppMessage.toString()}"),
     ));
-    _braze.logInAppMessageClicked(inAppMessage);
-    inAppMessage.buttons.forEach((button) {
-      _braze.logInAppMessageButtonClicked(inAppMessage, button.id);
-    });
+
+    // Programmatically log impression, body click, and any button clicks
+    if (automaticallyInteract) {
+      print(
+          "[$prefix] Logging impression, body click, and button clicks programmatically.");
+      _braze.logInAppMessageImpression(inAppMessage);
+      _braze.logInAppMessageClicked(inAppMessage);
+      inAppMessage.buttons.forEach((button) {
+        _braze.logInAppMessageButtonClicked(inAppMessage, button.id);
+      });
+    }
   }
 
   void _contentCardsReceived(List<BrazeContentCard> contentCards,
-      {String prefix}) {
+      {String prefix, bool automaticallyInteract = false}) {
     if (contentCards.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
         content: new Text("Empty Content Cards update received."),
@@ -459,11 +469,20 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
     }
     contentCards.forEach((contentCard) {
       print("[$prefix] Received card: " + contentCard.toString());
-      _braze.logContentCardClicked(contentCard);
-      _braze.logContentCardImpression(contentCard);
       ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
         content: new Text("[$prefix] Received card: ${contentCard.toString()}"),
       ));
+
+      // Programmatically log impression, card click, and dismissal
+      if (automaticallyInteract) {
+        print("[$prefix] Logging impression and body click programmatically.");
+        _braze.logContentCardImpression(contentCard);
+        _braze.logContentCardClicked(contentCard);
+
+        // Only for testing, remove from actual branch
+        // - Executes dismissal and removes from UI too
+        _braze.logContentCardDismissed(contentCard);
+      }
     });
   }
 
@@ -512,5 +531,32 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
     ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
       content: new Text("Logged preset events and purchases"),
     ));
+  }
+}
+
+class SectionHeader extends StatelessWidget {
+  SectionHeader(this.title);
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(children: [
+      Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Divider(
+          thickness: 2,
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.only(bottom: 8.0),
+        child: Text(
+          title,
+          style: Theme.of(context).textTheme.headline6.copyWith(
+              fontWeight: FontWeight.bold,
+              decoration: TextDecoration.underline),
+        ),
+      ),
+    ]);
   }
 }

@@ -1,3 +1,26 @@
+## 3.0.0
+
+##### Breaking
+- The native iOS bridge now uses the [new Braze Swift SDK](https://github.com/braze-inc/braze-swift-sdk), [version 5.6.4](https://github.com/braze-inc/braze-swift-sdk/blob/main/CHANGELOG.md#564).
+  - The minimum iOS deployment target is 10.0.
+- During migration, update your project with the following changes:
+  - To initialize Braze, [follow these integration steps](https://braze-inc.github.io/braze-swift-sdk/tutorials/braze/a2-configure-braze) to create a `configuration` object. Then, add this code to complete the setup:
+    ```
+    let braze = BrazePlugin.initBraze(configuration)
+    ```
+  - To continue using `SDWebImage` as a dependency, add this line to your project's `/ios/Podfile`:
+    ```
+    pod 'SDWebImage', :modular_headers => true
+    ```
+      - Then, follow [these setup instructions](https://braze-inc.github.io/braze-swift-sdk/tutorials/braze/c3-gif-support).
+  - For guidance around other changes such as receiving in-app message and content card data, reference our sample [`AppDelegate.swift`](https://github.com/braze-inc/braze-flutter-sdk/blob/master/example/ios/Runner/AppDelegate.swift).
+
+##### Added
+- Adds the `isControl` field to `BrazeContentCard`.
+
+##### Changed
+- Updates the parameter syntax for `subscribeToInAppMessages()` and `subscribeToContentCards()`.
+
 ## 2.6.1
 
 ##### Added

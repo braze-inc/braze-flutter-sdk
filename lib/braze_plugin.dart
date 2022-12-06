@@ -41,7 +41,7 @@ class BrazePlugin {
   /// Subscribes to the stream of in-app messages and calls [onEvent] when it
   /// receives an in-app message.
   StreamSubscription subscribeToInAppMessages(
-      Function onEvent(BrazeInAppMessage inAppMessage)) {
+      void Function(BrazeInAppMessage) onEvent) {
     if (_replayCallbacksConfigEnabled() && _queuedInAppMessages.isNotEmpty) {
       print(
           "Replaying stream onEvent for previously queued Braze in-app messages.");
@@ -57,7 +57,7 @@ class BrazePlugin {
   /// Subscribes to the stream of content cards and calls [onEvent] when it
   /// receives the list of content cards.
   StreamSubscription subscribeToContentCards(
-      Function onEvent(List<BrazeContentCard> contentCard)) {
+      void Function(List<BrazeContentCard>) onEvent) {
     if (_replayCallbacksConfigEnabled() && _queuedContentCards.isNotEmpty) {
       print(
           "Replaying stream onEvent for previously queued Braze content cards.");
@@ -657,6 +657,9 @@ class BrazeContentCard {
   /// Content Card viewed
   bool viewed = false;
 
+  /// Content Card control
+  bool isControl = false;
+
   BrazeContentCard(String _data) {
     contentCardJsonString = _data;
     var contentCardJson = json.jsonDecode(_data);
@@ -721,6 +724,9 @@ class BrazeContentCard {
     if (typeJson is String) {
       type = typeJson;
     }
+    if (type == "control") {
+      isControl = true;
+    }
     var urlJson = contentCardJson["u"];
     if (urlJson is String) {
       url = urlJson;
@@ -773,6 +779,8 @@ class BrazeContentCard {
         expiresAt.toString() +
         " dismissable:" +
         dismissable.toString() +
+        " isControl:" +
+        isControl.toString() +
         " contentCardJsonString:" +
         contentCardJsonString;
   }

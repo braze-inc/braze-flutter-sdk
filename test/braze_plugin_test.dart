@@ -99,6 +99,13 @@ void main() {
     ]);
   });
 
+  test('should include isControl field', () {
+    BrazePlugin _braze = new BrazePlugin();
+    String _data = '{"tp":"control"}';
+    BrazeContentCard _contentCard = new BrazeContentCard(_data);
+    expect(_contentCard.isControl, equals(true));
+  });
+
   test('should call logContentCardImpression', () {
     BrazePlugin _braze = new BrazePlugin();
     String _data = '{"someJson":"data"}';
