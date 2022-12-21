@@ -532,10 +532,6 @@ class BrazePlugin {
         for (dynamic card in argumentsMap['contentCards']) {
           brazeCards.add(BrazeContentCard(card));
         }
-        if (brazeCards.isEmpty) {
-          print("Braze content cards response is empty. Doing nothing.");
-          return Future<void>.value();
-        }
 
         if (_brazeContentCardHandler != null) {
           _brazeContentCardHandler!(brazeCards);

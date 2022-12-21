@@ -1,3 +1,9 @@
+## 3.0.1
+
+##### Fixed
+- Updates the `braze_plugin.podspec` file to statically link the iOS framework by default. This prevents the need to do a manual step when migrating to `3.x.x`.
+- Fixes an issue introduced in version `2.2.0` where the content cards callback was not being called when receiving an empty list of content cards.
+
 ## 3.0.0
 
 ##### Breaking
