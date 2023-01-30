@@ -959,7 +959,7 @@ void main() {
     expect(inAppMessage.imageUrl, equals(defaultImageUrl));
     expect(inAppMessage.header, equals(defaultHeader));
     expect(json.jsonEncode(inAppMessage.inAppMessageJsonString),
-        json.jsonEncode(testJson)); //TODO Martin use this in the thingy (main)
+        json.jsonEncode(testJson));
     expect(inAppMessage.buttons, equals(defaultButtons));
   });
 
