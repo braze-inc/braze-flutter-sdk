@@ -1,3 +1,10 @@
+## 3.1.0
+
+##### Breaking
+- The native Android bridge uses [Braze Android SDK 24.2.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#2420).
+- The native iOS bridge uses [Braze iOS SDK 5.9.0](https://github.com/braze-inc/braze-swift-sdk/blob/main/CHANGELOG.md#590).
+- The minimum iOS deployment target is 11.0.
+
 ## 3.0.1
 
 ##### Fixed

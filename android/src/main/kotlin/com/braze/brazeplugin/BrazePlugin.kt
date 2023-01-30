@@ -4,11 +4,11 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import androidx.annotation.NonNull
-import com.appboy.enums.Gender
-import com.appboy.enums.Month
-import com.appboy.enums.NotificationSubscriptionType
-import com.appboy.models.cards.Card
-import com.appboy.models.outgoing.AttributionData
+import com.braze.enums.Gender
+import com.braze.enums.Month
+import com.braze.enums.NotificationSubscriptionType
+import com.braze.models.cards.Card
+import com.braze.models.outgoing.AttributionData
 import com.braze.Braze
 import com.braze.BrazeUser
 import com.braze.events.BrazeSdkAuthenticationErrorEvent

@@ -3,7 +3,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'braze_plugin'
-  s.version          = '3.0.1'
+  s.version          = '3.1.0'
   s.summary          = 'Braze plugin for Flutter.'
   s.homepage         = 'https://braze.com'
   s.license          = { :file => '../LICENSE' }
@@ -14,9 +14,9 @@ Pod::Spec.new do |s|
   s.static_framework = true
 
   s.dependency 'Flutter'
-  s.dependency 'BrazeKit', '~> 5.6.4'
-  s.dependency 'BrazeLocation', '~> 5.6.4'
-  s.dependency 'BrazeUI', '~> 5.6.4'
+  s.dependency 'BrazeKit', '~> 5.9.0'
+  s.dependency 'BrazeLocation', '~> 5.9.0'
+  s.dependency 'BrazeUI', '~> 5.9.0'
 
-  s.ios.deployment_target = '10.0'
+  s.ios.deployment_target = '11.0'
 end
