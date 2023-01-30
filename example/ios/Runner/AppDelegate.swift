@@ -77,9 +77,16 @@ extension GIFViewProvider {
 
   private static func image(for url: URL?) -> UIImage? {
     guard let url = url else { return nil }
-    return url.pathExtension == "gif"
-      ? SDAnimatedImage(contentsOfFile: url.path)
-      : UIImage(contentsOfFile: url.path)
+      
+    if url.pathExtension == "gif" {
+      return SDAnimatedImage(contentsOfFile: url.path)
+    }
+      
+    if url.isFileURL {
+      return UIImage(contentsOfFile: url.path)
+    }
+      
+    guard let data = try? Data(contentsOf: url) else { return nil }
+    return UIImage(data: data)
   }
-
 }

@@ -103,6 +103,18 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeDelegate {
       if let contentCard = BrazePlugin.contentCard(from: contentCardJSONString, braze: braze) {
         contentCard.logImpression(using: braze)
       }
+        
+    case "presentInAppMessage":
+      guard let args = call.arguments as? [String: Any],
+        let inAppMessageJSONString = args["inAppMessageString"] as? String,
+        let braze = BrazePlugin.braze
+      else {
+        print("Invalid args: \(argsDescription), braze: \(String(describing: braze)), iOS method: \(call.method)")
+        return
+      }
+      if let inAppMessage = BrazePlugin.inAppMessage(from: inAppMessageJSONString, braze: braze) {
+        BrazePlugin.braze?.inAppMessagePresenter?.present(message: inAppMessage)
+      }
 
     case "logInAppMessageClicked":
       guard let args = call.arguments as? [String: Any],

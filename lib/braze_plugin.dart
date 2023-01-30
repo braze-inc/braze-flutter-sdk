@@ -164,6 +164,14 @@ class BrazePlugin {
     _channel.invokeMethod('logInAppMessageImpression', params);
   }
 
+  /// Presents the in-app message to the end user.
+  void presentInAppMessage(BrazeInAppMessage inAppMessage) {
+    final Map<String, dynamic> params = <String, dynamic>{
+      "inAppMessageString": inAppMessage.inAppMessageJsonString,
+    };
+    _channel.invokeMethod('presentInAppMessage', params);
+  }
+
   /// Logs a button click for the provided in-app message button data.
   void logInAppMessageButtonClicked(
       BrazeInAppMessage inAppMessage, int buttonId) {

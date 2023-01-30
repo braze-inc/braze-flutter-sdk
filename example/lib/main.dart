@@ -63,6 +63,29 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
     super.dispose();
   }
 
+  final exampleInAppMessageJson =
+      '{\"message\":\"message\",\"click_action\":\"NONE\",'
+      '\"header\":\"header\",\"text_align_header\":\"CENTER\",'
+      '\"header_text_color\":4279990479,'
+      '\"type\":\"MODAL\",'
+      '\"use_webview\":false,'
+      '\"image_url\":\"https://raw.githubusercontent.com/Appboy/appboy-ios-sdk/master/braze-logo.png\",'
+      '\"image_style\":\"TOP\", \"orientation\":\"ANY\",'
+      '\"text_align_message\":\"CENTER\",\"message_close\":\"SWIPE\",'
+      '\"btns\":['
+      '{\"id\":0,\"text\":\"Close\",\"click_action\":\"NONE\",'
+      '\"use_webview\":false,\"bg_color\":4294967295,\"text_color\":4279990479,'
+      '\"border_color\":4279990479},'
+      '{\"id\":1,\"text\":\"Open\",'
+      '\"click_action\":\"URI\",\"uri\":\"https://www.braze.com\",'
+      '\"use_webview\":false,\"bg_color\":4294967295,'
+      '\"text_color\":4279990479,\"border_color\":4279990479}'
+      '],'
+      '\"close_btn_color\":4291085508,\"bg_color\":4294967295,'
+      '\"frame_color\":3207803699,\"text_color\":4280624421,'
+      '\"animate_in\":true,\"animate_out\":true,'
+      '\"extras\":{},\"is_control":false}';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -268,6 +291,13 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                   content: new Text("Listening to in-app message stream. "
                       "In-app message data will appear in snackbars."),
                 ));
+              },
+            ),
+            TextButton(
+              child: const Text('PRESENT IN-APP MESSAGE'),
+              onPressed: () {
+                final inAppMessage = BrazeInAppMessage(exampleInAppMessageJson);
+                _braze.presentInAppMessage(inAppMessage);
               },
             ),
             SectionHeader("Content Cards"),

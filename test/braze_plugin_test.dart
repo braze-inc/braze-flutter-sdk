@@ -136,6 +136,21 @@ void main() {
     ]);
   });
 
+  test('should call presentInAppMessage', () {
+    BrazePlugin _braze = new BrazePlugin();
+    String _data = testInAppMessageJson;
+    BrazeInAppMessage _inAppMessage = new BrazeInAppMessage(_data);
+    _braze.presentInAppMessage(_inAppMessage);
+    expect(log, <Matcher>[
+      isMethodCall(
+        'presentInAppMessage',
+        arguments: <String, dynamic>{
+          'inAppMessageString': _inAppMessage.inAppMessageJsonString
+        },
+      ),
+    ]);
+  });
+
   test('should call logInAppMessageClicked', () {
     BrazePlugin _braze = new BrazePlugin();
     String _data = '{"someJson":"data"}';
@@ -944,7 +959,7 @@ void main() {
     expect(inAppMessage.imageUrl, equals(defaultImageUrl));
     expect(inAppMessage.header, equals(defaultHeader));
     expect(json.jsonEncode(inAppMessage.inAppMessageJsonString),
-        json.jsonEncode(testJson));
+        json.jsonEncode(testJson)); //TODO Martin use this in the thingy (main)
     expect(inAppMessage.buttons, equals(defaultButtons));
   });
 

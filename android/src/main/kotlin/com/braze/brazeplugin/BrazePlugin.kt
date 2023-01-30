@@ -20,6 +20,7 @@ import com.braze.support.BrazeLogger
 import com.braze.support.BrazeLogger.brazelog
 import com.braze.support.BrazeLogger.Priority.W
 import com.braze.ui.activities.ContentCardsActivity
+import com.braze.ui.inappmessage.BrazeInAppMessageManager
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -192,6 +193,11 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     if (contentCardString != null) {
                         Braze.getInstance(context).deserializeContentCard(contentCardString)?.isDismissed = true
                     }
+                }
+                "presentInAppMessage" -> {
+                    val inAppMessage = Braze.getInstance(context)
+                        .deserializeInAppMessageString(call.argument("inAppMessageString"))
+                    BrazeInAppMessageManager.getInstance().addInAppMessage(inAppMessage)
                 }
                 "logInAppMessageClicked" -> {
                     Braze.getInstance(context)
