@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert' as json;
 import 'package:flutter/services.dart';
 
+export 'widgets/widgets.dart';
+
 /* Custom configuration keys */
 const String replayCallbacksConfigKey = 'ReplayCallbacksKey';
 
@@ -598,6 +600,17 @@ enum ClickAction { news_feed, uri, none }
 /// Braze in-app message types
 enum MessageType { slideup, modal, full, html_full }
 
+/// Braze content card types
+enum ContentCardType {
+  bannerImage('banner_image'),
+  shortNews('short_news'),
+  captionedImage('captioned_image');
+
+  const ContentCardType(this._jsonValue);
+
+  final String _jsonValue;
+}
+
 class BrazeContentCard {
   /// Content Card json
   String contentCardJsonString = "";
@@ -642,7 +655,7 @@ class BrazeContentCard {
   String title = "";
 
   /// Content Card type
-  String type = "";
+  ContentCardType type = ContentCardType.shortNews;
 
   /// Content Card url
   String url = "";
@@ -652,9 +665,6 @@ class BrazeContentCard {
 
   /// Content Card viewed
   bool viewed = false;
-
-  /// Content Card control
-  bool isControl = false;
 
   BrazeContentCard(String _data) {
     contentCardJsonString = _data;
@@ -718,10 +728,12 @@ class BrazeContentCard {
     }
     var typeJson = contentCardJson["tp"];
     if (typeJson is String) {
-      type = typeJson;
-    }
-    if (type == "control") {
-      isControl = true;
+      for (final contentType in ContentCardType.values) {
+        if (contentType._jsonValue == typeJson) {
+          type = contentType;
+          break;
+        }
+      }
     }
     var urlJson = contentCardJson["u"];
     if (urlJson is String) {
@@ -744,7 +756,7 @@ class BrazeContentCard {
         " url:" +
         url +
         " type:" +
-        type +
+        type.toString() +
         " useWebView:" +
         useWebView.toString() +
         " title:" +
@@ -775,8 +787,6 @@ class BrazeContentCard {
         expiresAt.toString() +
         " dismissable:" +
         dismissable.toString() +
-        " isControl:" +
-        isControl.toString() +
         " contentCardJsonString:" +
         contentCardJsonString;
   }
