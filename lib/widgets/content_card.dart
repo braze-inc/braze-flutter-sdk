@@ -19,36 +19,60 @@ class ContentCard extends StatelessWidget {
         onTap: contentCard.url.isNotEmpty && cardPressedUrl != null
             ? () => cardPressedUrl!(contentCard.url)
             : null,
-        child: Stack(
+        child: Column(
           children: [
-            Builder(
-              builder: (context) {
-                switch (contentCard.type) {
-                  case ContentCardType.bannerImage:
-                    return BannerImage(
-                      contentCard: contentCard,
-                    );
-                  case ContentCardType.shortNews:
-                    return ShortNews(
-                      contentCard: contentCard,
-                    );
-                  case ContentCardType.captionedImage:
-                    return CaptionedImage(
-                      contentCard: contentCard,
-                    );
-                }
-              },
+            Stack(
+              children: [
+                Builder(
+                  builder: (context) {
+                    switch (contentCard.type) {
+                      case ContentCardType.bannerImage:
+                        return BannerImage(
+                          contentCard: contentCard,
+                        );
+                      case ContentCardType.shortNews:
+                        return ShortNews(
+                          contentCard: contentCard,
+                        );
+                      case ContentCardType.captionedImage:
+                        return CaptionedImage(
+                          contentCard: contentCard,
+                        );
+                    }
+                  },
+                ),
+                Visibility(
+                  visible: contentCard.pinned,
+                  child: const Align(
+                    alignment: Alignment.topRight,
+                    child: StarTriangleBackground(),
+                  ),
+                ),
+              ],
             ),
             Visibility(
-              visible: contentCard.pinned,
-              child: const Align(
-                alignment: Alignment.topRight,
-                child: StarTriangleBackground(),
-              ),
+              visible: !contentCard.viewed,
+              child: const NotViewedCard(),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+@visibleForTesting
+class NotViewedCard extends StatelessWidget {
+  const NotViewedCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.blue,
+      ),
+      height: 3,
+      width: double.infinity,
     );
   }
 }

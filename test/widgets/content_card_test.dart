@@ -25,6 +25,33 @@ void main() {
 
       when(() => mockBrazeContentCard.image).thenReturn('');
       when(() => mockBrazeContentCard.url).thenReturn('');
+      when(() => mockBrazeContentCard.viewed).thenReturn(true);
+      when(() => mockBrazeContentCard.pinned).thenReturn(false);
+    });
+
+    group('ViewedCard', () {
+      setUp(() {
+        when(() => mockBrazeContentCard.title).thenReturn('Title');
+        when(() => mockBrazeContentCard.description).thenReturn('Description');
+        when(() => mockBrazeContentCard.type)
+            .thenReturn(ContentCardType.shortNews);
+      });
+
+      testWidgets('displays ViewedCard when not viewed',
+          (WidgetTester tester) async {
+        when(() => mockBrazeContentCard.viewed).thenReturn(false);
+        await tester.pumpWidget(widget);
+
+        expect(find.byType(NotViewedCard), findsOneWidget);
+      });
+
+      testWidgets('does not display ViewedCard when viewed',
+          (WidgetTester tester) async {
+        when(() => mockBrazeContentCard.viewed).thenReturn(true);
+        await tester.pumpWidget(widget);
+
+        expect(find.byType(NotViewedCard), findsNothing);
+      });
     });
 
     group('StarTriangleBackground', () {
