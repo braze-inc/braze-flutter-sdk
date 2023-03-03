@@ -34,6 +34,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
   final customEventPropertyValueController = TextEditingController();
   StreamSubscription inAppMessageStreamSubscription;
   StreamSubscription contentCardsStreamSubscription;
+  List<BrazeContentCard> _brazeContentCards = <BrazeContentCard>[];
 
   void initState() {
     _braze = new BrazePlugin(customConfigs: {replayCallbacksConfigKey: true});
@@ -314,6 +315,22 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                 ));
               },
             ),
+            Visibility(
+              visible: _brazeContentCards.isNotEmpty,
+              child: SectionHeader("ContentCards"),
+            ),
+            Visibility(
+              visible: _brazeContentCards.isNotEmpty,
+              child: Column(
+                children: _brazeContentCards
+                    .map(
+                      (contentCard) => ContentCard(
+                        contentCard: contentCard,
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
             SectionHeader("Other"),
             TextButton(
               child: const Text('SET LAST KNOWN LOCATION'),
@@ -467,6 +484,9 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
       ));
       return;
     }
+    setState(() {
+      _brazeContentCards = contentCards;
+    });
     contentCards.forEach((contentCard) {
       print("[$prefix] Received card: " + contentCard.toString());
       ScaffoldMessenger.of(context).showSnackBar(new SnackBar(

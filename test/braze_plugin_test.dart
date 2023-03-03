@@ -99,11 +99,22 @@ void main() {
     ]);
   });
 
-  test('should include isControl field', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _data = '{"tp":"control"}';
+  test('should parse ContentCardType to a bannerImage', () {
+    String _data = '{"tp":"banner_image"}';
     BrazeContentCard _contentCard = new BrazeContentCard(_data);
-    expect(_contentCard.isControl, equals(true));
+    expect(_contentCard.type, equals(ContentCardType.bannerImage));
+  });
+
+  test('should parse ContentCardType to a shortNews', () {
+    String _data = '{"tp":"short_news"}';
+    BrazeContentCard _contentCard = new BrazeContentCard(_data);
+    expect(_contentCard.type, equals(ContentCardType.shortNews));
+  });
+
+  test('should parse ContentCardType to a captionedImage', () {
+    String _data = '{"tp":"captioned_image"}';
+    BrazeContentCard _contentCard = new BrazeContentCard(_data);
+    expect(_contentCard.type, equals(ContentCardType.captionedImage));
   });
 
   test('should call logContentCardImpression', () {
@@ -1060,7 +1071,7 @@ void main() {
     bool testPinned = true;
     bool testRemoved = false;
     String testTitle = "some title";
-    String testType = "some type";
+    String testType = "banner_image";
     String testUri = "https:\\/\\/www.sometesturi.com";
     bool testUseWebView = true;
     bool testViewed = false;
@@ -1084,7 +1095,7 @@ void main() {
     expect(contentCard.pinned, equals(testPinned));
     expect(contentCard.removed, equals(testRemoved));
     expect(contentCard.title, equals(testTitle));
-    expect(contentCard.type, equals(testType));
+    expect(contentCard.type, equals(ContentCardType.bannerImage));
     expect(contentCard.url, equals(json.jsonDecode('"$testUri"')));
     expect(contentCard.useWebView, equals(testUseWebView));
     expect(contentCard.viewed, equals(testViewed));
