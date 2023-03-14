@@ -10,10 +10,8 @@ class BrazePlugin {
   Map<String, bool>? _brazeCustomConfigs;
   Function(BrazeSdkAuthenticationError)? _brazeSdkAuthenticationErrorHandler;
 
-  Function(BrazeInAppMessage)? _brazeInAppMessageHandler;
+  // To be used alongside `replayCallbacksConfigKey`
   final List<BrazeInAppMessage> _queuedInAppMessages = [];
-
-  Function(List<BrazeContentCard>)? _brazeContentCardHandler;
   final List<BrazeContentCard> _queuedContentCards = [];
 
   /// Broadcast stream to listen for in-app messages.
@@ -24,15 +22,26 @@ class BrazePlugin {
   StreamController<List<BrazeContentCard>> contentCardsStreamController =
       StreamController<List<BrazeContentCard>>.broadcast();
 
+  /// The plugin used to interface with all Braze APIs with optional parameters
+  /// specific customization.
+  ///
+  /// The [inAppMessageHandler] and [contentCardsHandler] can subscribe to
+  /// their respective streams at plugin initialization. These can also be
+  /// subscribed at a later time after initialization
   BrazePlugin(
       {Function(BrazeInAppMessage)? inAppMessageHandler,
       Function(BrazeSdkAuthenticationError)? brazeSdkAuthenticationErrorHandler,
       Function(List<BrazeContentCard>)? contentCardsHandler,
       Map<String, bool>? customConfigs}) {
-    _brazeInAppMessageHandler = inAppMessageHandler;
-    _brazeSdkAuthenticationErrorHandler = brazeSdkAuthenticationErrorHandler;
-    _brazeContentCardHandler = contentCardsHandler;
     _brazeCustomConfigs = customConfigs;
+    _brazeSdkAuthenticationErrorHandler = brazeSdkAuthenticationErrorHandler;
+
+    if (inAppMessageHandler != null) {
+      subscribeToInAppMessages(inAppMessageHandler);
+    }
+    if (contentCardsHandler != null) {
+      subscribeToContentCards(contentCardsHandler);
+    }
 
     // Called after setting up plugin settings
     _channel.setMethodCallHandler(_handleBrazeData);
@@ -71,36 +80,10 @@ class BrazePlugin {
   }
 
   /// Sets a callback to receive in-app message data from Braze.
-  @Deprecated(
-      'Use subscribeToInAppMessages(void onEvent(List<BrazeContentCard> contentCard)) instead.')
-  void setBrazeInAppMessageCallback(Function(BrazeInAppMessage) callback) {
-    _brazeInAppMessageHandler = callback;
-
-    if (_replayCallbacksConfigEnabled() && _queuedInAppMessages.isNotEmpty) {
-      print("Replaying callback on previously queued Braze in-app messages.");
-      _queuedInAppMessages.forEach((message) => callback(message));
-      _queuedInAppMessages.clear();
-    }
-  }
-
-  /// Sets a callback to receive in-app message data from Braze.
   void setBrazeSdkAuthenticationErrorCallback(
       Function(BrazeSdkAuthenticationError) callback) {
     _channel.invokeMethod('setSdkAuthenticationDelegate');
     _brazeSdkAuthenticationErrorHandler = callback;
-  }
-
-  /// Sets a callback to receive Content Card data from Braze.
-  @Deprecated(
-      'Use subscribeToContentCards(void onEvent(List<BrazeContentCard> contentCard)) instead.')
-  void setBrazeContentCardsCallback(Function(List<BrazeContentCard>) callback) {
-    _brazeContentCardHandler = callback;
-
-    if (_replayCallbacksConfigEnabled() && _queuedContentCards.isNotEmpty) {
-      print("Replaying callback on previously queued Braze content cards.");
-      callback(_queuedContentCards);
-      _queuedContentCards.clear();
-    }
   }
 
   /// Changes the current Braze userId.
@@ -515,15 +498,14 @@ class BrazePlugin {
           return Future<void>.value();
         }
         final inAppMessage = BrazeInAppMessage(inAppMessageString);
-        if (_brazeInAppMessageHandler != null) {
-          _brazeInAppMessageHandler!(inAppMessage);
-        } else if (_replayCallbacksConfigEnabled()) {
-          print("Braze in-app message callback not present. Adding to queue.");
+        if (inAppMessageStreamController.hasListener) {
+          inAppMessageStreamController.add(inAppMessage);
+        } else {
+          print(
+              "Braze in-app message subscription not present. Adding to queue.");
           _queuedInAppMessages.add(inAppMessage);
         }
 
-        // Add valid in-app message to the stream.
-        inAppMessageStreamController.add(inAppMessage);
         return Future<void>.value();
 
       case "handleBrazeContentCards":
@@ -533,17 +515,15 @@ class BrazePlugin {
           brazeCards.add(BrazeContentCard(card));
         }
 
-        if (_brazeContentCardHandler != null) {
-          _brazeContentCardHandler!(brazeCards);
-        } else if (_replayCallbacksConfigEnabled()) {
+        if (contentCardsStreamController.hasListener) {
+          contentCardsStreamController.add(brazeCards);
+        } else {
           print(
-              "Braze content card callback not present. Removing any queued cards and adding only the recent refresh.");
+              "Braze content card subscription not present. Removing any queued cards and adding only the recent refresh.");
           _queuedContentCards.clear();
           _queuedContentCards.addAll(brazeCards);
         }
 
-        // Add valid list of content cards to the stream.
-        contentCardsStreamController.add(brazeCards);
         return Future<void>.value();
 
       case "handleSdkAuthenticationError":

@@ -1,3 +1,25 @@
+## 4.0.0
+
+> Starting with this release, this SDK will use [Semantic Versioning](https://semver.org/).
+
+##### Breaking
+- Fixes the behavior in the iOS bridge introduced in version `3.0.0` when logging clicks for in-app messages and content cards. Calling `logClick` now only sends a click event for metrics, instead of both sending a click event as well as redirecting to the associated `url` field.
+  - For instance, to log a content card click and redirect to a URL, you will need two commands:
+  ```
+  braze.logContentCardClicked(contentCard);
+
+  // Your own custom implementation
+  Linking.openUrl(contentCard.url);
+  ```
+  - This brings the iOS behavior to match version `2.x` and bring parity with Android's behavior.
+- Removes `setBrazeInAppMessageCallback()` and `setBrazeContentCardsCallback()` in favor of subscribing via streams.
+  - Reference our [sample app](https://github.com/braze-inc/braze-flutter-sdk/blob/master/example/lib/main.dart) for an example on how to use [`subscribeToInAppMessages()`](https://www.braze.com/docs/developer_guide/platform_integration_guides/flutter/inapp_messages/#receiving-in-app-message-data) or [`subscribeToContentCards()`](https://www.braze.com/docs/developer_guide/platform_integration_guides/flutter/content_cards/#receiving-content-card-data).
+
+##### Changed
+- The native Android bridge uses [Braze Android SDK 24.3.0](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#2430).
+- The native iOS bridge uses [Braze iOS SDK 5.11.2](https://github.com/braze-inc/braze-swift-sdk/blob/main/CHANGELOG.md#5112).
+- Improves behavior when using `replayCallbacksConfigKey` alongside having subscriptions to in-app messages or content cards via streams.
+
 ## 3.1.0
 
 ##### Breaking
@@ -57,7 +79,7 @@
 
 ##### Changed
 - Updates the iOS layer to use Swift. `BrazePlugin.h` and `BrazePlugin.m` are now consolidated to `BrazePlugin.swift`.
-- Deprecates `setBrazeInAppMessageCallback()` and `setBrazeContentCardsCallback()` in favor of the subscribing via streams.
+- Deprecates `setBrazeInAppMessageCallback()` and `setBrazeContentCardsCallback()` in favor of subscribing via streams.
 
 ## 2.5.0
 

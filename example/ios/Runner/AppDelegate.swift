@@ -12,8 +12,6 @@ let brazeEndpoint = "sondheim.appboy.com"
 @UIApplicationMain
 @objc class AppDelegate: FlutterAppDelegate, BrazeInAppMessageUIDelegate {
 
-  static var braze: Braze? = nil
-
   // The subscription needs to be retained to be active
   var contentCardsSubscription: Braze.Cancellable?
 
@@ -28,7 +26,7 @@ let brazeEndpoint = "sondheim.appboy.com"
     configuration.sessionTimeout = 1
     configuration.triggerMinimumTimeInterval = 0
     configuration.location.automaticLocationCollection = true
-    configuration.location.brazeLocation = BrazeLocation()
+    configuration.location.brazeLocationProvider = BrazeLocationProvider()
     configuration.logger.level = .debug
 
     let braze = BrazePlugin.initBraze(configuration)

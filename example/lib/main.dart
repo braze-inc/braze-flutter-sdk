@@ -35,6 +35,10 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
   StreamSubscription inAppMessageStreamSubscription;
   StreamSubscription contentCardsStreamSubscription;
 
+  // Change to `true` to automatically log clicks, button clicks,
+  // and impressions for in-app messages and content cards.
+  final automaticallyInteract = false;
+
   void initState() {
     _braze = new BrazePlugin(customConfigs: {replayCallbacksConfigKey: true});
 
@@ -240,20 +244,6 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
             ),
             SectionHeader("In-app Messages"),
             TextButton(
-              child: const Text('SET IN-APP MESSAGE CALLBACK'),
-              onPressed: () {
-                // ignore: deprecated_member_use
-                _braze.setBrazeInAppMessageCallback(
-                    (BrazeInAppMessage inAppMessage) {
-                  _inAppMessageReceived(inAppMessage, prefix: "CALLBACK");
-                });
-                ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-                  content: new Text("In-app message callback set. "
-                      "In-app message data will appear in snackbars."),
-                ));
-              },
-            ),
-            TextButton(
               child: const Text('SUBSCRIBE VIA IN-APP MESSAGE STREAM'),
               onPressed: () {
                 this.setState(() {
@@ -281,20 +271,6 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
               child: const Text('LAUNCH CONTENT CARDS'),
               onPressed: () {
                 _braze.launchContentCards();
-              },
-            ),
-            TextButton(
-              child: const Text('SET CONTENT CARDS CALLBACK'),
-              onPressed: () {
-                // ignore: deprecated_member_use
-                _braze.setBrazeContentCardsCallback(
-                    (List<BrazeContentCard> contentCards) {
-                  _contentCardsReceived(contentCards, prefix: "CALLBACK");
-                });
-                ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-                  content: new Text("Content Cards Callback set. "
-                      "Content Card data will appear in snackbars."),
-                ));
               },
             ),
             TextButton(
@@ -439,8 +415,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
     );
   }
 
-  void _inAppMessageReceived(BrazeInAppMessage inAppMessage,
-      {String prefix, bool automaticallyInteract = false}) {
+  void _inAppMessageReceived(BrazeInAppMessage inAppMessage, {String prefix}) {
     print("[$prefix] Received message: ${inAppMessage.toString()}");
     ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
       content:
@@ -460,7 +435,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
   }
 
   void _contentCardsReceived(List<BrazeContentCard> contentCards,
-      {String prefix, bool automaticallyInteract = false}) {
+      {String prefix}) {
     if (contentCards.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
         content: new Text("Empty Content Cards update received."),
