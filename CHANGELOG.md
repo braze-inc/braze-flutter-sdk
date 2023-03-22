@@ -1,3 +1,11 @@
+## 4.1.0
+
+##### Fixed
+- Fixes an issue in `4.0.0` where the version in `braze_plugin.podspec` was not incremented correctly.
+
+##### Changed
+- The native iOS bridge uses [Braze iOS SDK 5.12.0](https://github.com/braze-inc/braze-swift-sdk/blob/main/CHANGELOG.md#5120).
+
 ## 4.0.0
 
 > Starting with this release, this SDK will use [Semantic Versioning](https://semver.org/).
