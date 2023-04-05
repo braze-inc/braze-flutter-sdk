@@ -377,6 +377,12 @@ class BrazePlugin {
     _callStringMethod('registerAndroidPushToken', 'pushToken', pushToken);
   }
 
+  /// Registers a APNS token for the current iOS device with Braze.
+  /// - No-op on Android
+  void registerApnsToken(String apnsToken) {
+    _callStringMethod('registerApnsToken', 'apnsToken', apnsToken);
+  }
+
   /// Requests an immediate data flush.
   void requestImmediateDataFlush() {
     _channel.invokeMethod('requestImmediateDataFlush');

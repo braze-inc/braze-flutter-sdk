@@ -1,4 +1,5 @@
 import BrazeKit
+import Foundation
 import BrazeUI
 import Flutter
 
@@ -409,7 +410,18 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeDelegate {
 
     case "registerAndroidPushToken", "setGoogleAdvertisingId":
       break  // Android-only features, do nothing.
-
+      
+    case "registerApnsToken":
+      guard let args = call.arguments as? [String: Any],
+        let apnsToken = args["apnsToken"] as? String else {
+          print("Invalid args: \(argsDescription), iOS method: \(call.method)")
+          return
+        }
+      do {
+        BrazePlugin.braze?.notifications.register(deviceToken: try hexToData(hexString: apnsToken))
+      } catch {
+        print("Unable to parse apnsToken (\(apnsToken) to Data")
+      }
     case "requestImmediateDataFlush":
       BrazePlugin.braze?.requestImmediateDataFlush()
 
@@ -615,4 +627,19 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeDelegate {
     }
   }
 
+}
+
+func hexToData(hexString: String) throws -> Data {
+  let length = 2
+  let end = hexString.count/length
+  let range = 0..<end
+  let transformHex: (Int) -> String = {
+      String(hexString.dropFirst($0 * length).prefix(length))
+  }
+  let transformByte: (String) throws -> UInt8 = {
+      return UInt8($0, radix: 16)!
+  }
+  let bytes = try range.map(transformHex).map(transformByte)
+  let data = Data(bytes)
+  return data
 }

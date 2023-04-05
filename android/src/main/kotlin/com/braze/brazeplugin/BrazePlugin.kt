@@ -446,6 +446,10 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val pushToken = call.argument<String>("pushToken")
                     Braze.getInstance(context).registeredPushToken = pushToken
                 }
+                "registerApnsToken" -> {
+                    // iOS specific, no-op for Android.
+                    return
+                }
                 "getInstallTrackingId" -> {
                     result.success(Braze.getInstance(context).deviceId)
                 }
