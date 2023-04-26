@@ -18,7 +18,6 @@ rootProject.allprojects {
     repositories {
         google()
         mavenCentral()
-        maven { url "https://appboy.github.io/appboy-android-sdk/sdk" }
     }
 }
 
@@ -52,5 +51,5 @@ android {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    implementation "com.appboy:android-sdk-ui:24.3.0"
+    implementation "com.braze:android-sdk-ui:25.0.0"
 }

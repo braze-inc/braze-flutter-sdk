@@ -1,3 +1,9 @@
+## 5.0.0
+
+##### Breaking
+- The native Android bridge uses [Braze Android SDK 25.0.0](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#2500).
+- The native iOS bridge uses [Braze iOS SDK 6.0.0](https://github.com/braze-inc/braze-swift-sdk/blob/main/CHANGELOG.md#600).
+
 ## 4.1.0
 
 ##### Fixed

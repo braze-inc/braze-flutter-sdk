@@ -453,10 +453,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
         print("[$prefix] Logging impression and body click programmatically.");
         _braze.logContentCardImpression(contentCard);
         _braze.logContentCardClicked(contentCard);
-
-        // Only for testing, remove from actual branch
-        // - Executes dismissal and removes from UI too
-        _braze.logContentCardDismissed(contentCard);
+        // _braze.logContentCardDismissed(contentCard);
       }
     });
   }

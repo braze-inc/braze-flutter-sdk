@@ -35,8 +35,7 @@ let brazeEndpoint = "sondheim.appboy.com"
     GIFViewProvider.shared = .sdWebImage
 
     // - InAppMessage UI
-    let inAppMessageUI = BrazeInAppMessageUI()
-    inAppMessageUI.delegate = self
+    let inAppMessageUI = CustomInAppMessagePresenter()
     braze.inAppMessagePresenter = inAppMessageUI
 
     contentCardsSubscription = braze.contentCards.subscribeToUpdates { contentCards in
@@ -48,18 +47,20 @@ let brazeEndpoint = "sondheim.appboy.com"
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
+}
 
-  // MARK: BrazeInAppMessageUIDelegate
+// MARK: In-app message UI
 
-  func inAppMessage(
-    _ ui: BrazeInAppMessageUI,
-    willPresent message: Braze.InAppMessage,
-    view: InAppMessageView
-  ) {
+class CustomInAppMessagePresenter: BrazeInAppMessageUI {
+
+  override func present(message: Braze.InAppMessage) {
     print("=> [In-app Message] Received message from Braze:", message)
 
     // Pass in-app message data to the Dart layer.
     BrazePlugin.processInAppMessage(message)
+
+    // If you want the default UI to display the in-app message.
+    super.present(message: message)
   }
 
 }
