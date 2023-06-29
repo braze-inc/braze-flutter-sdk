@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert' as json;
+
 import 'package:flutter/services.dart';
 
 /* Custom configuration keys */
@@ -13,6 +14,7 @@ class BrazePlugin {
   // To be used alongside `replayCallbacksConfigKey`
   final List<BrazeInAppMessage> _queuedInAppMessages = [];
   final List<BrazeContentCard> _queuedContentCards = [];
+  final List<BrazeFeatureFlag> _queuedFeatureFlags = [];
 
   /// Broadcast stream to listen for in-app messages.
   StreamController<BrazeInAppMessage> inAppMessageStreamController =
@@ -21,6 +23,10 @@ class BrazePlugin {
   /// Broadcast stream to listen for content cards.
   StreamController<List<BrazeContentCard>> contentCardsStreamController =
       StreamController<List<BrazeContentCard>>.broadcast();
+
+  /// Broadcast stream to listen for feature flags.
+  StreamController<List<BrazeFeatureFlag>> featureFlagsStreamController =
+      StreamController<List<BrazeFeatureFlag>>.broadcast();
 
   /// The plugin used to interface with all Braze APIs with optional parameters
   /// specific customization.
@@ -32,6 +38,7 @@ class BrazePlugin {
       {Function(BrazeInAppMessage)? inAppMessageHandler,
       Function(BrazeSdkAuthenticationError)? brazeSdkAuthenticationErrorHandler,
       Function(List<BrazeContentCard>)? contentCardsHandler,
+      Function(List<BrazeFeatureFlag>)? featureFlagsHandler,
       Map<String, bool>? customConfigs}) {
     _brazeCustomConfigs = customConfigs;
     _brazeSdkAuthenticationErrorHandler = brazeSdkAuthenticationErrorHandler;
@@ -41,6 +48,9 @@ class BrazePlugin {
     }
     if (contentCardsHandler != null) {
       subscribeToContentCards(contentCardsHandler);
+    }
+    if (featureFlagsHandler != null) {
+      subscribeToFeatureFlags(featureFlagsHandler);
     }
 
     // Called after setting up plugin settings
@@ -483,6 +493,42 @@ class BrazePlugin {
     _channel.invokeMethod('setGoogleAdvertisingId', params);
   }
 
+  /// Get a single Feature Flag.
+  Future<BrazeFeatureFlag> getFeatureFlagByID(String id) {
+    final Map<String, dynamic> params = <String, dynamic>{"id": id};
+    return _channel
+        .invokeMethod('getFeatureFlagByID', params)
+        .then<BrazeFeatureFlag>((dynamic result) => BrazeFeatureFlag(result));
+  }
+
+  /// Get all Feature Flags from current cache.
+  Future<List<BrazeFeatureFlag>> getAllFeatureFlags() {
+    return _channel
+        .invokeMethod('getAllFeatureFlags')
+        .then<List<BrazeFeatureFlag>>((dynamic result) => (result as List)
+            .map((ffJson) => BrazeFeatureFlag(ffJson))
+            .toList());
+  }
+
+  /// Request a refresh of the feature flags. This may not always occur
+  /// if called too soon.
+  void refreshFeatureFlags() {
+    _channel.invokeMethod('refreshFeatureFlags');
+  }
+
+  /// Subscribes to the stream of feature flags and calls [onEvent] when it
+  /// receives the list of feature flags.
+  StreamSubscription subscribeToFeatureFlags(
+      void Function(List<BrazeFeatureFlag>) onEvent) {
+    StreamSubscription subscription =
+        featureFlagsStreamController.stream.listen(onEvent);
+
+    // Give any existing feature flags
+    getAllFeatureFlags().then((ffs) => onEvent(ffs));
+
+    return subscription;
+  }
+
   void _callStringMethod(String methodName, String paramName, String? value) {
     final Map<String, dynamic> params = <String, dynamic>{paramName: value};
     _channel.invokeMethod(methodName, params);
@@ -522,6 +568,24 @@ class BrazePlugin {
               "Braze content card subscription not present. Removing any queued cards and adding only the recent refresh.");
           _queuedContentCards.clear();
           _queuedContentCards.addAll(brazeCards);
+        }
+
+        return Future<void>.value();
+
+      case "handleBrazeFeatureFlags":
+        final Map<dynamic, dynamic> argumentsMap = call.arguments;
+        List<BrazeFeatureFlag> brazeFeatureFlags = [];
+        for (dynamic ff in argumentsMap['featureFlags']) {
+          brazeFeatureFlags.add(BrazeFeatureFlag(ff));
+        }
+
+        if (featureFlagsStreamController.hasListener) {
+          featureFlagsStreamController.add(brazeFeatureFlags);
+        } else {
+          print(
+              "Braze feature flags subscription not present. Removing any queued flags and adding only the recent refresh.");
+          _queuedFeatureFlags.clear();
+          _queuedFeatureFlags.addAll(brazeFeatureFlags);
         }
 
         return Future<void>.value();
@@ -607,7 +671,7 @@ class BrazeContentCard {
   String image = "";
 
   /// Content Card image aspect ratio
-  double imageAspectRatio = 1;
+  num imageAspectRatio = 1;
 
   /// Content Card link text
   String linkText = "";
@@ -677,7 +741,7 @@ class BrazeContentCard {
       image = imageJson;
     }
     var imageAspectRatioJson = contentCardJson["ar"];
-    if (imageAspectRatioJson is double) {
+    if (imageAspectRatioJson is num) {
       imageAspectRatio = imageAspectRatioJson;
     }
     var linkTextJson = contentCardJson["dm"];
@@ -985,5 +1049,69 @@ class BrazeSdkAuthenticationError {
   @override
   String toString() {
     return brazeSdkAuthenticationErrorString;
+  }
+}
+
+class BrazeFeatureFlag {
+  /// ID of the feature flag
+  String id = "";
+
+  /// Is this flag currently enabled?
+  bool enabled = false;
+
+  /// Map of optional additional properties of the feature flag
+  Map properties = Map();
+
+  BrazeFeatureFlag(String _data) {
+    var featureFlagJson = json.jsonDecode(_data);
+
+    var idJson = featureFlagJson["id"];
+    if (idJson is String) {
+      id = idJson;
+    }
+
+    var enabledJson = featureFlagJson["enabled"];
+    if (enabledJson is bool) {
+      enabled = enabledJson;
+    }
+
+    var propertiesJson = featureFlagJson["properties"];
+    properties = propertiesJson ?? Map();
+  }
+
+  /// Returns a string of the additional properties for the given ID
+  /// Returns null if the key is not a string property
+  String? getStringProperty(String key) {
+    var data = properties[key];
+    if (data != null) {
+      if (data["type"] == "string") {
+        return data["value"];
+      }
+    }
+    return null;
+  }
+
+  /// Returns a bool of the additional properties for the given ID
+  /// Returns null if the key is not a boolean property
+  bool? getBooleanProperty(String key) {
+    var data = properties[key];
+    if (data != null) {
+      if (data["type"] == "boolean") {
+        return data["value"];
+      }
+    }
+    return null;
+  }
+
+  /// Returns a num of the additional properties for the given ID
+  /// Returns null if the key is not a number
+  num? getNumberProperty(String key) {
+    var data = properties[key];
+    if (data != null) {
+      if (data["type"] == "number") {
+        return data["value"];
+      }
+    }
+    return null;
   }
 }

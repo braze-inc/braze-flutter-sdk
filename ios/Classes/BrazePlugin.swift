@@ -52,7 +52,9 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeDelegate {
       BrazePlugin.braze?.delegate = self
 
     case "getInstallTrackingId":
-      BrazePlugin.braze?.deviceId { result($0) }
+      if let deviceId = BrazePlugin.braze?.deviceId {
+        result(deviceId)
+      }
 
     case "requestContentCardsRefresh":
       BrazePlugin.braze?.contentCards.requestRefresh { _ in }
@@ -465,6 +467,30 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeDelegate {
       BrazePlugin.braze?.enabled = true
     case "disableSDK":
       BrazePlugin.braze?.enabled = false
+      
+    case "getFeatureFlagByID":
+      guard let args = call.arguments as? [String: Any],
+            let flagId = args["id"] as? String
+      else {
+        print("Unexpected null id in `getFeatureFlagByID`.")
+        return
+      }
+      if let featureFlagJson = BrazePlugin.braze?.featureFlags.featureFlag(id: flagId).json() {
+        let featureFlagString = String(data: featureFlagJson, encoding: .utf8)
+        result(featureFlagString)
+      }
+    case "getAllFeatureFlags":
+      let featureFlags = BrazePlugin.braze?.featureFlags.featureFlags.compactMap { flag in
+        if let featureFlagJson = flag.json() {
+          return String(data: featureFlagJson, encoding: .utf8)
+        } else {
+          print("Failed to serialize Feature Flag with ID: \(flag.id). Skipping...")
+          return nil
+        }
+      }
+      result(featureFlags)
+    case "refreshFeatureFlags":
+      BrazePlugin.braze?.featureFlags.requestRefresh()
 
     default:
       result(FlutterMethodNotImplemented)
@@ -477,7 +503,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeDelegate {
     guard let inAppMessageRaw = inAppMessageRaw else { return nil }
 
     do {
-      var inAppMessage: Braze.InAppMessage = try Braze.InAppMessage.init(inAppMessageRaw)
+      let inAppMessage: Braze.InAppMessage = try Braze.InAppMessage.init(inAppMessageRaw)
       return inAppMessage
     } catch {
       print("Error parsing in-app message from jsonString: \(jsonString), error: \(error)")
@@ -490,7 +516,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeDelegate {
     guard let contentCardRaw = contentCardRaw else { return nil }
 
     do {
-      var contentCard: Braze.ContentCard = try Braze.ContentCard.init(contentCardRaw)
+      let contentCard: Braze.ContentCard = try Braze.ContentCard.init(contentCardRaw)
       return contentCard
     } catch {
       print("Error parsing Content Card from jsonString: \(jsonString), error: \(error)")
@@ -552,6 +578,8 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeDelegate {
   /// Translates the native [inAppMessage] into JSON and passes it from the iOS layer
   /// to the Dart layer.
   /// Note: Swift closures are unable to be translated into JSON.
+  ///
+  /// - Parameter inAppMessage: The Braze in-app message in native Swift.
   public class func processInAppMessage(_ inAppMessage: Braze.InAppMessage) {
     guard let inAppMessageData = inAppMessage.json(),
       let inAppMessageString = String(data: inAppMessageData, encoding: .utf8)
@@ -569,6 +597,8 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeDelegate {
   /// Translates each of the the native content [cards] into JSON and passes it
   /// from the iOS layer to the Dart layer.
   /// Note: Swift closures are unable to be translated into JSON.
+  ///
+  /// - Parameter cards: The array of Braze content cards in native Swift.
   public class func processContentCards(_ cards: [Braze.ContentCard]) {
     var cardStrings: [String] = []
     for card in cards {
@@ -584,6 +614,26 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeDelegate {
     let arguments = ["contentCards": cardStrings]
     for channel in channels {
       channel.invokeMethod("handleBrazeContentCards", arguments: arguments)
+    }
+  }
+  
+  /// Translates each of the native [featureFlags] into JSON and passes it
+  /// from the iOS layer to the Dart layer.
+  /// Note: Swift closures are unable to be translated into JSON.
+  ///
+  /// - Parameter featureFlags: The array of Braze feature flags in native Swift.
+  public class func processFeatureFlags(_ featureFlags: [Braze.FeatureFlag]) {
+    let flagStrings: [String] = featureFlags.compactMap { flag in
+      if let featureFlagJson = flag.json() {
+        return String(data: featureFlagJson, encoding: .utf8)
+      } else {
+        print("Failed to serialize Feature Flag with ID: \(flag.id). Skipping...")
+        return nil
+      }
+    }
+    let arguments = ["featureFlags": flagStrings]
+    for channel in channels {
+      channel.invokeMethod("handleBrazeFeatureFlags", arguments: arguments)
     }
   }
 
