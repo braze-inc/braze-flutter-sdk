@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:io' show Platform;
-import 'package:braze_plugin_example/jwt_generator.dart';
-import 'package:flutter/material.dart';
 
 import 'package:braze_plugin/braze_plugin.dart';
+import 'package:braze_plugin_example/jwt_generator.dart';
+import 'package:flutter/material.dart';
 
 void main() => runApp(MyApp());
 
@@ -27,13 +27,18 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
   String _enabled = "";
   String _ccStreamSubscription = "DISABLED";
   String _iamStreamSubscription = "DISABLED";
+  String _ffStreamSubscription = "DISABLED";
+  String _featureFlagPropertyType = "BOOLEAN";
   BrazePlugin _braze;
   final userIdController = TextEditingController();
   final customEventNameController = TextEditingController();
   final customEventPropertyKeyController = TextEditingController();
   final customEventPropertyValueController = TextEditingController();
+  final featureFlagController = TextEditingController();
+  final featureFlagPropertyController = TextEditingController();
   StreamSubscription inAppMessageStreamSubscription;
   StreamSubscription contentCardsStreamSubscription;
+  StreamSubscription featureFlagsStreamSubscription;
 
   // Change to `true` to automatically log clicks, button clicks,
   // and impressions for in-app messages and content cards.
@@ -60,10 +65,13 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
     customEventNameController.dispose();
     customEventPropertyKeyController.dispose();
     customEventPropertyValueController.dispose();
+    featureFlagController.dispose();
+    featureFlagPropertyController.dispose();
 
     /// Stop listening to streams
     inAppMessageStreamSubscription.cancel();
     contentCardsStreamSubscription.cancel();
+    featureFlagsStreamSubscription.cancel();
     super.dispose();
   }
 
@@ -106,6 +114,9 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                     Text("IAM Stream Subscription: $_iamStreamSubscription")),
             Center(
                 child: Text("CC Stream Subscription: $_ccStreamSubscription")),
+            Center(
+              child: Text("FF Stream Subscription: $_ffStreamSubscription"),
+            ),
             Center(child: Text("User Id: $_userId")),
             TextField(
               autocorrect: false,
@@ -239,6 +250,118 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                 _braze.requestImmediateDataFlush();
                 ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
                   content: new Text("Requested Data Flush"),
+                ));
+              },
+            ),
+            SectionHeader("Feature Flags"),
+            TextField(
+              autocorrect: false,
+              controller: featureFlagController,
+              decoration: InputDecoration(
+                  hintText: 'Please enter a Feature Flag ID',
+                  labelText: 'Feature Flag ID'),
+            ),
+            TextButton(
+              child: const Text('GET SINGLE FEATURE FLAG'),
+              onPressed: () {
+                String ffId = featureFlagController.text;
+                print("Showing single feature flag");
+                _braze.getFeatureFlagByID(ffId).then((ff) {
+                  String ffString = _featureFlagToString(ff);
+                  print(ffString);
+                  ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                    content: new Text(ffString),
+                  ));
+                });
+              },
+            ),
+            TextField(
+              autocorrect: false,
+              controller: featureFlagPropertyController,
+              decoration: InputDecoration(
+                  hintText: 'Please enter a Feature Flag property key',
+                  labelText: 'Feature Flag Property Key'),
+            ),
+            DropdownButton<String>(
+                value: _featureFlagPropertyType,
+                alignment: Alignment.center,
+                items: [
+                  DropdownMenuItem(
+                    value: 'BOOLEAN',
+                    child: Text('BOOLEAN'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'NUMBER',
+                    child: Text('NUMBER'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'STRING',
+                    child: Text('STRING'),
+                  ),
+                ],
+                onChanged: (String value) {
+                  setState(() {
+                    _featureFlagPropertyType = value;
+                  });
+                }),
+            TextButton(
+              child: const Text('GET FEATURE FLAG PROPERTY'),
+              onPressed: () {
+                String ffId = featureFlagController.text;
+                _braze.getFeatureFlagByID(ffId).then((ff) {
+                  var ffProperty;
+                  switch (_featureFlagPropertyType) {
+                    case 'BOOLEAN':
+                      ffProperty = ff.getBooleanProperty(
+                          featureFlagPropertyController.text);
+                      break;
+                    case 'NUMBER':
+                      ffProperty = ff.getNumberProperty(
+                          featureFlagPropertyController.text);
+                      break;
+                    case 'STRING':
+                      ffProperty = ff.getStringProperty(
+                          featureFlagPropertyController.text);
+                      break;
+                  }
+                  print(ffProperty);
+                  ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                    content: new Text('$ffProperty'),
+                  ));
+                });
+              },
+            ),
+            TextButton(
+              child: const Text('GET ALL FEATURE FLAGS'),
+              onPressed: () {
+                print("Showing all feature flags");
+                _braze.getAllFeatureFlags().then((ffs) => ffs.forEach((ff) {
+                      String ffString = _featureFlagToString(ff);
+                      print(ffString);
+                      ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                        content: new Text(ffString),
+                      ));
+                    }));
+              },
+            ),
+            TextButton(
+              child: const Text('REFRESH FEATURE FLAGS'),
+              onPressed: () {
+                print("Refreshing feature flags");
+                _braze.refreshFeatureFlags();
+              },
+            ),
+            TextButton(
+              child: const Text('SUBSCRIBE TO FEATURE FLAG STREAM'),
+              onPressed: () {
+                this.setState(() {
+                  _ffStreamSubscription = 'ENABLED';
+                });
+                featureFlagsStreamSubscription =
+                    _braze.subscribeToFeatureFlags(_featureFlagsReceived);
+                ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                  content: new Text("Listening to feature flag stream. "
+                      "Feature flag data will appear in snackbars."),
                 ));
               },
             ),
@@ -456,6 +579,40 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
         // _braze.logContentCardDismissed(contentCard);
       }
     });
+  }
+
+  void _featureFlagsReceived(List<BrazeFeatureFlag> featureFlags) {
+    if (featureFlags.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+        content: new Text("Empty Feature Flags update received."),
+      ));
+      return;
+    }
+    featureFlags.forEach((featureFlag) {
+      print("Received feature flag: " + featureFlag.id);
+      ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+        content: new Text("Received feature flag: ${featureFlag.id}"),
+      ));
+    });
+  }
+
+  String _featureFlagToString(BrazeFeatureFlag ff) {
+    String ffString = "Feature Flag ID: " +
+        ff.id +
+        "\n" +
+        "  FF Enabled: " +
+        ff.enabled.toString() +
+        "\n";
+    ff.properties.forEach((key, value) {
+      ffString += "  FF Key: " +
+          key.toString() +
+          " Type: " +
+          value["type"] +
+          " Value: " +
+          value["value"].toString() +
+          "\n";
+    });
+    return ffString;
   }
 
   void _pressedLogPresetEventsAndPurchasesButton() {

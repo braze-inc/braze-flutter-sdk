@@ -13,12 +13,13 @@ import com.braze.Braze
 import com.braze.BrazeUser
 import com.braze.events.BrazeSdkAuthenticationErrorEvent
 import com.braze.events.SimpleValueCallback
+import com.braze.models.FeatureFlag
 import com.braze.models.inappmessage.IInAppMessage
 import com.braze.models.inappmessage.IInAppMessageImmersive
 import com.braze.models.outgoing.BrazeProperties
-import com.braze.support.BrazeLogger
-import com.braze.support.BrazeLogger.brazelog
+import com.braze.support.BrazeLogger.Priority.I
 import com.braze.support.BrazeLogger.Priority.W
+import com.braze.support.BrazeLogger.brazelog
 import com.braze.ui.activities.ContentCardsActivity
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -32,6 +33,7 @@ import java.math.BigDecimal
 import java.util.*
 
 class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
+
     private lateinit var context: Context
     private lateinit var channel: MethodChannel
     private lateinit var flutterCachedConfiguration: FlutterCachedConfiguration
@@ -64,8 +66,6 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
     }
 
     companion object {
-        val TAG: String = BrazeLogger.getBrazeLogTag(BrazePlugin::class.java)
-
         // Contains all plugins that have been initialized and are attached to a Flutter engine.
         var activePlugins = mutableListOf<BrazePlugin>()
 
@@ -75,33 +75,31 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
 
         /**
          * Used to pass in In App Message data from the Braze
-         * SDK native layer to the Flutter layer
+         * SDK native layer to the Flutter layer.
          */
         @JvmStatic
         fun processInAppMessage(inAppMessage: IInAppMessage) {
             if (activePlugins.isEmpty()) {
-                BrazeLogger.w(TAG, "There are no active Braze Plugins. Not calling 'handleBrazeInAppMessage'.")
+                brazelog(W) { "There are no active Braze Plugins. Not calling 'handleBrazeInAppMessage'." }
                 return
             }
 
             val inAppMessageMap: HashMap<String, String> =
                 hashMapOf("inAppMessage" to inAppMessage.forJsonPut().toString())
 
-            for (plugin in activePlugins) {
-                plugin.activity?.runOnUiThread {
-                    plugin.channel.invokeMethod("handleBrazeInAppMessage", inAppMessageMap)
-                }
+            executeOnAllPlugins {
+                it.channel.invokeMethod("handleBrazeInAppMessage", inAppMessageMap)
             }
         }
 
         /**
          * Used to pass in Content Card data from the Braze
-         * SDK native layer to the Flutter layer
+         * SDK native layer to the Flutter layer.
          */
         @JvmStatic
         fun processContentCards(contentCardList: List<Card>) {
             if (activePlugins.isEmpty()) {
-                BrazeLogger.w(TAG, "There are no active Braze Plugins. Not calling 'handleBrazeContentCards'.")
+                brazelog(W) { "There are no active Braze Plugins. Not calling 'handleBrazeContentCards'." }
                 return
             }
 
@@ -111,9 +109,34 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
             }
             val contentCardMap: HashMap<String, ArrayList<String>> = hashMapOf("contentCards" to cardStringList)
 
+            executeOnAllPlugins {
+                it.channel.invokeMethod("handleBrazeContentCards", contentCardMap)
+            }
+        }
+
+        /**
+         * Used to pass in Feature Flag data from the Braze
+         * SDK native layer to the Flutter layer.
+         */
+        @JvmStatic
+        fun processFeatureFlags(featureFlagList: List<FeatureFlag>) {
+            if (activePlugins.isEmpty()) {
+                brazelog(W) { "There are no active Braze Plugins. Not calling 'handleBrazeFeatureFlags'." }
+                return
+            }
+
+            val ffStringList = featureFlagList.map { it.forJsonPut().toString() }
+            val featureFlagMap = hashMapOf("featureFlags" to ffStringList)
+
+            executeOnAllPlugins {
+                it.channel.invokeMethod("handleBrazeFeatureFlags", featureFlagMap)
+            }
+        }
+
+        private fun executeOnAllPlugins(block: (BrazePlugin) -> Unit) {
             for (plugin in activePlugins) {
                 plugin.activity?.runOnUiThread {
-                    plugin.channel.invokeMethod("handleBrazeContentCards", contentCardMap)
+                    block(plugin)
                 }
             }
         }
@@ -134,7 +157,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         this.activity = binding.activity
         if (IntegrationInitializer.isUninitialized && flutterCachedConfiguration.isAutomaticInitializationEnabled()) {
-            BrazeLogger.i(TAG, "Running Flutter BrazePlugin automatic initialization")
+            brazelog(I) { "Running Flutter BrazePlugin automatic initialization" }
             this.activity?.application?.let { IntegrationInitializer.initializePlugin(it, flutterCachedConfiguration) }
         }
     }
@@ -218,7 +241,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val aliasName = call.argument<String>("aliasName")
                     val aliasLabel = call.argument<String>("aliasLabel")
                     if (aliasName == null || aliasLabel == null) {
-                        BrazeLogger.w(TAG, "Unexpected null parameter(s) in `addAlias`.")
+                        brazelog(W) { "Unexpected null parameter(s) in `addAlias`." }
                         return;
                     }
                     Braze.getInstance(context).runOnUser { user -> user.addAlias(aliasName, aliasLabel) }
@@ -247,7 +270,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val key = call.argument<String>("key")
                     val value = call.argument<String>("value")
                     if (key == null || value == null) {
-                        BrazeLogger.w(TAG, "Unexpected null parameter(s) in `addToCustomAttributeArray`.")
+                        brazelog(W) { "Unexpected null parameter(s) in `addToCustomAttributeArray`." }
                         return;
                     }
                     Braze.getInstance(context).runOnUser { user -> user.addToCustomAttributeArray(key, value) }
@@ -256,7 +279,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val key = call.argument<String>("key")
                     val value = call.argument<String>("value")
                     if (key == null || value == null) {
-                        BrazeLogger.w(TAG, "Unexpected null parameter(s) in `removeFromCustomAttributeArray`.")
+                        brazelog(W) { "Unexpected null parameter(s) in `removeFromCustomAttributeArray`." }
                         return;
                     }
                     Braze.getInstance(context).runOnUser { user -> user.removeFromCustomAttributeArray(key, value) }
@@ -265,7 +288,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val key = call.argument<String>("key")
                     val value = call.argument<String>("value")
                     if (key == null || value == null) {
-                        BrazeLogger.w(TAG, "Unexpected null parameter(s) in `setStringCustomUserAttribute`.")
+                        brazelog(W) { "Unexpected null parameter(s) in `setStringCustomUserAttribute`." }
                         return;
                     }
                     Braze.getInstance(context).runOnUser { user -> user.setCustomUserAttribute(key, value) }
@@ -274,7 +297,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val key = call.argument<String>("key")
                     val value = call.argument<Double>("value") ?: 0.0
                     if (key == null) {
-                        BrazeLogger.w(TAG, "Unexpected null key in `setDoubleCustomUserAttribute`")
+                        brazelog(W) { "Unexpected null key in `setDoubleCustomUserAttribute`" }
                         return;
                     }
                     Braze.getInstance(context).runOnUser { user -> user.setCustomUserAttribute(key, value) }
@@ -283,7 +306,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val key = call.argument<String>("key")
                     val value = (call.argument<Int>("value") ?: 0).toLong()
                     if (key == null) {
-                        BrazeLogger.w(TAG, "Unexpected null key in `setDateCustomUserAttribute`.")
+                        brazelog(W) { "Unexpected null key in `setDateCustomUserAttribute`." }
                         return;
                     }
                     Braze.getInstance(context).runOnUser { user -> user.setCustomUserAttributeToSecondsFromEpoch(key, value) }
@@ -292,7 +315,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val key = call.argument<String>("key")
                     val value = call.argument<Int>("value") ?: 0
                     if (key == null) {
-                        BrazeLogger.w(TAG, "Unexpected null key in `setIntCustomUserAttribute`.")
+                        brazelog(W) { "Unexpected null key in `setIntCustomUserAttribute`." }
                         return;
                     }
                     Braze.getInstance(context).runOnUser { user -> user.setCustomUserAttribute(key, value) }
@@ -301,7 +324,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val key = call.argument<String>("key")
                     val value = call.argument<Int>("value") ?: 0
                     if (key == null) {
-                        BrazeLogger.w(TAG, "Unexpected null key in `incrementCustomUserAttribute`.")
+                        brazelog(W) { "Unexpected null key in `incrementCustomUserAttribute`." }
                         return;
                     }
                     Braze.getInstance(context).runOnUser { user -> user.incrementCustomUserAttribute(key, value) }
@@ -310,7 +333,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val key = call.argument<String>("key")
                     val value = call.argument<Boolean>("value") ?: false
                     if (key == null) {
-                        BrazeLogger.w(TAG, "Unexpected null key in `setBoolCustomUserAttribute`.")
+                        brazelog(W) { "Unexpected null key in `setBoolCustomUserAttribute`." }
                         return;
                     }
                     Braze.getInstance(context).runOnUser { user -> user.setCustomUserAttribute(key, value) }
@@ -318,7 +341,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 "unsetCustomUserAttribute" -> {
                     val key = call.argument<String>("key")
                     if (key == null) {
-                        BrazeLogger.w(TAG, "Unexpected null key in `unsetCustomUserAttribute`.")
+                        brazelog(W) { "Unexpected null key in `unsetCustomUserAttribute`." }
                         return;
                     }
                     Braze.getInstance(context).runOnUser { user -> user.unsetCustomUserAttribute(key) }
@@ -326,7 +349,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 "setPushNotificationSubscriptionType" -> {
                     val type = getSubscriptionType(call.argument<String>("type") ?: "")
                     if (type == null) {
-                        BrazeLogger.w(TAG, "Unexpected null type in `setPushNotificationSubscriptionType`.")
+                        brazelog(W) { "Unexpected null type in `setPushNotificationSubscriptionType`." }
                         return;
                     }
                     Braze.getInstance(context).runOnUser { user -> user.setPushNotificationSubscriptionType(type) }
@@ -334,7 +357,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 "setEmailNotificationSubscriptionType" -> {
                     val type = getSubscriptionType(call.argument<String>("type") ?: "")
                     if (type == null) {
-                        BrazeLogger.w(TAG, "Unexpected null type in `setEmailNotificationSubscriptionType`.")
+                        brazelog(W) { "Unexpected null type in `setEmailNotificationSubscriptionType`." }
                         return;
                     }
                     Braze.getInstance(context).runOnUser { user -> user.setEmailNotificationSubscriptionType(type) }
@@ -342,7 +365,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 "addToSubscriptionGroup" -> {
                     val groupId = call.argument<String>("groupId")
                     if (groupId == null) {
-                        BrazeLogger.w(TAG, "Unexpected null groupId in `addToSubscriptionGroup`.")
+                        brazelog(W) { "Unexpected null groupId in `addToSubscriptionGroup`." }
                         return;
                     }
                     Braze.getInstance(context).runOnUser { user -> user.addToSubscriptionGroup(groupId) }
@@ -350,7 +373,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 "removeFromSubscriptionGroup" -> {
                     val groupId = call.argument<String>("groupId")
                     if (groupId == null) {
-                        BrazeLogger.w(TAG, "Unexpected null groupId in `removeFromSubscriptionGroup`.")
+                        brazelog(W) { "Unexpected null groupId in `removeFromSubscriptionGroup`." }
                         return;
                     }
                     Braze.getInstance(context).runOnUser { user -> user.removeFromSubscriptionGroup(groupId) }
@@ -360,7 +383,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val lat = call.argument<Double>("lat") ?: 0.0
                     val long = call.argument<Double>("long") ?: 0.0
                     if (key == null) {
-                        BrazeLogger.w(TAG, "Unexpected null key in `setLocationCustomAttribute`.")
+                        brazelog(W) { "Unexpected null key in `setLocationCustomAttribute`." }
                         return;
                     }
                     Braze.getInstance(context).runOnUser { user -> user.setLocationCustomAttribute(key, lat, long) }
@@ -436,7 +459,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val adGroup = call.argument<String>("adGroup")
                     val creative = call.argument<String>("creative")
                     if (network == null || campaign == null || adGroup == null || creative == null) {
-                        BrazeLogger.w(TAG, "Unexpected null parameter(s) in `setAttributionData`.")
+                        brazelog(W) { "Unexpected null parameter(s) in `setAttributionData`." }
                         return;
                     }
                     val attributionData = AttributionData(network, campaign, adGroup, creative)
@@ -470,7 +493,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val accuracy = call.argument<Double>("accuracy")
                     val altitude = call.argument<Double?>("altitude")
                     if (latitude == null || longitude == null) {
-                        BrazeLogger.w(TAG, "Unexpected null parameter(s) in `setLastKnownLocation`.")
+                        brazelog(W) { "Unexpected null parameter(s) in `setLastKnownLocation`." }
                         return;
                     }
                     Braze.getInstance(context).runOnUser { user -> user.setLastKnownLocation(latitude, longitude, altitude, accuracy) }
@@ -484,6 +507,22 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 "setSdkAuthenticationDelegate" -> {
                     // No-op on Android
                 }
+                "getFeatureFlagByID" -> {
+                    val ffId = call.argument<String>("id")
+                    if (ffId == null) {
+                        brazelog(W) { "Unexpected null id in `getFeatureFlagByID`." }
+                        return
+                    }
+                    val featureFlag = Braze.getInstance(context).getFeatureFlag(ffId)
+                    result.success(featureFlag.forJsonPut().toString())
+                }
+                "getAllFeatureFlags" -> {
+                    val featureFlags = Braze.getInstance(context).getAllFeatureFlags()
+                    result.success(featureFlags.map { featureFlag -> featureFlag.forJsonPut().toString() })
+                }
+                "refreshFeatureFlags" -> {
+                    Braze.getInstance(context).refreshFeatureFlags()
+                }
                 else -> result.notImplemented()
             }
         } catch (e: Exception) {
@@ -494,7 +533,6 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
     //--
     // Private methods
     //--
-
     private fun handleSdkAuthenticationError(errorEvent: BrazeSdkAuthenticationErrorEvent) {
         if (activePlugins.isEmpty()) {
             brazelog(W) { "There are no active Braze Plugins. Not calling 'handleSdkAuthenticationError'." }
@@ -510,15 +548,13 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
         val sdkAuthenticationErrorMap: HashMap<String, String> =
             hashMapOf("sdkAuthenticationError" to JSONObject(errorEventMap.toString()).toString())
 
-        for (plugin in activePlugins) {
-            plugin.activity?.runOnUiThread {
-                plugin.channel.invokeMethod("handleSdkAuthenticationError", sdkAuthenticationErrorMap)
-            }
+        executeOnAllPlugins {
+            it.channel.invokeMethod("handleSdkAuthenticationError", sdkAuthenticationErrorMap)
         }
     }
 
     /**
-     * Attempts to fetch the current user and then runs a block on it
+     * Attempts to fetch the current user and then runs a block on it.
      */
     private fun Braze.runOnUser(block: (user: BrazeUser) -> Unit) {
         this.getCurrentUser(object : SimpleValueCallback<BrazeUser>() {
@@ -541,7 +577,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
     private fun getMonth(month: Int): Month {
         val month = Month.getMonth(month - 1)
         if (month == null) {
-            BrazeLogger.w(TAG, "Invalid `null` month. Defaulting to January.")
+            brazelog(W) { "Invalid `null` month. Defaulting to January." }
             return Month.JANUARY
         }
         return month

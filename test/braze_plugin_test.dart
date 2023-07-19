@@ -1,14 +1,18 @@
 import 'dart:convert' as json;
-import 'package:flutter/services.dart';
-import 'package:flutter_test/flutter_test.dart';
+
 import 'package:braze_plugin/braze_plugin.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   final List<MethodCall> log = <MethodCall>[];
   final String mockInstallTrackingId = '_test_install_tracking_id_';
+
+  final String mockFeatureFlagJson =
+      "{\"id\":\"test\",\"enabled\":true,\"properties\":{\"stringkey\":{\"type\":\"string\",\"value\":\"stringValue\"},\"booleankey\":{\"type\":\"boolean\",\"value\": true },\"number1key\":{\"type\":\"number\",\"value\": 4 },\"number2key\":{\"type\":\"number\",\"value\": 5.1}}}";
 
   setUpAll(() async {
     TestDefaultBinaryMessengerBinding.instance!.defaultBinaryMessenger
@@ -19,6 +23,10 @@ void main() {
       switch (methodCall.method) {
         case 'getInstallTrackingId':
           return mockInstallTrackingId;
+        case 'getAllFeatureFlags':
+          return List<String>.generate(1, (index) => mockFeatureFlagJson);
+        case 'getFeatureFlagByID':
+          return mockFeatureFlagJson;
         default:
           return null;
       }
@@ -855,6 +863,72 @@ void main() {
         arguments: <String, dynamic>{'groupId': _groupId},
       ),
     ]);
+  });
+
+  test('should call refreshFeatureFlags', () {
+    BrazePlugin _braze = new BrazePlugin();
+    _braze.refreshFeatureFlags();
+    expect(log, <Matcher>[
+      isMethodCall(
+        'refreshFeatureFlags',
+        arguments: null,
+      ),
+    ]);
+  });
+
+  test('should call getAllFeatureFlags', () async {
+    BrazePlugin _braze = new BrazePlugin();
+    final result = await _braze.getAllFeatureFlags();
+    expect(log, <Matcher>[
+      isMethodCall(
+        'getAllFeatureFlags',
+        arguments: null,
+      )
+    ]);
+    expect(result.length, 1);
+    expect(result[0].id, "test");
+  });
+
+  test('featureFlag convenience functions work', () async {
+    BrazePlugin _braze = new BrazePlugin();
+    final result = await _braze.getFeatureFlagByID("test");
+    expect(result.id, "test");
+    expect(result.enabled, true);
+    expect(result.properties.length, 4);
+    expect(result.getStringProperty("stringkey"), "stringValue");
+    expect(result.getBooleanProperty("booleankey"), true);
+    expect(result.getNumberProperty("number1key"), 4);
+    expect(result.getNumberProperty("number2key"), 5.1);
+  });
+
+  test('featureFlag convenience functions return null for non-existent keys',
+      () async {
+    BrazePlugin _braze = new BrazePlugin();
+    final result = await _braze.getFeatureFlagByID("test");
+    expect(result.getStringProperty("keyThatDoesntExist"), null);
+    expect(result.getBooleanProperty("keyThatDoesntExist"), null);
+    expect(result.getNumberProperty("keyThatDoesntExist"), null);
+  });
+
+  test('should call getFeatureFlagByID', () async {
+    BrazePlugin _braze = new BrazePlugin();
+    final result = await _braze.getFeatureFlagByID("test");
+    expect(log, <Matcher>[
+      isMethodCall(
+        'getFeatureFlagByID',
+        arguments: <String, dynamic>{'id': "test"},
+      ),
+    ]);
+    expect(result.id, "test");
+    expect(result.enabled, true);
+    expect(result.properties.length, 4);
+    expect(result.getStringProperty("stringkey"), "stringValue");
+    expect(result.getStringProperty("stringkeyThatDoesntExist"), null);
+    expect(result.getBooleanProperty("booleankey"), true);
+    expect(result.getBooleanProperty("booleanKeyThatDoesntExist"), null);
+    expect(result.getNumberProperty("number1key"), 4);
+    expect(result.getNumberProperty("number2key"), 5.1);
+    expect(result.getNumberProperty("numberKeyThatDoesntExist"), null);
   });
 
   test('instantiate a BrazeInAppMessage object from JSON', () {

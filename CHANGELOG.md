@@ -1,8 +1,31 @@
+## 6.0.0
+
+##### Breaking
+- Updates the native Android bridge [from Braze Android SDK 25.0.0 to 26.1.0](https://github.com/braze-inc/braze-android-sdk/compare/v25.0.0...v26.1.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+
+##### Fixed
+- Fixes an issue where `BrazeContentCard.imageAspectRatio` would always return `1` for whole-number `int` values.
+  - The field `imageAspectRatio` is now a `num` type instead of a `double` type. No changes are required.
+
+##### Added
+- Added support for Braze Feature Flags.
+  - `BrazePlugin.getFeatureFlagByID(String id)` - Get a single Feature Flag
+  - `BrazePlugin.getAllFeatureFlags()` - Get all Feature Flags
+  - `BrazePlugin.refreshFeatureFlags()` - Request a refresh of Feature Flags
+  - `BrazePlugin.subscribeToFeatureFlags(void Function(List<BrazeFeatureFlag>) onEvent))` - Subscribe to Feature Flag updates
+  - Feature Flag property getter methods for the following types:
+    - Boolean: `featureFlag.getBooleanProperty(String key)`
+    - Number: `featureFlag.getNumberProperty(String key)`
+    - String: `featureFlag.getStringProperty(String key)`
+- Updates the native iOS bridge [from Braze iOS SDK 6.0.0 to 6.3.0](https://github.com/braze-inc/braze-swift-sdk/compare/6.0.0...6.3.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+
 ## 5.0.0
 
 ##### Breaking
 - The native Android bridge uses [Braze Android SDK 25.0.0](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#2500).
 - The native iOS bridge uses [Braze iOS SDK 6.0.0](https://github.com/braze-inc/braze-swift-sdk/blob/main/CHANGELOG.md#600).
+  - If you wish to access remote URLs for in-app messages instead of local URLs, replace your implementation of the `BrazeInAppMessageUIDelegate` method `inAppMessage(_:willPresent:view:)` with a custom implementation of `BrazeInAppMessagePresenter` or a `BrazeInAppMessageUI` subclass. This is relevant if you are caching asset URLs outside of the Braze SDK.
+  - For reference, see our sample code [here](https://github.com/braze-inc/braze-flutter-sdk/blob/master/example/ios/Runner/AppDelegate.swift).
 
 ## 4.1.0
 

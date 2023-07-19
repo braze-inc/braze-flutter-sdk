@@ -5,6 +5,7 @@ import android.content.Context
 import com.braze.Braze
 import com.braze.BrazeActivityLifecycleCallbackListener
 import com.braze.events.ContentCardsUpdatedEvent
+import com.braze.events.FeatureFlagsUpdatedEvent
 import com.braze.events.IEventSubscriber
 import com.braze.models.inappmessage.IInAppMessage
 import com.braze.support.BrazeLogger.brazelog
@@ -15,11 +16,13 @@ import com.braze.ui.inappmessage.listeners.DefaultInAppMessageManagerListener
 object IntegrationInitializer {
     var isUninitialized = true
     private var contentCardsUpdatedSubscriber: IEventSubscriber<ContentCardsUpdatedEvent>? = null
+    private var featureFlagsUpdatedSubscriber: IEventSubscriber<FeatureFlagsUpdatedEvent>? = null
 
     internal fun initializePlugin(application: Application, config: FlutterCachedConfiguration) {
         application.registerActivityLifecycleCallbacks(BrazeActivityLifecycleCallbackListener())
         val ctx = application.applicationContext
         subscribeToContentCardsUpdatedEvent(ctx)
+        subscribeToFeatureFlagsUpdatedEvent(ctx)
 
         BrazeInAppMessageManager.getInstance().setCustomInAppMessageManagerListener(
             BrazeInAppMessageManagerListener(config.automaticIntegrationInAppMessageOperation())
@@ -32,6 +35,13 @@ object IntegrationInitializer {
         contentCardsUpdatedSubscriber = IEventSubscriber { BrazePlugin.processContentCards(it.allCards) }
         contentCardsUpdatedSubscriber?.let { Braze.getInstance(ctx).subscribeToContentCardsUpdates(it) }
         Braze.getInstance(ctx).requestContentCardsRefresh(true)
+    }
+
+    private fun subscribeToFeatureFlagsUpdatedEvent(ctx: Context) {
+        Braze.getInstance(ctx).removeSingleSubscription(featureFlagsUpdatedSubscriber, FeatureFlagsUpdatedEvent::class.java)
+        featureFlagsUpdatedSubscriber = IEventSubscriber { BrazePlugin.processFeatureFlags(it.featureFlags) }
+        featureFlagsUpdatedSubscriber?.let { Braze.getInstance(ctx).subscribeToFeatureFlagsUpdates(it) }
+        Braze.getInstance(ctx).refreshFeatureFlags()
     }
 
     private class BrazeInAppMessageManagerListener(val defaultInAppMessageOperation: InAppMessageOperation) : DefaultInAppMessageManagerListener() {

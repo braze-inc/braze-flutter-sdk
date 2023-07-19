@@ -10,10 +10,11 @@ let brazeApiKey = "9292484d-3b10-4e67-971d-ff0c0d518e21"
 let brazeEndpoint = "sondheim.appboy.com"
 
 @UIApplicationMain
-@objc class AppDelegate: FlutterAppDelegate, BrazeInAppMessageUIDelegate {
+@objc class AppDelegate: FlutterAppDelegate {
 
-  // The subscription needs to be retained to be active
+  // These subscriptions need to be retained to be active
   var contentCardsSubscription: Braze.Cancellable?
+  var featureFlagsSubscription: Braze.Cancellable?
 
   override func application(
     _ application: UIApplication,
@@ -43,6 +44,13 @@ let brazeEndpoint = "sondheim.appboy.com"
 
       // Pass each content card model to the Dart layer.
       BrazePlugin.processContentCards(contentCards)
+    }
+    
+    featureFlagsSubscription = braze.featureFlags.subscribeToUpdates { featureFlags in
+      print("=> [Feature Flag Subscription] Received feature Flags:", featureFlags)
+      
+      // Pass each feature flag model to the Dart layer.
+      BrazePlugin.processFeatureFlags(featureFlags)
     }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
