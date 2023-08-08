@@ -29,16 +29,16 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
   String _iamStreamSubscription = "DISABLED";
   String _ffStreamSubscription = "DISABLED";
   String _featureFlagPropertyType = "BOOLEAN";
-  BrazePlugin _braze;
+  late BrazePlugin _braze;
   final userIdController = TextEditingController();
   final customEventNameController = TextEditingController();
   final customEventPropertyKeyController = TextEditingController();
   final customEventPropertyValueController = TextEditingController();
   final featureFlagController = TextEditingController();
   final featureFlagPropertyController = TextEditingController();
-  StreamSubscription inAppMessageStreamSubscription;
-  StreamSubscription contentCardsStreamSubscription;
-  StreamSubscription featureFlagsStreamSubscription;
+  late StreamSubscription inAppMessageStreamSubscription;
+  late StreamSubscription contentCardsStreamSubscription;
+  late StreamSubscription featureFlagsStreamSubscription;
 
   // Change to `true` to automatically log clicks, button clicks,
   // and impressions for in-app messages and content cards.
@@ -51,7 +51,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
         (BrazeSdkAuthenticationError error) async {
       print('Received an SDK Auth error: $error');
 
-      String newSignature = await JwtGenerator.create(_userId);
+      final newSignature = await JwtGenerator.create(_userId);
       print('Setting new signature: $newSignature, userId: $_userId');
       _braze.setSdkAuthenticationSignature(newSignature);
     });
@@ -299,9 +299,9 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                     child: Text('STRING'),
                   ),
                 ],
-                onChanged: (String value) {
+                onChanged: (String? value) {
                   setState(() {
-                    _featureFlagPropertyType = value;
+                    _featureFlagPropertyType = value!;
                   });
                 }),
             TextButton(
@@ -435,15 +435,9 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
               child: const Text('GET INSTALL TRACKING ID'),
               onPressed: () {
                 _braze.getInstallTrackingId().then((result) {
-                  if (result == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-                      content: new Text("Install Tracking ID was null"),
-                    ));
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-                      content: new Text("Install Tracking ID: " + result),
-                    ));
-                  }
+                  ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                    content: new Text("Install Tracking ID: " + result),
+                  ));
                 });
               },
             ),
@@ -538,7 +532,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
     );
   }
 
-  void _inAppMessageReceived(BrazeInAppMessage inAppMessage, {String prefix}) {
+  void _inAppMessageReceived(BrazeInAppMessage inAppMessage, {String? prefix}) {
     print("[$prefix] Received message: ${inAppMessage.toString()}");
     ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
       content:
@@ -558,7 +552,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
   }
 
   void _contentCardsReceived(List<BrazeContentCard> contentCards,
-      {String prefix}) {
+      {String? prefix}) {
     if (contentCards.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
         content: new Text("Empty Content Cards update received."),
@@ -616,7 +610,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
   }
 
   void _pressedLogPresetEventsAndPurchasesButton() {
-    var props = {"k1": "v1", "k2": 2, "k3": 3.5, "k4": false};
+    var props = <String, dynamic>{"k1": "v1", "k2": 2, "k3": 3.5, "k4": false};
     _braze.logCustomEvent("eventName");
     _braze.logCustomEvent("eventNameProps", properties: props);
     _braze.logPurchase("productId", "USD", 3.50, 2);
@@ -681,7 +675,7 @@ class SectionHeader extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: 8.0),
         child: Text(
           title,
-          style: Theme.of(context).textTheme.headline6.copyWith(
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
               decoration: TextDecoration.underline),
         ),
