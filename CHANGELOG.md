@@ -1,3 +1,8 @@
+## 6.0.1
+
+##### Fixed
+- Updates the native Android bridge [from Braze Android SDK 26.1.0 to 26.1.1](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#2611).
+
 ## 6.0.0
 
 ##### Breaking
