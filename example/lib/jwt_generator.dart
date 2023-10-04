@@ -9,7 +9,7 @@ class JwtGenerator {
 
   /// Returns a JWT associated with the Braze's public key on the dashboard for
   /// the App Group of this sample app.
-  static Future<String> create(String userId) async {
+  static Future<String?> create(String userId) async {
     final body = {
       'data': {
         'user_id': userId,

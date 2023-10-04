@@ -1,3 +1,24 @@
+## 7.0.0
+
+##### Breaking
+- Updates the native Android bridge [from Braze Android SDK 26.1.1 to 27.0.1](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#2701).
+- Adds support for Gradle 8.
+
+##### Added
+- Updates the native iOS bridge [from Braze Swift SDK 6.3.0 to 6.6.1](https://github.com/braze-inc/braze-swift-sdk/compare/6.3.0...6.6.1#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+- Adds `BrazePlugin.logFeatureFlagImpression(String id)` to log a Feature Flag impression.
+- Adds support for custom user attributes to be nested objects.
+  - `BrazeUser.setNestedCustomUserAttribute()`
+  - `BrazeUser.setCustomUserAttributeArrayOfObjects()`
+  - You can specify that the Dictionary be merged with the existing value.
+    - `BrazeUser.setNestedCustomUserAttribute(string, Map<string, dynamic>, true)`
+  - See https://www.braze.com/docs/user_guide/data_and_analytics/custom_data/custom_attributes/nested_custom_attribute_support/ for more information.
+- Adds `BrazeUser.setCustomUserAttributeArrayOfStrings()` to set arrays of strings as a custom attribute.
+- Adds `BrazePlugin.getCachedContentCards()` to get the most recent content cards from the cache.
+- Adds `BrazePlugin.registerPushToken()` to send a push token to Braze's servers.
+  - Deprecates `BrazePlugin.registerAndroidPushToken()` in favor of this new method.
+- Adds an example integration of iOS push notifications as well as custom scheme deep links, [universal links](https://docs.flutter.dev/cookbook/navigation/set-up-universal-links) (iOS), and [app links](https://docs.flutter.dev/cookbook/navigation/set-up-app-links) (Android) to the Flutter sample app.
+
 ## 6.0.1
 
 ##### Fixed
@@ -155,7 +176,7 @@
 - Custom events and purchases now support nested properties.
   - In addition to integers, floats, booleans, dates, or strings, a JSON object can be provided containing dictionaries of arrays or nested dictionaries. All properties combined can be up to 50 KB in total length.
 - Adds the ability to restrict the Android automatic integration from natively displaying in-app messages.
-  - To enable this feature, add this to your `braze.xml` configuration: 
+  - To enable this feature, add this to your `braze.xml` configuration:
   ```
   <string name="com_braze_flutter_automatic_integration_iam_operation">DISCARD</string>
   ```

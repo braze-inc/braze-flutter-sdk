@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert' as json;
+import 'dart:io' show Platform;
 
 import 'package:flutter/services.dart';
 
@@ -250,6 +251,33 @@ class BrazePlugin {
   }
 
   /// Sets a string typed custom attribute.
+  void setNestedCustomUserAttribute(String key, Map<String, dynamic> value, [ bool merge = false ] ) {
+    final Map<String, dynamic> params = <String, dynamic>{
+      'key': key,
+      'value': value,
+      'merge': merge
+    };
+    _channel.invokeMethod('setNestedCustomUserAttribute', params);
+  }
+
+  void setCustomUserAttributeArrayOfStrings(String key, List<String> value) {
+    final Map<String, dynamic> params = <String, dynamic>{
+      'key': key,
+      'value': value
+    };
+    _channel.invokeMethod('setCustomUserAttributeArrayOfStrings', params);
+  }
+
+  /// Sets a string typed custom attribute.
+  void setCustomUserAttributeArrayOfObjects(String key, List<Map<String, dynamic>> value) {
+    final Map<String, dynamic> params = <String, dynamic>{
+      'key': key,
+      'value': value
+    };
+    _channel.invokeMethod('setCustomUserAttributeArrayOfObjects', params);
+  }
+
+  /// Sets a string typed custom attribute.
   void setStringCustomUserAttribute(String key, String value) {
     final Map<String, dynamic> params = <String, dynamic>{
       'key': key,
@@ -383,8 +411,17 @@ class BrazePlugin {
 
   /// Registers a push token for the current Android device with Braze.
   /// - No-op on iOS.
+  /// This method is deprecated in favor of `registerPushToken`, which supports iOS and Android.
+  @Deprecated('Use registerPushToken(pushToken) instead.')
   void registerAndroidPushToken(String pushToken) {
-    _callStringMethod('registerAndroidPushToken', 'pushToken', pushToken);
+    if (Platform.isAndroid) {
+      registerPushToken(pushToken);
+    }
+  }
+
+  /// Registers a push token for the current device with Braze.
+  void registerPushToken(String pushToken) {
+    _callStringMethod('registerPushToken', 'pushToken', pushToken);
   }
 
   /// Requests an immediate data flush.
@@ -510,10 +547,25 @@ class BrazePlugin {
             .toList());
   }
 
+  /// Get all Content Cards from current cache.
+  Future<List<BrazeContentCard>> getCachedContentCards() {
+    return _channel
+        .invokeMethod('getCachedContentCards')
+        .then<List<BrazeContentCard>>((dynamic result) => (result as List)
+            .map((ccJson) => BrazeContentCard(ccJson))
+            .toList());
+  }
+
   /// Request a refresh of the feature flags. This may not always occur
   /// if called too soon.
   void refreshFeatureFlags() {
     _channel.invokeMethod('refreshFeatureFlags');
+  }
+
+  /// Log an impression for the Feature Flag with the provided id.
+  void logFeatureFlagImpression(String id) {
+    final Map<String, dynamic> params = <String, dynamic>{'id': id};
+    _channel.invokeMethod('logFeatureFlagImpression', params);
   }
 
   /// Subscribes to the stream of feature flags and calls [onEvent] when it

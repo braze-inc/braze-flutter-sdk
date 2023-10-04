@@ -4,6 +4,7 @@ import 'dart:io' show Platform;
 import 'package:braze_plugin/braze_plugin.dart';
 import 'package:braze_plugin_example/jwt_generator.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 void main() => runApp(MyApp());
 
@@ -22,6 +23,26 @@ class BrazeFunctions extends StatefulWidget {
   BrazeFunctionsState createState() => new BrazeFunctionsState();
 }
 
+void deepLinkAlert(String link, BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text("Deep Link Alert"),
+        content: Text("Opened with deep link: $link"),
+        actions: <Widget>[
+          TextButton(
+            child: Text("Close"),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
 class BrazeFunctionsState extends State<BrazeFunctions> {
   String _userId = "";
   String _enabled = "";
@@ -29,16 +50,16 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
   String _iamStreamSubscription = "DISABLED";
   String _ffStreamSubscription = "DISABLED";
   String _featureFlagPropertyType = "BOOLEAN";
-  BrazePlugin _braze;
+  late BrazePlugin _braze;
   final userIdController = TextEditingController();
   final customEventNameController = TextEditingController();
   final customEventPropertyKeyController = TextEditingController();
   final customEventPropertyValueController = TextEditingController();
   final featureFlagController = TextEditingController();
   final featureFlagPropertyController = TextEditingController();
-  StreamSubscription inAppMessageStreamSubscription;
-  StreamSubscription contentCardsStreamSubscription;
-  StreamSubscription featureFlagsStreamSubscription;
+  late StreamSubscription inAppMessageStreamSubscription;
+  late StreamSubscription contentCardsStreamSubscription;
+  late StreamSubscription featureFlagsStreamSubscription;
 
   // Change to `true` to automatically log clicks, button clicks,
   // and impressions for in-app messages and content cards.
@@ -51,9 +72,15 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
         (BrazeSdkAuthenticationError error) async {
       print('Received an SDK Auth error: $error');
 
-      String newSignature = await JwtGenerator.create(_userId);
+      final String? newSignature = await JwtGenerator.create(_userId);
       print('Setting new signature: $newSignature, userId: $_userId');
       _braze.setSdkAuthenticationSignature(newSignature);
+    });
+
+    // Deep link channel
+    MethodChannel('deepLinkChannel')
+        .setMethodCallHandler((MethodCall call) async {
+      deepLinkAlert(call.arguments, context);
     });
 
     super.initState();
@@ -90,7 +117,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
       // This is a hack to determine the enabled state of the Braze API
       // Not recommended for use in production
       _braze.getInstallTrackingId().then((result) {
-        if (result == null || result == "") {
+        if (result == "") {
           this.setState(() {
             _enabled = "DISABLED";
           });
@@ -197,6 +224,38 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
             TextButton(
               child: const Text('SET PRESET ATTRIBUTES'),
               onPressed: () {
+                // Nested properties
+                Map<String, dynamic> nestedProps = {
+                  'map_key': {'foo': 'bar'},
+                  'array_key': ['string', 123, false],
+                  'nested_map': {
+                    'inner_array': ['hello', 'world', 123.45, true],
+                    'inner_map': {'double': 101.1}
+                  },
+                  'nested_array': [
+                    [
+                      'obj',
+                      {'key': 'value'},
+                      ['element', 'element2', 50],
+                      12
+                    ]
+                  ]
+                };
+
+                List<Map<String, dynamic>> arrayOfNests = [
+                  {'key1': 'value1'},
+                  {'key2': 'value2'},
+                  {'key3': 'value3'}
+                ];
+
+                List<String> listOfStrings = ["one", "two", "three"];
+
+                _braze.setNestedCustomUserAttribute("nested", nestedProps);
+                _braze.setCustomUserAttributeArrayOfObjects(
+                    "arrayOfNests", arrayOfNests);
+                _braze.setCustomUserAttributeArrayOfStrings(
+                    "arrayOfStrings", listOfStrings);
+
                 _braze.addToCustomAttributeArray("arrayAttribute", "a");
                 _braze.addToCustomAttributeArray("arrayAttribute", "c");
                 _braze.setStringCustomUserAttribute(
@@ -226,8 +285,23 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                 _braze.setHomeCity("homeCity");
                 _braze.setPhoneNumber("123456789");
                 _braze.addAlias("alias-name-1", "alias-label-1");
+
                 ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
                   content: new Text("Logged attributes"),
+                ));
+              },
+            ),
+            TextButton(
+              child: const Text('SET NESTED CUSTOM ATTRIBUTE W/ MERGE'),
+              onPressed: () {
+                // Nested properties
+                Map<String, dynamic> nestedProps = {
+                  'this_is_merged': 'yes it is'
+                };
+                _braze.setNestedCustomUserAttribute(
+                    "nested", nestedProps, true);
+                ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                  content: new Text("Did NCA Merge"),
                 ));
               },
             ),
@@ -299,9 +373,9 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                     child: Text('STRING'),
                   ),
                 ],
-                onChanged: (String value) {
+                onChanged: (String? value) {
                   setState(() {
-                    _featureFlagPropertyType = value;
+                    _featureFlagPropertyType = value!;
                   });
                 }),
             TextButton(
@@ -329,6 +403,14 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                     content: new Text('$ffProperty'),
                   ));
                 });
+              },
+            ),
+            TextButton(
+              child: const Text('LOG FEATURE FLAG IMPRESSION'),
+              onPressed: () {
+                String ffId = featureFlagController.text;
+                print("Logging impression on feature flag $ffId.");
+                _braze.logFeatureFlagImpression(ffId);
               },
             ),
             TextButton(
@@ -374,7 +456,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                 });
                 inAppMessageStreamSubscription = _braze
                     .subscribeToInAppMessages((BrazeInAppMessage inAppMessage) {
-                  _inAppMessageReceived(inAppMessage, prefix: "STREAM");
+                  _inAppMessageReceived(inAppMessage);
                   return;
                 });
                 ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
@@ -404,13 +486,28 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                 });
                 contentCardsStreamSubscription = _braze.subscribeToContentCards(
                     (List<BrazeContentCard> contentCards) {
-                  _contentCardsReceived(contentCards, prefix: "STREAM");
+                  _contentCardsReceived(contentCards);
                   return;
                 });
                 ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
                   content: new Text("Listening to content cards stream. "
                       "Content Card data will appear in snackbars."),
                 ));
+              },
+            ),
+            TextButton(
+              child: const Text('GET CACHED CONTENT CARDS'),
+              onPressed: () {
+                _braze.getCachedContentCards().then((contentCards) {
+                  print("${contentCards.length} cached Content Cards found.");
+                  contentCards.forEach((contentCard) {
+                    String contentCardString = contentCard.toString();
+                    print(contentCardString);
+                    ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                      content: new Text(contentCardString),
+                    ));
+                  });
+                });
               },
             ),
             SectionHeader("Other"),
@@ -435,15 +532,9 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
               child: const Text('GET INSTALL TRACKING ID'),
               onPressed: () {
                 _braze.getInstallTrackingId().then((result) {
-                  if (result == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-                      content: new Text("Install Tracking ID was null"),
-                    ));
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-                      content: new Text("Install Tracking ID: " + result),
-                    ));
-                  }
+                  ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                    content: new Text("Install Tracking ID: " + result),
+                  ));
                 });
               },
             ),
@@ -538,17 +629,16 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
     );
   }
 
-  void _inAppMessageReceived(BrazeInAppMessage inAppMessage, {String prefix}) {
-    print("[$prefix] Received message: ${inAppMessage.toString()}");
+  void _inAppMessageReceived(BrazeInAppMessage inAppMessage) {
+    print("Received message: ${inAppMessage.toString()}");
     ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-      content:
-          new Text("[$prefix] Received message: ${inAppMessage.toString()}"),
+      content: new Text("Received message: ${inAppMessage.toString()}"),
     ));
 
     // Programmatically log impression, body click, and any button clicks
     if (automaticallyInteract) {
       print(
-          "[$prefix] Logging impression, body click, and button clicks programmatically.");
+          "Logging impression, body click, and button clicks programmatically.");
       _braze.logInAppMessageImpression(inAppMessage);
       _braze.logInAppMessageClicked(inAppMessage);
       inAppMessage.buttons.forEach((button) {
@@ -557,8 +647,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
     }
   }
 
-  void _contentCardsReceived(List<BrazeContentCard> contentCards,
-      {String prefix}) {
+  void _contentCardsReceived(List<BrazeContentCard> contentCards) {
     if (contentCards.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
         content: new Text("Empty Content Cards update received."),
@@ -566,14 +655,14 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
       return;
     }
     contentCards.forEach((contentCard) {
-      print("[$prefix] Received card: " + contentCard.toString());
+      print("Received content card: " + contentCard.toString());
       ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-        content: new Text("[$prefix] Received card: ${contentCard.toString()}"),
+        content: new Text("Received content card: ${contentCard.toString()}"),
       ));
 
       // Programmatically log impression, card click, and dismissal
       if (automaticallyInteract) {
-        print("[$prefix] Logging impression and body click programmatically.");
+        print("Logging impression and body click programmatically.");
         _braze.logContentCardImpression(contentCard);
         _braze.logContentCardClicked(contentCard);
         // _braze.logContentCardDismissed(contentCard);
@@ -616,7 +705,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
   }
 
   void _pressedLogPresetEventsAndPurchasesButton() {
-    var props = {"k1": "v1", "k2": 2, "k3": 3.5, "k4": false};
+    var props = <String, dynamic>{"k1": "v1", "k2": 2, "k3": 3.5, "k4": false};
     _braze.logCustomEvent("eventName");
     _braze.logCustomEvent("eventNameProps", properties: props);
     _braze.logPurchase("productId", "USD", 3.50, 2);
@@ -681,7 +770,7 @@ class SectionHeader extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: 8.0),
         child: Text(
           title,
-          style: Theme.of(context).textTheme.headline6.copyWith(
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
               decoration: TextDecoration.underline),
         ),

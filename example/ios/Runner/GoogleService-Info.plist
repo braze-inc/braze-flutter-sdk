@@ -13,21 +13,21 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>braze.com.brazePluginExample</string>
+	<string>com.braze.flutterPluginExample</string>
 	<key>PROJECT_ID</key>
 	<string>flutter-sample-9d2f4</string>
 	<key>STORAGE_BUCKET</key>
 	<string>flutter-sample-9d2f4.appspot.com</string>
 	<key>IS_ADS_ENABLED</key>
-	<false></false>
+	<false/>
 	<key>IS_ANALYTICS_ENABLED</key>
-	<false></false>
+	<false/>
 	<key>IS_APPINVITE_ENABLED</key>
-	<true></true>
+	<true/>
 	<key>IS_GCM_ENABLED</key>
-	<true></true>
+	<true/>
 	<key>IS_SIGNIN_ENABLED</key>
-	<true></true>
+	<true/>
 	<key>GOOGLE_APP_ID</key>
 	<string>1:141145922305:ios:bf9a8e3da037fe35</string>
 	<key>DATABASE_URL</key>

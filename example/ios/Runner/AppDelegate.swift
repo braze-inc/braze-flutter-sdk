@@ -7,7 +7,7 @@ import UIKit
 import braze_plugin
 
 let brazeApiKey = "9292484d-3b10-4e67-971d-ff0c0d518e21"
-let brazeEndpoint = "sondheim.appboy.com"
+let brazeEndpoint = "sondheim.braze.com"
 
 @UIApplicationMain
 @objc class AppDelegate: FlutterAppDelegate {
@@ -29,6 +29,17 @@ let brazeEndpoint = "sondheim.appboy.com"
     configuration.location.automaticLocationCollection = true
     configuration.location.brazeLocationProvider = BrazeLocationProvider()
     configuration.logger.level = .debug
+
+    // Automatic push notification setup
+    configuration.push.automation = .init(
+      automaticSetup: true,
+      requestAuthorizationAtLaunch: true,
+      setNotificationCategories: true,
+      registerDeviceToken: true,
+      handleBackgroundNotification: true,
+      handleNotificationResponse: true,
+      willPresentNotification: true
+    )
 
     let braze = BrazePlugin.initBraze(configuration)
 
@@ -76,17 +87,43 @@ class CustomInAppMessagePresenter: BrazeInAppMessageUI {
 // MARK: GIF support
 
 extension GIFViewProvider {
-
   public static let sdWebImage = Self(
     view: { SDAnimatedImageView(image: image(for: $0)) },
     updateView: { ($0 as? SDAnimatedImageView)?.image = image(for: $1) }
   )
-
   private static func image(for url: URL?) -> UIImage? {
     guard let url = url else { return nil }
     return url.pathExtension == "gif"
       ? SDAnimatedImage(contentsOfFile: url.path)
       : UIImage(contentsOfFile: url.path)
   }
-
+}
+  
+// MARK: Linking
+  
+extension AppDelegate {
+  
+  private func forwardURL(_ url: URL) {
+    guard let controller: FlutterViewController = window?.rootViewController as? FlutterViewController else { return }
+    let deepLinkChannel = FlutterMethodChannel(name: "deepLinkChannel", binaryMessenger: controller.binaryMessenger)
+    deepLinkChannel.invokeMethod("receiveDeepLink", arguments: url.absoluteString)
+  }
+  
+  // Custom scheme
+  // See https://developer.apple.com/documentation/xcode/defining-a-custom-url-scheme-for-your-app for more information.
+  override func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
+    forwardURL(url)
+    return true
+  }
+  
+  // Universal link
+  // See https://developer.apple.com/documentation/xcode/allowing-apps-and-websites-to-link-to-your-content for more information.
+  override func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
+    guard userActivity.activityType == NSUserActivityTypeBrowsingWeb,
+          let url = userActivity.webpageURL else {
+      return false
+    }
+    forwardURL(url)
+    return true
+  }
 }
