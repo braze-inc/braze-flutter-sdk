@@ -28,6 +28,7 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
+import org.json.JSONArray
 import org.json.JSONObject
 import java.math.BigDecimal
 import java.util.*
@@ -198,6 +199,12 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                         this.context.startActivity(intent)
                     }
                 }
+                "getCachedContentCards" -> {
+                    val contentCards = Braze.getInstance(context).getCachedContentCards()
+                    if (contentCards != null) {
+                        result.success(contentCards.map { contentCard -> contentCard.forJsonPut().toString() })
+                    }
+                }
                 "logContentCardClicked" -> {
                     val contentCardString = call.argument<String>("contentCardString")
                     if (contentCardString != null) {
@@ -283,6 +290,34 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                         return;
                     }
                     Braze.getInstance(context).runOnUser { user -> user.removeFromCustomAttributeArray(key, value) }
+                }
+                "setNestedCustomUserAttribute" -> {
+                    val key = call.argument<String>("key")
+                    val value = JSONObject(call.argument<Map<String, *>>("value"))
+                    val merge = call.argument<Boolean>("merge") ?: false
+                    if (key == null || value == null) {
+                        brazelog(W) { "Unexpected null parameter(s) in `setNestedCustomUserAttribute`." }
+                        return;
+                    }
+                    Braze.getInstance(context).runOnUser { user -> user.setCustomUserAttribute(key, value, merge) }
+                }
+                "setCustomUserAttributeArrayOfStrings" -> {
+                    val key = call.argument<String>("key")
+                    val value = call.argument<List<String?>>("value")?.toTypedArray()
+                    if (key == null || value == null) {
+                        brazelog(W) { "Unexpected null parameter(s) in `setCustomUserAttributeArrayOfStrings`." }
+                        return;
+                    }
+                    Braze.getInstance(context).runOnUser { user -> user.setCustomAttributeArray(key, value) }
+                }
+                "setCustomUserAttributeArrayOfObjects" -> {
+                    val key = call.argument<String>("key")
+                    val value = JSONArray(call.argument<List<Map<String, *>>>("value")?.map { JSONObject(it) })
+                    if (key == null || value == null) {
+                        brazelog(W) { "Unexpected null parameter(s) in `setCustomUserAttributeArrayOfObjects`." }
+                        return;
+                    }
+                    Braze.getInstance(context).runOnUser { user -> user.setCustomAttribute(key, value) }
                 }
                 "setStringCustomUserAttribute" -> {
                     val key = call.argument<String>("key")
@@ -465,7 +500,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val attributionData = AttributionData(network, campaign, adGroup, creative)
                     Braze.getInstance(context).runOnUser { user -> user.setAttributionData(attributionData) }
                 }
-                "registerAndroidPushToken" -> {
+                "registerPushToken" -> {
                     val pushToken = call.argument<String>("pushToken")
                     Braze.getInstance(context).registeredPushToken = pushToken
                 }
@@ -522,6 +557,14 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 }
                 "refreshFeatureFlags" -> {
                     Braze.getInstance(context).refreshFeatureFlags()
+                }
+                "logFeatureFlagImpression" -> {
+                    val ffId = call.argument<String>("id")
+                    if (ffId == null) {
+                        brazelog(W) { "Unexpected null id in `logFeatureFlagImpression`." }
+                        return
+                    }
+                    Braze.getInstance(context).logFeatureFlagImpression(ffId)
                 }
                 else -> result.notImplemented()
             }

@@ -37,7 +37,7 @@ android {
     defaultConfig {
         applicationId "braze.com.brazepluginexample"
         minSdkVersion 19
-        compileSdkVersion 31
+        compileSdkVersion 34
         targetSdkVersion 31
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
@@ -45,7 +45,29 @@ android {
         multiDexEnabled true
     }
 
+    signingConfigs {
+        appLinks {
+            // To enable App Links with auto-verification:
+            // 1. Generate a keystore for the example app.
+            // 2. Input the corresponding information in the fields below.
+            // 3. Host an `assetlinks.json` file containing the keystore's fingerprint online.
+            //    More on that here: https://developer.android.com/training/app-links/verify-android-applinks#web-assoc
+            // 4. Build the example app using the `appLinks` build variant.
+
+            // Never post secrets or files containing them online or in a GitHub
+            // repository accessible to people outside of your team.
+            storeFile file('YOUR KEYSTORE FILE')
+            storePassword 'YOUR STORE PASSWORD'
+            keyAlias 'YOUR KEY ALIAS'
+            keyPassword 'YOUR KEY PASSWORD'
+        }
+    }
+
     buildTypes {
+        appLinks {
+            signingConfig signingConfigs.appLinks
+        }
+
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
@@ -78,9 +100,9 @@ dependencies {
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test:rules:1.2.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
-    implementation 'androidx.multidex:multidex:2.0.0'
+    implementation 'androidx.multidex:multidex:2.0.1'
 
-    implementation "com.braze:android-sdk-ui:26.1.0"
+    implementation "com.braze:android-sdk-ui:27.0.1"
     implementation "com.google.firebase:firebase-messaging:+"
 }
 apply plugin: 'com.google.gms.google-services'

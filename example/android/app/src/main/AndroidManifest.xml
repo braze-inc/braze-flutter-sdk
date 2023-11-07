@@ -1,29 +1,56 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="braze.com.brazepluginexample">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
   <uses-permission android:name="android.permission.INTERNET" />
   <application
-    android:allowBackup="false"
-    android:icon="@mipmap/ic_launcher"
-    android:label="braze_plugin_example">
+      android:allowBackup="false"
+      android:icon="@mipmap/ic_launcher"
+      android:label="braze_plugin_example">
     <activity
-      android:name=".MainActivity"
-      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection|fontScale|screenLayout|density"
-      android:hardwareAccelerated="true"
-      android:launchMode="singleTop"
-      android:theme="@style/LaunchTheme"
-      android:windowSoftInputMode="adjustResize"
-      android:exported="true">
+        android:name=".MainActivity"
+        android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection|fontScale|screenLayout|density"
+        android:hardwareAccelerated="true"
+        android:launchMode="singleTop"
+        android:theme="@style/LaunchTheme"
+        android:windowSoftInputMode="adjustResize"
+        android:exported="true">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
+
       <meta-data
-        android:name="flutterEmbedding"
-        android:value="2" />
+          android:name="flutterEmbedding"
+          android:value="2" />
+
+      <!--
+      Because the example app uses native code for handling deep links, the below tag is commented out.
+      Apps which are not using native code or a third-party Flutter package for handling deep links should include the tag below.
+      <meta-data
+          android:name="flutter_deeplinking_enabled"
+          android:value="true" />
+      -->
+
+      <intent-filter android:autoVerify="true">
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+
+        <data android:scheme="http" android:host="braze-udl-examples.surge.sh" />
+        <data android:scheme="https" />
+      </intent-filter>
+
+      <intent-filter android:autoVerify="true">
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+
+        <data android:scheme="brazepluginexample"/>
+      </intent-filter>
+
     </activity>
     <service
-      android:name="com.braze.push.BrazeFirebaseMessagingService"
-      android:exported="false">
+        android:name="com.braze.push.BrazeFirebaseMessagingService"
+        android:exported="false">
       <intent-filter>
         <action android:name="com.google.firebase.MESSAGING_EVENT" />
       </intent-filter>

@@ -1,4 +1,5 @@
 import 'dart:convert' as json;
+import 'dart:io' show Platform;
 
 import 'package:braze_plugin/braze_plugin.dart';
 import 'package:flutter/foundation.dart';
@@ -14,8 +15,11 @@ void main() {
   final String mockFeatureFlagJson =
       "{\"id\":\"test\",\"enabled\":true,\"properties\":{\"stringkey\":{\"type\":\"string\",\"value\":\"stringValue\"},\"booleankey\":{\"type\":\"boolean\",\"value\": true },\"number1key\":{\"type\":\"number\",\"value\": 4 },\"number2key\":{\"type\":\"number\",\"value\": 5.1}}}";
 
+  final String mockContentCardJson =
+      "{\"ca\":1234567890,\"cl\":false,\"db\":true,\"dm\":\"\",\"ds\":\"Description of Card\",\"e\":{\"timestamp\":\"1234567890\"},\"ea\":1234567890,\"id\":\"someID=\",\"p\":false,\"r\":false,\"t\":false,\"tp\":\"short_news\",\"tt\":\"Title of Card\",\"uw\":true,\"v\":false}";
+
   setUpAll(() async {
-    TestDefaultBinaryMessengerBinding.instance!.defaultBinaryMessenger
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(MethodChannel('braze_plugin'),
             (MethodCall methodCall) async {
       log.add(methodCall);
@@ -27,6 +31,8 @@ void main() {
           return List<String>.generate(1, (index) => mockFeatureFlagJson);
         case 'getFeatureFlagByID':
           return mockFeatureFlagJson;
+        case 'getCachedContentCards':
+          return List<String>.generate(1, (index) => mockContentCardJson);
         default:
           return null;
       }
@@ -141,6 +147,19 @@ void main() {
         },
       ),
     ]);
+  });
+
+  test('should call getCachedContentCards', () async {
+    BrazePlugin _braze = new BrazePlugin();
+    final result = await _braze.getCachedContentCards();
+    expect(log, <Matcher>[
+      isMethodCall(
+        'getCachedContentCards',
+        arguments: null,
+      )
+    ]);
+    expect(result.length, 1);
+    expect(result[0].contentCardJsonString, mockContentCardJson);
   });
 
   test('should call logInAppMessageClicked', () {
@@ -440,6 +459,69 @@ void main() {
     ]);
   });
 
+  test('should call setNestedCustomUserAttribute', () {
+    BrazePlugin _braze = new BrazePlugin();
+    String _key = 'someKey';
+    Map<String, dynamic> _value = {'k': 'v'};
+    _braze.setNestedCustomUserAttribute(_key, _value);
+    expect(log, <Matcher>[
+      isMethodCall(
+        'setNestedCustomUserAttribute',
+        arguments: <String, dynamic>{
+          'key': _key,
+          'value': _value,
+          'merge': false
+        },
+      ),
+    ]);
+  });
+
+  test('should call setNestedCustomUserAttribute with `merge: true`', () {
+    BrazePlugin _braze = new BrazePlugin();
+    String _key = 'someKey';
+    Map<String, dynamic> _value = {'k': 'v'};
+    _braze.setNestedCustomUserAttribute(_key, _value, true);
+    expect(log, <Matcher>[
+      isMethodCall(
+        'setNestedCustomUserAttribute',
+        arguments: <String, dynamic>{
+          'key': _key,
+          'value': _value,
+          'merge': true
+        },
+      ),
+    ]);
+  });
+
+  test('should call setCustomUserAttributeArrayOfStrings', () {
+    BrazePlugin _braze = new BrazePlugin();
+    String _key = 'someKey';
+    List<String> _value = ['a', 'b'];
+    _braze.setCustomUserAttributeArrayOfStrings(_key, _value);
+    expect(log, <Matcher>[
+      isMethodCall(
+        'setCustomUserAttributeArrayOfStrings',
+        arguments: <String, dynamic>{'key': _key, 'value': _value},
+      ),
+    ]);
+  });
+
+  test('should call setCustomUserAttributeArrayOfObjects', () {
+    BrazePlugin _braze = new BrazePlugin();
+    String _key = 'someKey';
+    List<Map<String, dynamic>> _value = [
+      {'a': 'b'},
+      {'c': 'd'}
+    ];
+    _braze.setCustomUserAttributeArrayOfObjects(_key, _value);
+    expect(log, <Matcher>[
+      isMethodCall(
+        'setCustomUserAttributeArrayOfObjects',
+        arguments: <String, dynamic>{'key': _key, 'value': _value},
+      ),
+    ]);
+  });
+
   test('should call setDoubleCustomUserAttribute', () {
     BrazePlugin _braze = new BrazePlugin();
     String _key = 'someKey';
@@ -671,10 +753,27 @@ void main() {
   test('should call registerAndroidPushToken', () {
     BrazePlugin _braze = new BrazePlugin();
     String _pushToken = 'someToken';
+    // ignore: deprecated_member_use_from_same_package
     _braze.registerAndroidPushToken(_pushToken);
+    if (Platform.isAndroid) {
+      expect(log, <Matcher>[
+        isMethodCall(
+          'registerPushToken',
+          arguments: <String, dynamic>{'pushToken': _pushToken},
+        ),
+      ]);
+    } else {
+      expect(log, []);
+    }
+  });
+
+  test('should call registerPushToken', () {
+    BrazePlugin _braze = new BrazePlugin();
+    String _pushToken = 'someToken';
+    _braze.registerPushToken(_pushToken);
     expect(log, <Matcher>[
       isMethodCall(
-        'registerAndroidPushToken',
+        'registerPushToken',
         arguments: <String, dynamic>{'pushToken': _pushToken},
       ),
     ]);
