@@ -339,13 +339,25 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
               child: const Text('GET SINGLE FEATURE FLAG'),
               onPressed: () {
                 String ffId = featureFlagController.text;
-                print("Showing single feature flag");
+                if (ffId == "") {
+                  print("No Feature Flag ID entered");
+                  return;
+                }
+                
                 _braze.getFeatureFlagByID(ffId).then((ff) {
-                  String ffString = _featureFlagToString(ff);
-                  print(ffString);
-                  ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-                    content: new Text(ffString),
-                  ));
+                  if (ff == null) {
+                    print("No Feature Flag Found with ID: " + ffId);
+                    ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                      content: new Text("No Feature Flag Found with ID: " + ffId),
+                    ));
+                  } else {
+                    print("Showing single feature flag");
+                    String ffString = _featureFlagToString(ff);
+                    print(ffString);
+                    ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                      content: new Text(ffString),
+                    ));                    
+                  }
                 });
               },
             ),
@@ -386,15 +398,15 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                   var ffProperty;
                   switch (_featureFlagPropertyType) {
                     case 'BOOLEAN':
-                      ffProperty = ff.getBooleanProperty(
+                      ffProperty = ff?.getBooleanProperty(
                           featureFlagPropertyController.text);
                       break;
                     case 'NUMBER':
-                      ffProperty = ff.getNumberProperty(
+                      ffProperty = ff?.getNumberProperty(
                           featureFlagPropertyController.text);
                       break;
                     case 'STRING':
-                      ffProperty = ff.getStringProperty(
+                      ffProperty = ff?.getStringProperty(
                           featureFlagPropertyController.text);
                       break;
                   }

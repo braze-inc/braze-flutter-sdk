@@ -18,6 +18,8 @@ void main() {
   final String mockContentCardJson =
       "{\"ca\":1234567890,\"cl\":false,\"db\":true,\"dm\":\"\",\"ds\":\"Description of Card\",\"e\":{\"timestamp\":\"1234567890\"},\"ea\":1234567890,\"id\":\"someID=\",\"p\":false,\"r\":false,\"t\":false,\"tp\":\"short_news\",\"tt\":\"Title of Card\",\"uw\":true,\"v\":false}";
 
+  bool nullFeatureFlag = false;
+
   setUpAll(() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(MethodChannel('braze_plugin'),
@@ -30,7 +32,7 @@ void main() {
         case 'getAllFeatureFlags':
           return List<String>.generate(1, (index) => mockFeatureFlagJson);
         case 'getFeatureFlagByID':
-          return mockFeatureFlagJson;
+          return nullFeatureFlag == true ? null : mockFeatureFlagJson;
         case 'getCachedContentCards':
           return List<String>.generate(1, (index) => mockContentCardJson);
         default:
@@ -991,25 +993,26 @@ void main() {
   test('featureFlag convenience functions work', () async {
     BrazePlugin _braze = new BrazePlugin();
     final result = await _braze.getFeatureFlagByID("test");
-    expect(result.id, "test");
-    expect(result.enabled, true);
-    expect(result.properties.length, 4);
-    expect(result.getStringProperty("stringkey"), "stringValue");
-    expect(result.getBooleanProperty("booleankey"), true);
-    expect(result.getNumberProperty("number1key"), 4);
-    expect(result.getNumberProperty("number2key"), 5.1);
+    expect(result?.id, "test");
+    expect(result?.enabled, true);
+    expect(result?.properties.length, 4);
+    expect(result?.getStringProperty("stringkey"), "stringValue");
+    expect(result?.getBooleanProperty("booleankey"), true);
+    expect(result?.getNumberProperty("number1key"), 4);
+    expect(result?.getNumberProperty("number2key"), 5.1);
   });
 
   test('featureFlag convenience functions return null for non-existent keys',
       () async {
     BrazePlugin _braze = new BrazePlugin();
     final result = await _braze.getFeatureFlagByID("test");
-    expect(result.getStringProperty("keyThatDoesntExist"), null);
-    expect(result.getBooleanProperty("keyThatDoesntExist"), null);
-    expect(result.getNumberProperty("keyThatDoesntExist"), null);
+    expect(result?.getStringProperty("keyThatDoesntExist"), null);
+    expect(result?.getBooleanProperty("keyThatDoesntExist"), null);
+    expect(result?.getNumberProperty("keyThatDoesntExist"), null);
   });
 
   test('should call getFeatureFlagByID', () async {
+    nullFeatureFlag = false;
     BrazePlugin _braze = new BrazePlugin();
     final result = await _braze.getFeatureFlagByID("test");
     expect(log, <Matcher>[
@@ -1018,16 +1021,39 @@ void main() {
         arguments: <String, dynamic>{'id': "test"},
       ),
     ]);
-    expect(result.id, "test");
-    expect(result.enabled, true);
-    expect(result.properties.length, 4);
-    expect(result.getStringProperty("stringkey"), "stringValue");
-    expect(result.getStringProperty("stringkeyThatDoesntExist"), null);
-    expect(result.getBooleanProperty("booleankey"), true);
-    expect(result.getBooleanProperty("booleanKeyThatDoesntExist"), null);
-    expect(result.getNumberProperty("number1key"), 4);
-    expect(result.getNumberProperty("number2key"), 5.1);
-    expect(result.getNumberProperty("numberKeyThatDoesntExist"), null);
+    expect(result?.id, "test");
+    expect(result?.enabled, true);
+    expect(result?.properties.length, 4);
+    expect(result?.getStringProperty("stringkey"), "stringValue");
+    expect(result?.getStringProperty("stringkeyThatDoesntExist"), null);
+    expect(result?.getBooleanProperty("booleankey"), true);
+    expect(result?.getBooleanProperty("booleanKeyThatDoesntExist"), null);
+    expect(result?.getNumberProperty("number1key"), 4);
+    expect(result?.getNumberProperty("number2key"), 5.1);
+    expect(result?.getNumberProperty("numberKeyThatDoesntExist"), null);
+  });
+
+  test('getFeatureFlagByID returns null for non-existent Feature Flag', () async {
+    nullFeatureFlag = true;
+    BrazePlugin _braze = new BrazePlugin();
+    final result = await _braze.getFeatureFlagByID("idThatDoesntExist");
+    expect(log, <Matcher>[
+      isMethodCall(
+        'getFeatureFlagByID',
+        arguments: <String, dynamic>{'id': "idThatDoesntExist"},
+      ),
+    ]);
+    expect(result, null);
+    expect(result?.id, null);
+    expect(result?.enabled, null);
+    expect(result?.properties.length, null);
+    expect(result?.getStringProperty("stringkey"), null);
+    expect(result?.getStringProperty("stringkeyThatDoesntExist"), null);
+    expect(result?.getBooleanProperty("booleankey"), null);
+    expect(result?.getBooleanProperty("booleanKeyThatDoesntExist"), null);
+    expect(result?.getNumberProperty("number1key"), null);
+    expect(result?.getNumberProperty("number2key"), null);
+    expect(result?.getNumberProperty("numberKeyThatDoesntExist"), null);
   });
 
   test('instantiate a BrazeInAppMessage object from JSON', () {

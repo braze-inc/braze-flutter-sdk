@@ -531,11 +531,12 @@ class BrazePlugin {
   }
 
   /// Get a single Feature Flag.
-  Future<BrazeFeatureFlag> getFeatureFlagByID(String id) {
+  /// Returns null if there is no feature flag with that ID.
+  Future<BrazeFeatureFlag?> getFeatureFlagByID(String id) {
     final Map<String, dynamic> params = <String, dynamic>{"id": id};
     return _channel
         .invokeMethod('getFeatureFlagByID', params)
-        .then<BrazeFeatureFlag>((dynamic result) => BrazeFeatureFlag(result));
+        .then<BrazeFeatureFlag?>((dynamic result) => result == null ? null : BrazeFeatureFlag(result));
   }
 
   /// Get all Feature Flags from current cache.

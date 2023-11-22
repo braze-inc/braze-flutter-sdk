@@ -1,3 +1,18 @@
+## 8.0.0
+
+##### Breaking
+- Updates the native Android bridge [from Braze Android SDK 27.0.1 to 29.0.1](https://github.com/braze-inc/braze-android-sdk/compare/v27.0.0...v29.0.1#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+- Updates the native iOS bridge [from Braze Swift SDK 6.6.1 to 7.2.0](https://github.com/braze-inc/braze-swift-sdk/compare/6.6.1...7.2.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+- Modifies the behavior for Feature Flags methods.
+  - `BrazePlugin.getFeatureFlagByID(String id)` will now return `null` if the feature flag does not exist.
+  - `BrazePlugin.subscribeToFeatureFlags(void Function(List<BrazeFeatureFlag>) onEvent))` will only trigger in the following situations:
+    - When a refresh request completes with success or failure.
+    - Upon initial subscription if there was previously cached data from the current session.
+- The minimum supported Android SDK version is 21.
+
+##### Fixed
+- Moved the `compileSDKVersion` for Android down to 33 to match Flutter's versioning.
+
 ## 7.0.0
 
 ##### Breaking

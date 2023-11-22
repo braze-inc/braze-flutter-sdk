@@ -531,9 +531,13 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeDelegate {
         print("Unexpected null id in `getFeatureFlagByID`.")
         return
       }
-      if let featureFlagJson = BrazePlugin.braze?.featureFlags.featureFlag(id: flagId).json() {
-        let featureFlagString = String(data: featureFlagJson, encoding: .utf8)
-        result(featureFlagString)
+      
+      if let featureFlag = BrazePlugin.braze?.featureFlags.featureFlag(id: flagId),
+        let featureFlagJson = featureFlag.json() {
+          let featureFlagString = String(data: featureFlagJson, encoding: .utf8)
+          result(featureFlagString)
+      } else {
+        result(nil)
       }
     case "getAllFeatureFlags":
       let featureFlags = BrazePlugin.braze?.featureFlags.featureFlags.compactMap { flag in

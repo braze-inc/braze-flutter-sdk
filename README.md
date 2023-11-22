@@ -19,5 +19,5 @@ Please reach out to support@braze.com regarding any questions or issues.
 The `/example` folder contains a sample app illustrating how to integrate and use this package's APIs.
 
 ### Requirements
-- Dart SDK 2.0.0+
+- Dart SDK 2.12.0+
 - Flutter SDK 1.10.0+

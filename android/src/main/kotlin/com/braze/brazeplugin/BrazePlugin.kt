@@ -544,8 +544,13 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                         brazelog(W) { "Unexpected null id in `getFeatureFlagByID`." }
                         return
                     }
+
                     val featureFlag = Braze.getInstance(context).getFeatureFlag(ffId)
-                    result.success(featureFlag.forJsonPut().toString())
+                    if (featureFlag == null) {
+                        result.success(null)
+                    } else {
+                        result.success(featureFlag.forJsonPut().toString())
+                    }
                 }
                 "getAllFeatureFlags" -> {
                     val featureFlags = Braze.getInstance(context).getAllFeatureFlags()
