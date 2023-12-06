@@ -1,3 +1,8 @@
+## 8.1.0
+
+##### Added
+- Updates the native iOS bridge [from Braze Swift SDK 7.2.0 to 7.3.0](https://github.com/braze-inc/braze-swift-sdk/compare/7.2.0...7.3.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+
 ## 8.0.0
 
 ##### Breaking
