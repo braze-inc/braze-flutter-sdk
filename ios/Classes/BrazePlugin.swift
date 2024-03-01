@@ -5,7 +5,7 @@ import Flutter
 /// Stores all channels, including ones across different BrazePlugin instances
 var channels = [FlutterMethodChannel]()
 
-public class BrazePlugin: NSObject, FlutterPlugin, BrazeDelegate {
+public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
 
   public static var braze: Braze? = nil
 
@@ -48,8 +48,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeDelegate {
       BrazePlugin.braze?.set(sdkAuthenticationSignature: sdkAuthSignature)
 
     case "setSdkAuthenticationDelegate":
-      // This delegate is only implemented to handle SDK Auth in this plugin
-      BrazePlugin.braze?.delegate = self
+      BrazePlugin.braze?.sdkAuthDelegate = self
 
     case "getInstallTrackingId":
       if let deviceId = BrazePlugin.braze?.deviceId {

@@ -29,6 +29,7 @@ let brazeEndpoint = "sondheim.braze.com"
     configuration.location.automaticLocationCollection = true
     configuration.location.brazeLocationProvider = BrazeLocationProvider()
     configuration.logger.level = .debug
+    configuration.push.appGroup = "group.com.braze.flutterPluginExample.PushStories"
 
     // Automatic push notification setup
     configuration.push.automation = .init(

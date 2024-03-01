@@ -1,0 +1,12 @@
+{
+  "applinks": {
+      "apps": [],
+      "details": [
+      {
+        "appID": "5GLZKGNWQ3.com.braze.flutterPluginExample",
+        "paths": ["*"]
+      }
+    ]
+  }
+}
+

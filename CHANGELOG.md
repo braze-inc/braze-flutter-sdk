@@ -1,3 +1,13 @@
+## 8.2.0
+
+##### Added
+- Updates the native iOS bridge [from Braze Swift SDK 7.3.0 to 7.7.0](https://github.com/braze-inc/braze-swift-sdk/compare/7.3.0...7.7.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+- Adds example integrations for [Braze Rich Push Notifications](https://braze-inc.github.io/braze-swift-sdk/tutorials/braze/b2-rich-push-notifications) and [Braze Push Stories](https://braze-inc.github.io/braze-swift-sdk/tutorials/braze/b3-push-stories) to the iOS sample app.
+
+##### Fixed
+- Removes the automatic assignment of [`BrazeDelegate`](https://braze-inc.github.io/braze-swift-sdk/documentation/brazekit/braze/delegate) in the iOS native layer, allowing for custom implementations to be assigned to the `braze` instance.
+  - The plugin now uses the [`sdkAuthDelegate` property](https://braze-inc.github.io/braze-swift-sdk/documentation/brazekit/brazesdkauthdelegate) for the SDK Authentication feature instead.
+
 ## 8.1.0
 
 ##### Added
