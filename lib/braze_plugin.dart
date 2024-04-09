@@ -15,6 +15,7 @@ class BrazePlugin {
   // To be used alongside `replayCallbacksConfigKey`
   final List<BrazeInAppMessage> _queuedInAppMessages = [];
   final List<BrazeContentCard> _queuedContentCards = [];
+  final List<BrazePushEvent> _queuedPushEvents = [];
   final List<BrazeFeatureFlag> _queuedFeatureFlags = [];
 
   /// Broadcast stream to listen for in-app messages.
@@ -25,6 +26,10 @@ class BrazePlugin {
   StreamController<List<BrazeContentCard>> contentCardsStreamController =
       StreamController<List<BrazeContentCard>>.broadcast();
 
+  /// Broadcast stream to listen for push notification events.
+  StreamController<BrazePushEvent> pushEventStreamController =
+      StreamController<BrazePushEvent>.broadcast();
+
   /// Broadcast stream to listen for feature flags.
   StreamController<List<BrazeFeatureFlag>> featureFlagsStreamController =
       StreamController<List<BrazeFeatureFlag>>.broadcast();
@@ -32,14 +37,15 @@ class BrazePlugin {
   /// The plugin used to interface with all Braze APIs with optional parameters
   /// specific customization.
   ///
-  /// The [inAppMessageHandler] and [contentCardsHandler] can subscribe to
-  /// their respective streams at plugin initialization. These can also be
-  /// subscribed at a later time after initialization
+  /// Each of the different handlers can subscribe to their respective streams
+  /// at plugin initialization. These can also be subscribed at a later time
+  /// after initialization
   BrazePlugin(
       {Function(BrazeInAppMessage)? inAppMessageHandler,
       Function(BrazeSdkAuthenticationError)? brazeSdkAuthenticationErrorHandler,
       Function(List<BrazeContentCard>)? contentCardsHandler,
       Function(List<BrazeFeatureFlag>)? featureFlagsHandler,
+      Function(BrazePushEvent)? pushEventHandler,
       Map<String, bool>? customConfigs}) {
     _brazeCustomConfigs = customConfigs;
     _brazeSdkAuthenticationErrorHandler = brazeSdkAuthenticationErrorHandler;
@@ -52,6 +58,9 @@ class BrazePlugin {
     }
     if (featureFlagsHandler != null) {
       subscribeToFeatureFlags(featureFlagsHandler);
+    }
+    if (pushEventHandler != null) {
+      subscribeToPushNotificationEvents(pushEventHandler);
     }
 
     // Called after setting up plugin settings
@@ -87,6 +96,20 @@ class BrazePlugin {
 
     StreamSubscription subscription =
         contentCardsStreamController.stream.listen(onEvent);
+    return subscription;
+  }
+
+  StreamSubscription subscribeToPushNotificationEvents(
+      void Function(BrazePushEvent) onEvent) {
+    if (_replayCallbacksConfigEnabled() && _queuedPushEvents.isNotEmpty) {
+      print(
+          "Replaying stream onEvent for previously queued Braze push events.");
+      _queuedPushEvents.forEach((pushEvent) => onEvent(pushEvent));
+      _queuedPushEvents.clear();
+    }
+
+    StreamSubscription subscription =
+        pushEventStreamController.stream.listen(onEvent);
     return subscription;
   }
 
@@ -251,7 +274,8 @@ class BrazePlugin {
   }
 
   /// Sets a string typed custom attribute.
-  void setNestedCustomUserAttribute(String key, Map<String, dynamic> value, [ bool merge = false ] ) {
+  void setNestedCustomUserAttribute(String key, Map<String, dynamic> value,
+      [bool merge = false]) {
     final Map<String, dynamic> params = <String, dynamic>{
       'key': key,
       'value': value,
@@ -269,7 +293,8 @@ class BrazePlugin {
   }
 
   /// Sets a string typed custom attribute.
-  void setCustomUserAttributeArrayOfObjects(String key, List<Map<String, dynamic>> value) {
+  void setCustomUserAttributeArrayOfObjects(
+      String key, List<Map<String, dynamic>> value) {
     final Map<String, dynamic> params = <String, dynamic>{
       'key': key,
       'value': value
@@ -522,6 +547,7 @@ class BrazePlugin {
 
   /// Sets Google Advertising Id for the current user.
   /// - No-op on iOS.
+  @Deprecated('Use setAdTrackingEnabled(adTrackingEnabled, id) instead.')
   void setGoogleAdvertisingId(String id, bool adTrackingEnabled) {
     final Map<String, dynamic> params = <String, dynamic>{
       "id": id,
@@ -530,13 +556,57 @@ class BrazePlugin {
     _channel.invokeMethod('setGoogleAdvertisingId', params);
   }
 
+  /// Sets ad tracking configuration for the current user.
+  ///
+  /// - `googleAdvertisingId` is required on Android.
+  void setAdTrackingEnabled(bool adTrackingEnabled, String? googleAdvertisingId) {
+    final Map<String, dynamic> params = <String, dynamic>{
+      "adTrackingEnabled": adTrackingEnabled
+    };
+    if (googleAdvertisingId != null) {
+      // Omits entry when id is null
+      params["id"] = googleAdvertisingId;
+    }
+    _channel.invokeMethod('setAdTrackingEnabled', params);
+  }
+
+  /// Updates the existing tracking property allow list.
+  /// No-op on Android.
+  void updateTrackingPropertyAllowList(BrazeTrackingPropertyList allowList) {
+    final Map<String, dynamic> params = {};
+    if (allowList.adding != null) {
+      params["adding"] =
+          allowList.adding?.map((value) => value.toString()).toList();
+    }
+    if (allowList.removing != null) {
+      params["removing"] =
+          allowList.removing?.map((value) => value.toString()).toList();
+    }
+    if (allowList.addingCustomEvents != null) {
+      params["addingCustomEvents"] = allowList.addingCustomEvents?.toList();
+    }
+    if (allowList.removingCustomEvents != null) {
+      params["removingCustomEvents"] = allowList.removingCustomEvents?.toList();
+    }
+    if (allowList.addingCustomAttributes != null) {
+      params["addingCustomAttributes"] =
+          allowList.addingCustomAttributes?.toList();
+    }
+    if (allowList.removingCustomAttributes != null) {
+      params["removingCustomAttributes"] =
+          allowList.removingCustomAttributes?.toList();
+    }
+    _channel.invokeMethod('updateTrackingPropertyAllowList', params);
+  }
+
   /// Get a single Feature Flag.
   /// Returns null if there is no feature flag with that ID.
   Future<BrazeFeatureFlag?> getFeatureFlagByID(String id) {
     final Map<String, dynamic> params = <String, dynamic>{"id": id};
     return _channel
         .invokeMethod('getFeatureFlagByID', params)
-        .then<BrazeFeatureFlag?>((dynamic result) => result == null ? null : BrazeFeatureFlag(result));
+        .then<BrazeFeatureFlag?>((dynamic result) =>
+            result == null ? null : BrazeFeatureFlag(result));
   }
 
   /// Get all Feature Flags from current cache.
@@ -625,6 +695,25 @@ class BrazePlugin {
 
         return Future<void>.value();
 
+      case "handleBrazePushNotificationEvent":
+        final Map<dynamic, dynamic> argumentsMap = call.arguments;
+        String? pushEventString = argumentsMap['pushEvent'];
+        if (pushEventString == null) {
+          print("Invalid input. Missing value for key 'pushEvent'.");
+          return Future<void>.value();
+        }
+        final pushEvent = BrazePushEvent(pushEventString);
+
+        if (pushEventStreamController.hasListener) {
+          pushEventStreamController.add(pushEvent);
+        } else {
+          print(
+              "Braze push notification event subscription not present. Adding to queue.");
+          _queuedPushEvents.add(pushEvent);
+        }
+
+        return Future<void>.value();
+
       case "handleBrazeFeatureFlags":
         final Map<dynamic, dynamic> argumentsMap = call.arguments;
         List<BrazeFeatureFlag> brazeFeatureFlags = [];
@@ -694,6 +783,50 @@ enum ClickAction { news_feed, uri, none }
 
 /// Braze in-app message types
 enum MessageType { slideup, modal, full, html_full }
+
+/// Braze property types to be marked for user tracking
+enum TrackingProperty {
+  all_custom_attributes,
+  all_custom_events,
+  analytics_events,
+  attribution_data,
+  country,
+  date_of_birth,
+  device_data,
+  email,
+  email_subscription_state,
+  everything,
+  first_name,
+  gender,
+  home_city,
+  language,
+  last_name,
+  notification_subscription_state,
+  phone_number,
+  push_token,
+  push_to_start_tokens
+}
+
+/// Braze data properties to be either added or removed from the allow list.
+class BrazeTrackingPropertyList {
+  /// Enumerated tracking properties to be added for tracking.
+  Set<TrackingProperty>? adding;
+
+  /// Enumerated tracking properties to be removed from tracking.
+  Set<TrackingProperty>? removing;
+
+  /// Custom event strings to be added for tracking.
+  Set<String>? addingCustomEvents;
+
+  /// Custom event strings to be removed from tracking.
+  Set<String>? removingCustomEvents;
+
+  /// Custom attribute strings to be added for tracking.
+  Set<String>? addingCustomAttributes;
+
+  /// Custom attribute strings to be removed from tracking.
+  Set<String>? removingCustomAttributes;
+}
 
 class BrazeContentCard {
   /// Content Card json
@@ -1003,6 +1136,138 @@ class BrazeInAppMessage {
   @override
   String toString() {
     return inAppMessageJsonString;
+  }
+}
+
+class BrazePushEvent {
+  /// Notification payload type. Only `push_opened` events are supported on iOS
+  String payloadType = "";
+
+  /// URL opened by the notification
+  String? url;
+
+  /// Specifies whether the URL should be opened in a modal webview
+  bool useWebview = false;
+
+  /// Notification title
+  String? title;
+
+  /// Notification body, or content text
+  String? body;
+
+  /// Notification summary text. Mapped from `subtitle` on iOS
+  String? summaryText;
+
+  /// Notification badge count
+  int? badgeCount;
+
+  /// In-app message body click action
+  int timestamp = -1;
+
+  /// Specifies whether the payload was received silently.
+  ///
+  /// For details on sending Android silent push notifications, refer to
+  /// [Silent push notifications](https://www.braze.com/docs/developer_guide/platform_integration_guides/android/push_notifications/android/silent_push_notifications).
+  ///
+  /// For details on sending iOS silent push notifications, refer to
+  /// [Silent push notifications](https://www.braze.com/docs/developer_guide/platform_integration_guides/swift/push_notifications/silent_push_notifications/).
+  bool isSilent = false;
+
+  /// Specifies whether the payload is used by Braze for an internal SDK feature
+  bool isBrazeInternal = false;
+
+  /// URL associated with the notification image
+  String? imageUrl;
+
+  /// Braze properties associated with the campaign (key-value pairs)
+  Map<String, dynamic> brazeProperties = Map();
+
+  /// iOS-specific fields
+  Map<String, dynamic> ios = Map();
+
+  /// Android-specific fields
+  Map<String, dynamic> android = Map();
+
+  /// Push Notification event json
+  String pushEventJsonString = "";
+
+  BrazePushEvent(String _data) {
+    pushEventJsonString = _data;
+    var pushEventJson = json.jsonDecode(_data);
+
+    var payloadTypeJson = pushEventJson["payload_type"];
+    if (payloadTypeJson is String) {
+      payloadType = payloadTypeJson;
+    }
+    var urlJson = pushEventJson["url"];
+    if (urlJson is String) {
+      url = urlJson;
+    }
+    var useWebviewJson = pushEventJson["use_webview"];
+    if (useWebviewJson is bool) {
+      useWebview = useWebviewJson;
+    }
+    var titleJson = pushEventJson["title"];
+    if (titleJson is String) {
+      title = titleJson;
+    }
+    var bodyJson = pushEventJson["body"];
+    if (bodyJson is String) {
+      body = bodyJson;
+    }
+    var summaryTextJson = pushEventJson["summary_text"];
+    if (summaryTextJson is String) {
+      summaryText = summaryTextJson;
+    }
+    var badgeCountJson = pushEventJson["badge_count"];
+    if (badgeCountJson is int) {
+      badgeCount = badgeCountJson;
+    }
+    var timestampJson = pushEventJson["timestamp"];
+    if (timestampJson is int) {
+      timestamp = timestampJson;
+    }
+    var isSilentJson = pushEventJson["is_silent"];
+    if (isSilentJson is bool) {
+      isSilent = isSilentJson;
+    }
+    var isBrazeInternalJson = pushEventJson["is_braze_internal"];
+    if (isBrazeInternalJson is bool) {
+      isBrazeInternal = isBrazeInternalJson;
+    }
+    var imageUrlJson = pushEventJson["image_url"];
+    if (imageUrlJson is String) {
+      imageUrl = imageUrlJson;
+    }
+    var brazePropertiesJson = pushEventJson["braze_properties"];
+    if (brazePropertiesJson is Map<String, dynamic>) {
+      brazePropertiesJson.forEach((key, value) {
+        if (brazePropertiesJson[key] is String) {
+          brazeProperties[key] = value;
+        }
+      });
+    }
+    var iosJson = pushEventJson["ios"];
+    if (iosJson is Map<String, dynamic>) {
+      iosJson.forEach((key, value) {
+        if (iosJson[key] is String) {
+          ios[key] = value;
+        }
+      });
+    }
+    var androidJson = pushEventJson["android"];
+    if (androidJson is Map<String, dynamic>) {
+      androidJson.forEach((key, value) {
+        if (androidJson[key] is String) {
+          android[key] = value;
+        }
+      });
+    }
+  }
+
+  @override
+  String toString() {
+    return pushEventJsonString;
   }
 }
 

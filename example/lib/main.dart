@@ -49,6 +49,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
   String _ccStreamSubscription = "DISABLED";
   String _iamStreamSubscription = "DISABLED";
   String _ffStreamSubscription = "DISABLED";
+  String _pushStreamSubscription = "DISABLED";
   String _featureFlagPropertyType = "BOOLEAN";
   late BrazePlugin _braze;
   final userIdController = TextEditingController();
@@ -59,6 +60,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
   final featureFlagPropertyController = TextEditingController();
   late StreamSubscription inAppMessageStreamSubscription;
   late StreamSubscription contentCardsStreamSubscription;
+  late StreamSubscription pushEventsStreamSubscription;
   late StreamSubscription featureFlagsStreamSubscription;
 
   // Change to `true` to automatically log clicks, button clicks,
@@ -98,6 +100,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
     /// Stop listening to streams
     inAppMessageStreamSubscription.cancel();
     contentCardsStreamSubscription.cancel();
+    pushEventsStreamSubscription.cancel();
     featureFlagsStreamSubscription.cancel();
     super.dispose();
   }
@@ -143,6 +146,10 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                 child: Text("CC Stream Subscription: $_ccStreamSubscription")),
             Center(
               child: Text("FF Stream Subscription: $_ffStreamSubscription"),
+            ),
+            Center(
+              child: Text(
+                  "Push Notification Stream Subscription: $_pushStreamSubscription"),
             ),
             Center(child: Text("User Id: $_userId")),
             TextField(
@@ -319,6 +326,21 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
               },
             ),
             TextButton(
+              child: const Text('SUBSCRIBE TO PUSH NOTIFICATION EVENTS'),
+              onPressed: () {
+                this.setState(() {
+                  _pushStreamSubscription = 'ENABLED';
+                });
+                pushEventsStreamSubscription =
+                    _braze.subscribeToPushNotificationEvents(
+                        _pushNotificationEventReceived);
+                ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                  content: new Text("Listening to push notification events "
+                      "stream. Push event payloads will appear in snackbars"),
+                ));
+              },
+            ),
+            TextButton(
               child: const Text('REQUEST DATA FLUSH'),
               onPressed: () {
                 _braze.requestImmediateDataFlush();
@@ -343,12 +365,13 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                   print("No Feature Flag ID entered");
                   return;
                 }
-                
+
                 _braze.getFeatureFlagByID(ffId).then((ff) {
                   if (ff == null) {
                     print("No Feature Flag Found with ID: " + ffId);
                     ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-                      content: new Text("No Feature Flag Found with ID: " + ffId),
+                      content:
+                          new Text("No Feature Flag Found with ID: " + ffId),
                     ));
                   } else {
                     print("Showing single feature flag");
@@ -356,7 +379,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                     print(ffString);
                     ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
                       content: new Text(ffString),
-                    ));                    
+                    ));
                   }
                 });
               },
@@ -559,6 +582,34 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
               },
             ),
             TextButton(
+              child: const Text('SET AD TRACKING ENABLED'),
+              onPressed: () {
+                _braze.setAdTrackingEnabled(true, "dummy-id");
+                ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                    content: new Text("Set ad tracking enabled.")));
+              },
+            ),
+            TextButton(
+              child: const Text('UPDATE TRACKING PROPERTY LIST'),
+              onPressed: () {
+                BrazeTrackingPropertyList list = BrazeTrackingPropertyList();
+                list.adding = {
+                  TrackingProperty.first_name,
+                  TrackingProperty.gender
+                };
+                list.removing = {TrackingProperty.last_name};
+                list.addingCustomEvents = {'custom-event-1'};
+                list.removingCustomAttributes = {
+                  'custom-attr-2',
+                  'custom-attr-3'
+                };
+                _braze.updateTrackingPropertyAllowList(list);
+                ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                    content:
+                        new Text("Updated tracking property allow list.")));
+              },
+            ),
+            TextButton(
               child: const Text('WIPE DATA'),
               onPressed: () {
                 showDialog(
@@ -680,6 +731,13 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
         // _braze.logContentCardDismissed(contentCard);
       }
     });
+  }
+
+  void _pushNotificationEventReceived(BrazePushEvent pushEvent) {
+    print("Received push notification event: " + pushEvent.toString());
+    ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+      content: new Text("Received push notification event: $pushEvent"),
+    ));
   }
 
   void _featureFlagsReceived(List<BrazeFeatureFlag> featureFlags) {

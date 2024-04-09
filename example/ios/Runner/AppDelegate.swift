@@ -14,6 +14,7 @@ let brazeEndpoint = "sondheim.braze.com"
 
   // These subscriptions need to be retained to be active
   var contentCardsSubscription: Braze.Cancellable?
+  var pushEventsSubscription: Braze.Cancellable?
   var featureFlagsSubscription: Braze.Cancellable?
 
   override func application(
@@ -31,7 +32,7 @@ let brazeEndpoint = "sondheim.braze.com"
     configuration.logger.level = .debug
     configuration.push.appGroup = "group.com.braze.flutterPluginExample.PushStories"
 
-    // Automatic push notification setup
+    // - Automatic push notification setup
     configuration.push.automation = .init(
       automaticSetup: true,
       requestAuthorizationAtLaunch: true,
@@ -51,17 +52,17 @@ let brazeEndpoint = "sondheim.braze.com"
     let inAppMessageUI = CustomInAppMessagePresenter()
     braze.inAppMessagePresenter = inAppMessageUI
 
+    // - Subscribe to various features and pass each model to the Dart layer
     contentCardsSubscription = braze.contentCards.subscribeToUpdates { contentCards in
       print("=> [Content Card Subscription] Received cards:", contentCards)
-
-      // Pass each content card model to the Dart layer.
       BrazePlugin.processContentCards(contentCards)
     }
-    
+    pushEventsSubscription = braze.notifications.subscribeToUpdates { pushEvent in
+      print("=> [Push Event Subscription] Received push event:", pushEvent)
+      BrazePlugin.processPushEvent(pushEvent)
+    }
     featureFlagsSubscription = braze.featureFlags.subscribeToUpdates { featureFlags in
       print("=> [Feature Flag Subscription] Received feature Flags:", featureFlags)
-      
-      // Pass each feature flag model to the Dart layer.
       BrazePlugin.processFeatureFlags(featureFlags)
     }
 

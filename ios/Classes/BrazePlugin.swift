@@ -453,6 +453,15 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
     case "setGoogleAdvertisingId":
       break  // Android-only features, do nothing.
 
+    case "setAdTrackingEnabled":
+      guard let args = call.arguments as? [String: Any],
+            let adTrackingEnabled = args["adTrackingEnabled"] as? Bool
+      else {
+        print("Invalid args: \(argsDescription), iOS method: \(call.method)")
+        return
+      }
+      BrazePlugin.braze?.set(adTrackingEnabled: adTrackingEnabled)
+
     case "requestImmediateDataFlush":
       BrazePlugin.braze?.requestImmediateDataFlush()
 
@@ -558,6 +567,48 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         return
       }
       BrazePlugin.braze?.featureFlags.logFeatureFlagImpression(id: flagId)
+    case "updateTrackingPropertyAllowList":
+      guard let args = call.arguments as? [String: Any] else {
+        print("Invalid args: \(argsDescription), iOS method: \(call.method)")
+        return
+      }
+      var addingSet = Set<Braze.Configuration.TrackingProperty>()
+      var removingSet = Set<Braze.Configuration.TrackingProperty>()
+      
+      if let adding = args["adding"] as? [String] {
+        adding.forEach { propertyString in
+          if let trackingProperty = BrazePlugin.getTrackingProperty(from: propertyString) {
+            addingSet.insert(trackingProperty)
+          } else {
+            print("Invalid Braze tracking property for string \(propertyString)")
+          }
+        }
+      }
+      if let removing = args["removing"] as? [String] {
+        removing.forEach { propertyString in
+          if let trackingProperty = BrazePlugin.getTrackingProperty(from: propertyString) {
+            removingSet.insert(trackingProperty)
+          } else {
+            print("Invalid Braze tracking property for string \(propertyString)")
+          }
+        }
+      }
+      if let addingCustomEvents = args["addingCustomEvents"] as? [String] {
+        addingSet.insert(.customEvent(Set(addingCustomEvents)))
+      }
+      if let removingCustomEvents = args["removingCustomEvents"] as? [String] {
+        removingSet.insert(.customEvent(Set(removingCustomEvents)))
+      }
+      if let addingCustomAttributes = args["addingCustomAttributes"] as? [String] {
+        addingSet.insert(.customAttribute(Set(addingCustomAttributes)))
+      }
+      if let removingCustomAttributes = args["removingCustomAttributes"] as? [String] {
+        removingSet.insert(.customAttribute(Set(removingCustomAttributes)))
+      }
+      BrazePlugin.braze?.updateTrackingAllowList(
+        adding: addingSet,
+        removing: removingSet
+      )
 
     default:
       result(FlutterMethodNotImplemented)
@@ -629,6 +680,82 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       return .unknown
     }
   }
+  
+  private class func getTrackingProperty(from propertyString: String) -> Braze.Configuration.TrackingProperty? {
+    switch propertyString {
+    case "TrackingProperty.all_custom_attributes":
+      return .allCustomAttributes
+    case "TrackingProperty.all_custom_events":
+      return .allCustomEvents
+    case "TrackingProperty.analytics_events":
+      return .analyticsEvents
+    case "TrackingProperty.attribution_data":
+      return .attributionData
+    case "TrackingProperty.country":
+      return .country
+    case "TrackingProperty.date_of_birth":
+      return .dateOfBirth
+    case "TrackingProperty.device_data":
+      return .deviceData
+    case "TrackingProperty.email":
+      return .email
+    case "TrackingProperty.email_subscription_state":
+      return .emailSubscriptionState
+    case "TrackingProperty.everything":
+      return .everything
+    case "TrackingProperty.first_name":
+      return .firstName
+    case "TrackingProperty.gender":
+      return .gender
+    case "TrackingProperty.home_city":
+      return .homeCity
+    case "TrackingProperty.language":
+      return .language
+    case "TrackingProperty.last_name":
+      return .lastName
+    case "TrackingProperty.notification_subscription_state":
+      return .notificationSubscriptionState
+    case "TrackingProperty.phone_number":
+      return .phoneNumber
+    case "TrackingProperty.push_token":
+      return .pushToken
+    case "TrackingProperty.push_to_start_tokens":
+      return .pushToStartTokens
+    default:
+      return nil
+    }
+  }
+
+  /// Modifies the Swift SDK's push payload to match Android push payloads
+  /// and the expected payload in Dart.
+  ///
+  /// - Parameter originalJson: The unedited push event JSON.
+  /// - Parameter pushEvent: The Braze push notification event in native Swift.
+  /// - Returns: The push event JSON after updating some fields.
+  private class func updatePushEventJson(_ originalJson: [String : Any], pushEvent: Braze.Notifications.Payload) -> [String : Any] {
+    var pushEventJson = originalJson
+
+    // - Use the `"push_` prefix for consistency with Android. The Swift SDK internally uses `"opened"`.
+    if (pushEventJson["payload_type"] as? String == "opened") {
+      pushEventJson["payload_type"] = "push_opened"
+    }
+
+    // - Map the value with the key name "summary_text"
+    pushEventJson["summary_text"] = pushEvent.subtitle
+
+    // - Ensure the timestamp is an Int instead of a Double
+    pushEventJson["timestamp"] = Int(pushEvent.date.timeIntervalSince1970)
+
+    // - If present, add the URL of the image attached to the notification.
+    //   This avoids the need to extract the field from UserInfo.
+    if let brazeUserInfo = pushEvent.userInfo["ab"] as? [String: Any],
+       let att = brazeUserInfo["att"] as? [String: Any],
+       let imageUrl = att["url"] as? String {
+      pushEventJson["image_url"] = imageUrl
+    }
+
+    return pushEventJson
+  }
 
   // MARK: - Public methods
 
@@ -683,7 +810,40 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       channel.invokeMethod("handleBrazeContentCards", arguments: arguments)
     }
   }
-  
+
+  /// Translates the native [pushEvent] into JSON, edits it to match Android's
+  /// payload, and passes it from the iOS layer to the Dart layer.
+  /// Note: Swift closures are unable to be translated into JSON.
+  ///
+  /// - Parameter pushEvent: The Braze push notification event in native Swift.
+  public class func processPushEvent(_ pushEvent: Braze.Notifications.Payload) {
+    guard let pushEventData = pushEvent.json(),
+          var pushEventJson = try? JSONSerialization.jsonObject(with: pushEventData, options: []) as? [String : Any]
+    else {
+      print("Invalid pushEvent: \(pushEvent)")
+      return
+    }
+
+    pushEventJson = updatePushEventJson(pushEventJson, pushEvent: pushEvent)
+
+    // Re-serialize the updated JSON
+    var options: JSONSerialization.WritingOptions = [.sortedKeys]
+    if #available(iOS 13.0, *) {
+      options.insert(.withoutEscapingSlashes)
+    }
+    guard let updatedJsonData = try? JSONSerialization.data(withJSONObject: pushEventJson, options: options),
+          let pushEventString = String(data: updatedJsonData, encoding: .utf8)
+    else {
+      print("Unable to encode updated pushEventJson: \(pushEventJson)")
+      return
+    }
+
+    let arguments = ["pushEvent": pushEventString]
+    for channel in channels {
+      channel.invokeMethod("handleBrazePushNotificationEvent", arguments: arguments)
+    }
+  }
+
   /// Translates each of the native [featureFlags] into JSON and passes it
   /// from the iOS layer to the Dart layer.
   /// Note: Swift closures are unable to be translated into JSON.

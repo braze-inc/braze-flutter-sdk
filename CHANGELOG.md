@@ -1,3 +1,21 @@
+## 9.0.0
+
+##### Breaking
+- Updates the native iOS bridge [from Braze Swift SDK 7.7.0 to 8.4.0](https://github.com/braze-inc/braze-swift-sdk/compare/7.7.0...8.4.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+  - The minimum iOS deployment target has been updated to 12.0.
+- Updates the native Android bridge [from Braze Android SDK 29.0.1 to 30.3.0](https://github.com/braze-inc/braze-android-sdk/compare/v29.0.1...v30.3.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+- The minimum supported Dart version is `2.15.0`.
+
+##### Added
+- Push notification payloads are now accessible in the Dart layer by calling `subscribeToPushNotificationEvents(void Function(BrazePushEvent) onEvent)`. This allows you to run custom Dart code after a push is received or when a push is clicked.
+  - On iOS, this callback can only be triggered for push click events.
+  - Reference our [Flutter Push Notification documentation](https://www.braze.com/docs/developer_guide/platform_integration_guides/flutter/push_notifications) with details on how to utilize this feature.
+  - This feature is compatible with the `replayCallbacksConfigKey` to replay the push event callback for any notifications that were received prior to calling `subscribeToPushNotificationEvents`.
+- Adds support for Braze tracking properties.
+  - Adds the `updateTrackingPropertyAllowList(allowList)` method to dynamically configure Braze tracking properties.
+  - For further usage details, refer to the [Swift privacy manifest documentation](https://www.braze.com/docs/developer_guide/platform_integration_guides/swift/privacy_manifest/).
+- Deprecates `setGoogleAdvertisingId(id, adTrackingEnabled)` in favor of `setAdTrackingEnabled(adTrackingEnabled, id)`.
+
 ## 8.2.0
 
 ##### Added

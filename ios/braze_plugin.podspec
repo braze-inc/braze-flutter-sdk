@@ -1,9 +1,15 @@
 #
 # To learn more about a Podspec see http://guides.cocoapods.org/syntax/podspec.html
 #
+require 'yaml'
+
+# Read the version from your pubspec.yaml file
+pubspec = YAML.load_file(File.join(__dir__, '../pubspec.yaml'))
+flutter_version = pubspec['version']
+
 Pod::Spec.new do |s|
   s.name             = 'braze_plugin'
-  s.version          = '8.2.0'
+  s.version          = flutter_version
   s.summary          = 'Braze plugin for Flutter.'
   s.homepage         = 'https://braze.com'
   s.license          = { :file => '../LICENSE' }
@@ -14,9 +20,9 @@ Pod::Spec.new do |s|
   s.static_framework = true
 
   s.dependency 'Flutter'
-  s.dependency 'BrazeKit', '~> 7.7.0'
-  s.dependency 'BrazeLocation', '~> 7.7.0'
-  s.dependency 'BrazeUI', '~> 7.7.0'
+  s.dependency 'BrazeKit', '~> 8.4.0'
+  s.dependency 'BrazeLocation', '~> 8.4.0'
+  s.dependency 'BrazeUI', '~> 8.4.0'
 
-  s.ios.deployment_target = '11.0'
+  s.ios.deployment_target = '12.0'
 end

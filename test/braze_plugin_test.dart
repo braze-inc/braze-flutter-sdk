@@ -2,7 +2,6 @@ import 'dart:convert' as json;
 import 'dart:io' show Platform;
 
 import 'package:braze_plugin/braze_plugin.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -794,6 +793,7 @@ void main() {
 
   test('should call setGoogleAdvertisingId', () {
     BrazePlugin _braze = new BrazePlugin();
+    // ignore: deprecated_member_use_from_same_package
     _braze.setGoogleAdvertisingId('some_id', false);
     expect(log, <Matcher>[
       isMethodCall(
@@ -803,6 +803,36 @@ void main() {
           'adTrackingEnabled': false
         },
       ),
+    ]);
+  });
+
+  test('should call setAdTrackingEnabled', () {
+    BrazePlugin _braze = new BrazePlugin();
+    _braze.setAdTrackingEnabled(true, 'some_id');
+    expect(log, <Matcher>[
+      isMethodCall('setAdTrackingEnabled', arguments: <String, dynamic>{
+        'adTrackingEnabled': true,
+        'id': 'some_id'
+      })
+    ]);
+  });
+
+  test('should call updateTrackingAllowList', () {
+    BrazePlugin _braze = new BrazePlugin();
+    BrazeTrackingPropertyList list = BrazeTrackingPropertyList();
+    list.removing = {TrackingProperty.country};
+    list.addingCustomAttributes = {'attr-1'};
+    list.addingCustomEvents = {'event-1'};
+    list.removingCustomEvents = {'event-2', 'event-3'};
+    _braze.updateTrackingPropertyAllowList(list);
+    expect(log, <Matcher>[
+      isMethodCall('updateTrackingPropertyAllowList',
+          arguments: <String, dynamic>{
+            'removing': ['TrackingProperty.country'],
+            'addingCustomAttributes': ['attr-1'],
+            'addingCustomEvents': ['event-1'],
+            'removingCustomEvents': ['event-2', 'event-3']
+          })
     ]);
   });
 
@@ -1033,7 +1063,8 @@ void main() {
     expect(result?.getNumberProperty("numberKeyThatDoesntExist"), null);
   });
 
-  test('getFeatureFlagByID returns null for non-existent Feature Flag', () async {
+  test('getFeatureFlagByID returns null for non-existent Feature Flag',
+      () async {
     nullFeatureFlag = true;
     BrazePlugin _braze = new BrazePlugin();
     final result = await _braze.getFeatureFlagByID("idThatDoesntExist");
@@ -1091,18 +1122,18 @@ void main() {
         '$testDismissType\",\"use_webview\":$testUseWebView}';
     BrazeInAppMessage inAppMessage = new BrazeInAppMessage(testJson);
     expect(inAppMessage.message, equals(testMessageBody));
-    expect(describeEnum(inAppMessage.messageType),
-        equals(testMessageType.toLowerCase()));
+    expect(
+        inAppMessage.messageType.name, equals(testMessageType.toLowerCase()));
     expect(inAppMessage.uri, equals(json.jsonDecode('"$testUri"')));
     expect(inAppMessage.useWebView, equals(testUseWebView));
     expect(inAppMessage.zippedAssetsUrl,
         equals(json.jsonDecode('"$testZippedAssetsUrl"')));
     expect(inAppMessage.duration, equals(testDuration));
     expect(inAppMessage.extras, equals(json.jsonDecode(testExtras)));
-    expect(describeEnum(inAppMessage.clickAction),
-        equals(testClickAction.toLowerCase()));
-    expect(describeEnum(inAppMessage.dismissType),
-        equals(testDismissType.toLowerCase()));
+    expect(
+        inAppMessage.clickAction.name, equals(testClickAction.toLowerCase()));
+    expect(
+        inAppMessage.dismissType.name, equals(testDismissType.toLowerCase()));
     expect(inAppMessage.imageUrl, equals(json.jsonDecode('"$testImageUrl"')));
     expect(inAppMessage.header, equals(testHeader));
     expect(inAppMessage.inAppMessageJsonString, equals(testJson));
@@ -1128,16 +1159,16 @@ void main() {
     String testJson = '{}';
     BrazeInAppMessage inAppMessage = new BrazeInAppMessage(testJson);
     expect(inAppMessage.message, equals(defaultMessageBody));
-    expect(describeEnum(inAppMessage.messageType),
+    expect(inAppMessage.messageType.name,
         equals(defaultMessageType.toLowerCase()));
     expect(inAppMessage.uri, equals(defaultUri));
     expect(inAppMessage.useWebView, equals(defaultUseWebView));
     expect(inAppMessage.zippedAssetsUrl, equals(defaultZippedAssetsUrl));
     expect(inAppMessage.duration, equals(defaultDuration));
     expect(inAppMessage.extras, equals(defaultExtras));
-    expect(describeEnum(inAppMessage.clickAction),
+    expect(inAppMessage.clickAction.name,
         equals(defaultClickAction.toLowerCase()));
-    expect(describeEnum(inAppMessage.dismissType),
+    expect(inAppMessage.dismissType.name,
         equals(defaultDismissType.toLowerCase()));
     expect(inAppMessage.imageUrl, equals(defaultImageUrl));
     expect(inAppMessage.header, equals(defaultHeader));
@@ -1212,8 +1243,7 @@ void main() {
         'der_color\":4279990479}';
     BrazeButton button = new BrazeButton(json.jsonDecode(testButtonJson));
     expect(button.id, equals(testId));
-    expect(describeEnum(button.clickAction),
-        equals(testClickAction.toLowerCase()));
+    expect(button.clickAction.name, equals(testClickAction.toLowerCase()));
     expect(button.text, equals(testText));
     expect(button.uri, equals(json.jsonDecode('"$testUri"')));
     expect(button.useWebView, equals(testUseWebView));
@@ -1237,8 +1267,7 @@ void main() {
     bool defaultUseWebView = false;
     BrazeButton button = new BrazeButton({});
     expect(button.id, equals(defaultId));
-    expect(describeEnum(button.clickAction),
-        equals(defaultClickAction.toLowerCase()));
+    expect(button.clickAction.name, equals(defaultClickAction.toLowerCase()));
     expect(button.text, equals(defaultText));
     expect(button.uri, equals(defaultUri));
     expect(button.useWebView, equals(defaultUseWebView));
@@ -1287,5 +1316,48 @@ void main() {
     expect(contentCard.useWebView, equals(testUseWebView));
     expect(contentCard.viewed, equals(testViewed));
     expect(contentCard.contentCardJsonString, equals(testContentCardJson));
+  });
+
+  test('instantiate a BrazePushEvent object from JSON', () {
+    String testTitle = "title of push";
+    String testBody = "some push notification body";
+    String testPayloadType = "push_opened";
+    String testUrl = "https:\\/\\/www.example.com";
+    String testImageUrl = "https:\\/\\/www.sometestimageuri.com";
+    String testSummaryText = "test summary text";
+    int testBadgeCount = 5;
+    bool testUseWebView = true;
+    bool testIsSilent = false;
+    bool testIsBrazeInternal = true;
+    int testTimestamp = 222;
+    String testBrazeProperties =
+        '{\"Key_ofKVP\":\"the_value_here\",\"secondKey\":\"secondValue\"}';
+    String testiOSField = '{\"iOS_payload\":\"123\",\"foo\":\"bar\"}';
+    String testAndroidField = '{\"Android_payload\":\"456\",\"key\":\"value\"}';
+    String testJson =
+        '{\"title\":\"$testTitle\",\"body\":\"$testBody\",\"payload_type\":\"'
+        '$testPayloadType\",\"url\":\"$testUrl\",\"timestamp\":$testTimestamp,'
+        '\"is_silent\":\"$testIsSilent\",\"use_webview\":$testUseWebView,'
+        '\"is_braze_internal\":$testIsBrazeInternal,\"image_url\":\"$testImageUrl\",'
+        '\"summary_text\":\"$testSummaryText\",\"badge_count\":$testBadgeCount,'
+        '\"ios\":$testiOSField,\"android\":$testAndroidField,\"braze_properties\":'
+        '$testBrazeProperties}';
+    BrazePushEvent pushEvent = new BrazePushEvent(testJson);
+    expect(pushEvent.title, equals(testTitle));
+    expect(pushEvent.body, equals(testBody));
+    expect(pushEvent.payloadType, equals(testPayloadType));
+    expect(pushEvent.url, equals(json.jsonDecode('"$testUrl"')));
+    expect(pushEvent.imageUrl, equals(json.jsonDecode('"$testImageUrl"')));
+    expect(pushEvent.summaryText, equals(testSummaryText));
+    expect(pushEvent.badgeCount, equals(testBadgeCount));
+    expect(pushEvent.useWebview, equals(testUseWebView));
+    expect(pushEvent.isSilent, equals(testIsSilent));
+    expect(pushEvent.isBrazeInternal, equals(testIsBrazeInternal));
+    expect(pushEvent.timestamp, equals(testTimestamp));
+    expect(pushEvent.brazeProperties,
+        equals(json.jsonDecode(testBrazeProperties)));
+    expect(pushEvent.ios, equals(json.jsonDecode(testiOSField)));
+    expect(pushEvent.android, equals(json.jsonDecode(testAndroidField)));
+    expect(pushEvent.pushEventJsonString, equals(testJson));
   });
 }
