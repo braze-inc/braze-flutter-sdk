@@ -1,3 +1,5 @@
+⚠️ In version 3.0.0, we changed the iOS bridge from AppboyKit, which is written in Objective-C, to the new [Swift SDK](https://github.com/braze-inc/braze-swift-sdk). If you are upgrading from a version below 3.0.0 to a version above 3.0.0, please read [the instructions](https://github.com/braze-inc/braze-flutter-sdk/blob/master/CHANGELOG.md#300) to ensure a smooth transition and backward compatibility.
+
 ## 9.0.0
 
 ##### Breaking
@@ -154,6 +156,7 @@
     ```
     let braze = BrazePlugin.initBraze(configuration)
     ```
+  - This migration requires re-identifying users. To do so, you must call the `changeUser` method on the Braze instance for non-anonymous users. You can read more about it [here](https://braze-inc.github.io/braze-swift-sdk/documentation/braze/appboy-migration-guide/#Re-identify-users).
   - To continue using `SDWebImage` as a dependency, add this line to your project's `/ios/Podfile`:
     ```
     pod 'SDWebImage', :modular_headers => true
