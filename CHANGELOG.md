@@ -156,13 +156,13 @@
     ```
     let braze = BrazePlugin.initBraze(configuration)
     ```
+  - This migration requires re-identifying users. To do so, you must call the `changeUser` method on the Braze instance for non-anonymous users. You can read more about it [here](https://braze-inc.github.io/braze-swift-sdk/documentation/braze/appboy-migration-guide/#Re-identify-users).
   - To continue using `SDWebImage` as a dependency, add this line to your project's `/ios/Podfile`:
     ```
     pod 'SDWebImage', :modular_headers => true
     ```
       - Then, follow [these setup instructions](https://braze-inc.github.io/braze-swift-sdk/tutorials/braze/c3-gif-support).
   - For guidance around other changes such as receiving in-app message and content card data, reference our sample [`AppDelegate.swift`](https://github.com/braze-inc/braze-flutter-sdk/blob/master/example/ios/Runner/AppDelegate.swift).
-  - This migration requires re-identifying users. To do so, you must call the `changeUser` method on the Braze instance for non-anonymous users. You can read more about it [here](https://braze-inc.github.io/braze-swift-sdk/documentation/braze/appboy-migration-guide/#Re-identify-users).
 
 ##### Added
 - Adds the `isControl` field to `BrazeContentCard`.
