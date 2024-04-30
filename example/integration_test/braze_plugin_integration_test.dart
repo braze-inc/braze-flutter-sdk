@@ -7,8 +7,8 @@ void main() {
 
   testWidgets('Can initialize plugin', (WidgetTester tester) async {
     BrazePlugin plugin = BrazePlugin();
-    Future<String> installTrackingId = plugin.getInstallTrackingId();
+    Future<String> getDeviceId = plugin.getDeviceId();
     expect(plugin, isNotNull);
-    expect(installTrackingId, isNotNull);
+    expect(getDeviceId, isNotNull);
   });
 }

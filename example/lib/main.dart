@@ -119,7 +119,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
     if (_enabled == "") {
       // This is a hack to determine the enabled state of the Braze API
       // Not recommended for use in production
-      _braze.getInstallTrackingId().then((result) {
+      _braze.getDeviceId().then((result) {
         if (result == "") {
           this.setState(() {
             _enabled = "DISABLED";
@@ -564,7 +564,17 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
               },
             ),
             TextButton(
-              child: const Text('GET INSTALL TRACKING ID'),
+              child: const Text('GET DEVICE ID'),
+              onPressed: () {
+                _braze.getDeviceId().then((result) {
+                  ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                    content: new Text("Device ID: " + result),
+                  ));
+               });
+              },
+            ),
+            TextButton(
+              child: const Text('GET INSTALL TRACKING ID(deprecated)'),
               onPressed: () {
                 _braze.getInstallTrackingId().then((result) {
                   ScaffoldMessenger.of(context).showSnackBar(new SnackBar(

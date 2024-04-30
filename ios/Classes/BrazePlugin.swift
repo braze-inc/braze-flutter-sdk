@@ -50,7 +50,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
     case "setSdkAuthenticationDelegate":
       BrazePlugin.braze?.sdkAuthDelegate = self
 
-    case "getInstallTrackingId":
+    case "getDeviceId":
       if let deviceId = BrazePlugin.braze?.deviceId {
         result(deviceId)
       }

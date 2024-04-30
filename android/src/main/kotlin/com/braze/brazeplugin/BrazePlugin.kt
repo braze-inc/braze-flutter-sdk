@@ -41,7 +41,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
 
     private lateinit var context: Context
     private lateinit var channel: MethodChannel
-    private lateinit var flutterCachedConfiguration: FlutterCachedConfiguration
+    private lateinit var flutterConfiguration: FlutterConfiguration
     private var activity: Activity? = null
 
     //--
@@ -49,7 +49,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
     //--
 
     private fun initPlugin(context: Context, messenger: BinaryMessenger) {
-        flutterCachedConfiguration = FlutterCachedConfiguration(context, false)
+        flutterConfiguration = FlutterConfiguration(context)
         val channel = MethodChannel(messenger, "braze_plugin")
         channel.setMethodCallHandler(this)
         this.context = context
@@ -225,9 +225,9 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         this.activity = binding.activity
-        if (IntegrationInitializer.isUninitialized && flutterCachedConfiguration.isAutomaticInitializationEnabled()) {
+        if (IntegrationInitializer.isUninitialized && flutterConfiguration.isAutomaticInitializationEnabled()) {
             brazelog(I) { "Running Flutter BrazePlugin automatic initialization" }
-            this.activity?.application?.let { IntegrationInitializer.initializePlugin(it, flutterCachedConfiguration) }
+            this.activity?.application?.let { IntegrationInitializer.initializePlugin(it, flutterConfiguration) }
         }
     }
 
@@ -572,7 +572,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val pushToken = call.argument<String>("pushToken")
                     Braze.getInstance(context).registeredPushToken = pushToken
                 }
-                "getInstallTrackingId" -> {
+                "getDeviceId" -> {
                     result.success(Braze.getInstance(context).deviceId)
                 }
                 "setGoogleAdvertisingId" -> {

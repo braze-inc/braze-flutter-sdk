@@ -1,5 +1,17 @@
 ⚠️ In version 3.0.0, we changed the iOS bridge from AppboyKit, which is written in Objective-C, to the new [Swift SDK](https://github.com/braze-inc/braze-swift-sdk). If you are upgrading from a version below 3.0.0 to a version above 3.0.0, please read [the instructions](https://github.com/braze-inc/braze-flutter-sdk/blob/master/CHANGELOG.md#300) to ensure a smooth transition and backward compatibility.
 
+## 10.0.0
+
+##### Breaking
+- Updates the native iOS bridge [from Braze Swift SDK 8.4.0 to 9.0.0](https://github.com/braze-inc/braze-swift-sdk/compare/8.4.0...9.0.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+
+##### Added
+- Adds the `getDeviceId` method to replace `getInstallTrackingId`, which is now deprecated.
+
+##### Fixed
+- Fixes an issue where StrictMode DiskReadViolation was triggered on Android.
+  - Thanks @radivojeostojic for pointing this out.
+
 ## 9.0.0
 
 ##### Breaking
@@ -136,7 +148,7 @@
 ## 3.1.0
 
 ##### Breaking
-- The native Android bridge uses [Braze Android SDK 24.2.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#2420).
+- The native Android bridge uses [Braze Android SDK 24.2.0](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#2420).
 - The native iOS bridge uses [Braze iOS SDK 5.9.0](https://github.com/braze-inc/braze-swift-sdk/blob/main/CHANGELOG.md#590).
 - The minimum iOS deployment target is 11.0.
 
@@ -177,13 +189,13 @@
   - This feature must be enabled by setting `replayCallbacksConfigKey: true` in `customConfigs` for the `BrazePlugin`.
 
 ##### Changed
-- The native Android bridge uses [Braze Android SDK 23.3.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#2330).
+- The native Android bridge uses [Braze Android SDK 23.3.0](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#2330).
 - Updates the parameter type for `subscribeToInAppMessages()` and `subscribeToContentCards()` to accept a `Function` instead of a `void`.
 
 ## 2.6.0
 
 ##### Breaking
-- The native Android bridge uses [Braze Android SDK 23.2.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#2320).
+- The native Android bridge uses [Braze Android SDK 23.2.0](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#2320).
 - The native iOS bridge uses [Braze iOS SDK 4.5.1](https://github.com/Appboy/appboy-ios-sdk/blob/master/CHANGELOG.md#451).
 - `process(inAppMessage)` is renamed to `processInAppMessage(inAppMessage)` in the iOS layer.
 
@@ -198,7 +210,7 @@
 ## 2.5.0
 
 ##### Breaking
-- The native Android bridge uses [Braze Android SDK 21.0.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#2100).
+- The native Android bridge uses [Braze Android SDK 21.0.0](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#2100).
 - Removes `logContentCardsDisplayed()`. This method was not part of the recommended Content Cards integration and can be safely removed.
 
 ##### Added
@@ -210,7 +222,7 @@
 ## 2.4.0
 
 ##### Breaking
-- The native Android bridge uses [Braze Android SDK 20.0.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#2000).
+- The native Android bridge uses [Braze Android SDK 20.0.0](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#2000).
 - Removes `setAvatarImageUrl()`.
 
 ##### Changed
@@ -219,7 +231,7 @@
 ## 2.3.0
 
 ##### Breaking
-- The native Android bridge uses [Braze Android SDK 17.0.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#1700).
+- The native Android bridge uses [Braze Android SDK 17.0.0](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#1700).
 - The minimum supported Android SDK version is 19.
 - Removes support for Android V1 Embedding APIs. Please reference [the Flutter migration guide](https://flutter.dev/docs/development/packages-and-plugins/plugin-api-migration) to update to the V2 APIs.
 
@@ -239,7 +251,7 @@
 ## 2.2.0
 
 ##### Breaking
-- The native Android bridge uses [Braze Android SDK 16.0.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#1600).
+- The native Android bridge uses [Braze Android SDK 16.0.0](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#1600).
 - The native iOS bridge uses [Braze iOS SDK 4.4.0](https://github.com/Appboy/appboy-ios-sdk/blob/master/CHANGELOG.md#440).
 - Streamlines the Android integration process to not involve any manual writing of code to automatically register for sessions, in-app messages, or Content Card updates from the native SDK.
   - To migrate, remove any manual calls to `registerActivityLifecycleCallbacks()`, `subscribeToContentCardsUpdates()`, and `setCustomInAppMessageManagerListener()`.
@@ -262,7 +274,7 @@
 
 ##### Breaking
 - The native iOS bridge uses [Braze iOS SDK 4.3.2](https://github.com/Appboy/appboy-ios-sdk/blob/master/CHANGELOG.md#432).
-- The native Android bridge uses [Braze Android SDK 15.0.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#1500).
+- The native Android bridge uses [Braze Android SDK 15.0.0](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#1500).
 
 ##### Added
 - Adds `logContentCardsDisplayed()` to manually log an impression when displaying Content Cards in a custom UI.
@@ -277,7 +289,7 @@
 - Passing through `null` as a value for user attributes is no longer supported.
   - The only attribute that is able to be unset is `email` by passing in `null` into `setEmail`.
 - The methods `logEvent` and `logPurchase` now take an optional `properties` parameter.
-- The native Android bridge uses [Braze Android SDK 14.0.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#1400).
+- The native Android bridge uses [Braze Android SDK 14.0.0](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#1400).
 - The minimum supported Dart version is `2.12.0`.
 
 ##### Changed
@@ -287,7 +299,7 @@
 
 ##### Breaking
 - The native iOS bridge uses [Braze iOS SDK 4.0.2](https://github.com/Appboy/appboy-ios-sdk/blob/master/CHANGELOG.md#402).
-- The native Android bridge uses [Braze Android SDK 13.1.2](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#1312).
+- The native Android bridge uses [Braze Android SDK 13.1.2](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#1312).
 - The minimum supported Flutter version is 1.10.0.
 
 ##### Added
@@ -297,7 +309,7 @@
 ## 1.4.0
 
 ##### Breaking
-- The native Android bridge uses [Braze Android SDK 13.0.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#1300).
+- The native Android bridge uses [Braze Android SDK 13.0.0](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#1300).
 - The native iOS bridge uses [Braze iOS SDK 3.34.0](https://github.com/Appboy/appboy-ios-sdk/blob/master/CHANGELOG.md#3340).
 
 ##### Added
@@ -309,7 +321,7 @@
 ## 1.3.0
 
 ##### Breaking
-- The native Android bridge uses [Braze Android SDK 12.0.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#1200).
+- The native Android bridge uses [Braze Android SDK 12.0.0](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#1200).
 - The native iOS bridge uses [Braze iOS SDK 3.31.0](https://github.com/Appboy/appboy-ios-sdk/blob/master/CHANGELOG.md#3310).
 
 ##### Added
@@ -327,7 +339,7 @@
 ## 1.1.0
 
 ##### Breaking
-- The native Android bridge uses [Braze Android SDK 11.0.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#1100).
+- The native Android bridge uses [Braze Android SDK 11.0.0](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#1100).
 - The native iOS bridge uses [Braze iOS SDK 3.29.1](https://github.com/Appboy/appboy-ios-sdk/blob/master/CHANGELOG.md#3291).
 
 ## 1.0.0
@@ -343,7 +355,7 @@
 ## 0.10.0
 
 ##### Breaking
-- The native Android bridge uses [Braze Android SDK 8.1.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#810).
+- The native Android bridge uses [Braze Android SDK 8.1.0](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#810).
 - The native iOS bridge uses [Braze iOS SDK 3.26.0](https://github.com/Appboy/appboy-ios-sdk/blob/master/CHANGELOG.md#3260).
 
 ##### Fixed
@@ -352,15 +364,15 @@
 ## 0.9.0
 
 ##### Breaking
-- The native Android bridge uses [Braze Android SDK 7.0.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#700).
+- The native Android bridge uses [Braze Android SDK 7.0.0](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#700).
 - The native iOS bridge uses [Braze iOS SDK 3.22.0](https://github.com/Appboy/appboy-ios-sdk/blob/master/CHANGELOG.md#3220).
 
 ## 0.8.0
 
 ##### Breaking
 - The native iOS bridge uses [Braze iOS SDK 3.21.3](https://github.com/Appboy/appboy-ios-sdk/blob/master/CHANGELOG.md#3213).
-- The native Android bridge uses [Braze Android SDK 4.0.2](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#402).
-  - If you are using a custom `IInAppMessageManagerListener`, then you will need to define new methods added to that interface in [Braze Android SDK 4.0.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#400). See the `MainActivity.kt` file of our sample app for a reference example.
+- The native Android bridge uses [Braze Android SDK 4.0.2](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#402).
+  - If you are using a custom `IInAppMessageManagerListener`, then you will need to define new methods added to that interface in [Braze Android SDK 4.0.0](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#400). See the `MainActivity.kt` file of our sample app for a reference example.
 
 ## 0.7.0
 
@@ -384,7 +396,7 @@
 ## 0.6.0
 
 ##### Changed
-- The native Android bridge uses [Braze Android SDK 3.8.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#380).
+- The native Android bridge uses [Braze Android SDK 3.8.0](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#380).
 - Updated the native iOS bridge to [Braze iOS SDK 3.20.4](https://github.com/Appboy/appboy-ios-sdk/releases/tag/3.20.4).
 
 ## 0.5.2
@@ -422,7 +434,7 @@ with
 
 ##### Breaking
 - The native iOS bridge uses [Braze iOS SDK 3.18.0](https://github.com/Appboy/appboy-ios-sdk/blob/master/CHANGELOG.md#3180).
-- The native Android bridge uses [Braze Android SDK 3.6.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#360).
+- The native Android bridge uses [Braze Android SDK 3.6.0](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#360).
 
 ##### Added
 - Added the following new field to `BrazeInAppMessage`: `zippedAssetsUrl`.
@@ -432,7 +444,7 @@ with
 
 ##### Breaking
 - The native iOS bridge uses [Braze iOS SDK 3.15.0](https://github.com/Appboy/appboy-ios-sdk/blob/master/CHANGELOG.md#3150).
-- The native Android bridge uses [Braze Android SDK 3.5.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#350).
+- The native Android bridge uses [Braze Android SDK 3.5.0](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#350).
 - Support for the Android configuration parameter `com_appboy_inapp_show_inapp_messages_automatically` has been removed.
   - To control whether an in-app message object should be displayed natively or not, create and register an instance of `IInAppMessageManagerListener` in your native Android code and implement decisioning in the `beforeInAppMessageDisplayed` method. See `MainActivity` in our sample app for an example.
 - On Android, in-app message objects are no longer sent automatically to the Dart in-app message callback after calling `BrazePlugin.setBrazeInAppMessageCallback()` in your Dart code.
@@ -454,7 +466,7 @@ with
 
 ##### Breaking
 - The native iOS bridge uses [Braze iOS SDK 3.14.0](https://github.com/Appboy/appboy-ios-sdk/blob/master/CHANGELOG.md#3140).
-- The native Android bridge uses [Braze Android SDK 3.2.1](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#321).
+- The native Android bridge uses [Braze Android SDK 3.2.1](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#321).
 
 ##### Added
 - Adds `addAlias()` to the public API interface.
@@ -484,4 +496,4 @@ with
 ## 0.0.1
 - Initial release.
 - The native iOS bridge uses [Braze iOS SDK 3.12.0](https://github.com/Appboy/appboy-ios-sdk/releases/tag/3.12.0).
-- The native Android bridge uses [Braze Android SDK 3.1.0](https://github.com/Appboy/appboy-android-sdk/blob/master/CHANGELOG.md#310).
+- The native Android bridge uses [Braze Android SDK 3.1.0](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#310).

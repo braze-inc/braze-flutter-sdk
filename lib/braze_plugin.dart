@@ -538,10 +538,18 @@ class BrazePlugin {
     _channel.invokeMethod('removeFromSubscriptionGroup', params);
   }
 
-  /// Gets the install tracking id.
-  Future<String> getInstallTrackingId() {
+  /// Gets the device id.
+  Future<String> getDeviceId() {
     return _channel
-        .invokeMethod('getInstallTrackingId')
+        .invokeMethod('getDeviceId')
+        .then<String>((dynamic result) => result);
+  }
+
+   /// Gets the install tracking id.
+  @Deprecated('Use getDeviceId instead.')
+  Future<String> getInstallTrackingId() {
+        return _channel
+        .invokeMethod('getDeviceId')
         .then<String>((dynamic result) => result);
   }
 
@@ -559,7 +567,8 @@ class BrazePlugin {
   /// Sets ad tracking configuration for the current user.
   ///
   /// - `googleAdvertisingId` is required on Android.
-  void setAdTrackingEnabled(bool adTrackingEnabled, String? googleAdvertisingId) {
+  void setAdTrackingEnabled(
+      bool adTrackingEnabled, String? googleAdvertisingId) {
     final Map<String, dynamic> params = <String, dynamic>{
       "adTrackingEnabled": adTrackingEnabled
     };

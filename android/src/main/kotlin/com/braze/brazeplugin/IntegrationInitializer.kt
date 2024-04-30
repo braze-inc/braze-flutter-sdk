@@ -20,7 +20,7 @@ object IntegrationInitializer {
     private var featureFlagsUpdatedSubscriber: IEventSubscriber<FeatureFlagsUpdatedEvent>? = null
     private var pushNotificationsUpdatedSubscriber: IEventSubscriber<BrazePushEvent>? = null
 
-    internal fun initializePlugin(application: Application, config: FlutterCachedConfiguration) {
+    internal fun initializePlugin(application: Application, config: FlutterConfiguration) {
         application.registerActivityLifecycleCallbacks(BrazeActivityLifecycleCallbackListener())
         val ctx = application.applicationContext
         subscribeToContentCardsUpdatedEvent(ctx)

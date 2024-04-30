@@ -9,7 +9,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   final List<MethodCall> log = <MethodCall>[];
-  final String mockInstallTrackingId = '_test_install_tracking_id_';
+  final String mockDeviceId = '_test_device_id_';
 
   final String mockFeatureFlagJson =
       "{\"id\":\"test\",\"enabled\":true,\"properties\":{\"stringkey\":{\"type\":\"string\",\"value\":\"stringValue\"},\"booleankey\":{\"type\":\"boolean\",\"value\": true },\"number1key\":{\"type\":\"number\",\"value\": 4 },\"number2key\":{\"type\":\"number\",\"value\": 5.1}}}";
@@ -26,8 +26,9 @@ void main() {
       log.add(methodCall);
       // If needed to mock return values:
       switch (methodCall.method) {
+        case 'getDeviceId':
         case 'getInstallTrackingId':
-          return mockInstallTrackingId;
+          return mockDeviceId;
         case 'getAllFeatureFlags':
           return List<String>.generate(1, (index) => mockFeatureFlagJson);
         case 'getFeatureFlagByID':
@@ -210,16 +211,28 @@ void main() {
     ]);
   });
 
+  test('should call getDeviceId', () async {
+    BrazePlugin _braze = new BrazePlugin();
+    final result = await _braze.getDeviceId();
+    expect(log, <Matcher>[
+      isMethodCall(
+        'getDeviceId',
+        arguments: null,
+      )
+    ]);
+    expect(result, mockDeviceId);
+  });
+
   test('should call getInstallTrackingId', () async {
     BrazePlugin _braze = new BrazePlugin();
     final result = await _braze.getInstallTrackingId();
     expect(log, <Matcher>[
       isMethodCall(
-        'getInstallTrackingId',
+        'getDeviceId',
         arguments: null,
       )
     ]);
-    expect(result, mockInstallTrackingId);
+    expect(result, mockDeviceId);
   });
 
   test('should call addAlias', () {
