@@ -545,10 +545,10 @@ class BrazePlugin {
         .then<String>((dynamic result) => result);
   }
 
-   /// Gets the install tracking id.
+  /// Gets the install tracking id.
   @Deprecated('Use getDeviceId instead.')
   Future<String> getInstallTrackingId() {
-        return _channel
+    return _channel
         .invokeMethod('getDeviceId')
         .then<String>((dynamic result) => result);
   }
@@ -1040,6 +1040,9 @@ class BrazeInAppMessage {
   /// Whether to use a webview to display the uri when clicked
   bool useWebView = false;
 
+  // Whether the message was delivered as a test send
+  bool isTestSend = false;
+
   /// In-app message display duration in milliseconds
   int duration = 5;
 
@@ -1088,6 +1091,10 @@ class BrazeInAppMessage {
     var useWebViewJson = inAppMessageJson["use_webview"];
     if (useWebViewJson is bool) {
       useWebView = useWebViewJson;
+    }
+    var isTestSendJson = inAppMessageJson["is_test_send"];
+    if (isTestSendJson is bool) {
+      isTestSend = isTestSendJson;
     }
     var durationJson = inAppMessageJson["duration"];
     if (durationJson is int) {

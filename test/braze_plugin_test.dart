@@ -58,7 +58,7 @@ void main() {
       '95,\"border_color\":4279990479}],\"close_btn_color\":4291085508,\"bg_color\"'
       ':4294243575,\"frame_color\":3207803699,\"text_color\":4280624421,\"header_te'
       'xt_color\":4280624421,\"trigger_id\":\"NWJhNTMxOThiZjVjZWE0NDZiMTUzYjZiXyRfb'
-      'XY9NWJhNTMxOThiZjVjZWE0NDZiMTUzYjc1JnBpPWNtcA==\"}';
+      'XY9NWJhNTMxOThiZjVjZWE0NDZiMTUzYjc1JnBpPWNtcA==\", \"is_test_send\":false}';
 
   test('should call changeUser', () {
     BrazePlugin _braze = new BrazePlugin();
@@ -1163,6 +1163,7 @@ void main() {
     String defaultImageUrl = '';
     String defaultZippedAssetsUrl = '';
     bool defaultUseWebView = false;
+    bool defaultIsTestSend = false;
     int defaultDuration = 5;
     Map defaultExtras = Map();
     String defaultClickAction = 'NONE';
@@ -1188,6 +1189,7 @@ void main() {
     expect(json.jsonEncode(inAppMessage.inAppMessageJsonString),
         json.jsonEncode(testJson));
     expect(inAppMessage.buttons, equals(defaultButtons));
+    expect(inAppMessage.isTestSend, equals(defaultIsTestSend));
   });
 
   test('return the original JSON when calling BrazeInAppMessage.toString()',

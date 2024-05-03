@@ -1,5 +1,12 @@
 ⚠️ In version 3.0.0, we changed the iOS bridge from AppboyKit, which is written in Objective-C, to the new [Swift SDK](https://github.com/braze-inc/braze-swift-sdk). If you are upgrading from a version below 3.0.0 to a version above 3.0.0, please read [the instructions](https://github.com/braze-inc/braze-flutter-sdk/blob/master/CHANGELOG.md#300) to ensure a smooth transition and backward compatibility.
 
+## 10.1.0
+
+##### Added
+- Updated the Android Gradle plugin from `8.0.2` to `8.1.1`.
+- Updated the native Android bridge [from Braze Android SDK 30.3.0 to 30.4.0](https://github.com/braze-inc/braze-android-sdk/compare/v30.3.0...v30.4.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+- Adds the `BrazeInAppMessage.isTestSend` property, which indicates whether an in-app message was triggered as part of a test send.
+
 ## 10.0.0
 
 ##### Breaking
