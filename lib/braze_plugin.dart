@@ -791,7 +791,7 @@ enum DismissType { swipe, auto_dismiss }
 enum ClickAction { news_feed, uri, none }
 
 /// Braze in-app message types
-enum MessageType { slideup, modal, full, html_full }
+enum MessageType { slideup, modal, full, html_full, html }
 
 /// Braze property types to be marked for user tracking
 enum TrackingProperty {
@@ -1130,6 +1130,7 @@ class BrazeInAppMessage {
             .toLowerCase()
             .endsWith(messageTypeJson.toLowerCase())) {
           messageType = type;
+          break;
         }
       }
     }
