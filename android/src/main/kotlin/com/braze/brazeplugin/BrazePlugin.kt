@@ -73,7 +73,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
     companion object {
         // Contains all plugins that have been initialized and are attached to a Flutter engine.
         var activePlugins = mutableListOf<BrazePlugin>()
-
+        var pendingPushEvents = mutableListOf<BrazePushEvent>()
         //--
         // Braze public APIs
         //--
@@ -126,10 +126,25 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
         @JvmStatic
         fun processPushNotificationEvent(event: BrazePushEvent) {
             if (activePlugins.isEmpty()) {
-                brazelog(W) { "There are no active Braze Plugins. Not calling 'handleBrazePushNotificationEvent'." }
+                brazelog(W) { "There are no active Braze Plugins. Storing the event unless an activity is attached once any plugin is activated." }
+                // Store the event if no active plugins
+                pendingPushEvents.add(event)
                 return
             }
 
+            handlePushEvent(event)
+        }
+
+        private fun reprocessPendingEvents() {
+            if (pendingPushEvents.isNotEmpty() && activePlugins.isNotEmpty()) {
+                for (event in pendingPushEvents) {
+                    handlePushEvent(event)
+                }
+                pendingPushEvents.clear()
+            }
+        }
+
+        private fun handlePushEvent(event: BrazePushEvent) {
             val pushType = when (event.eventType) {
                 BrazePushEventType.NOTIFICATION_RECEIVED -> "push_received"
                 BrazePushEventType.NOTIFICATION_OPENED -> "push_opened"
@@ -229,6 +244,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
             brazelog(I) { "Running Flutter BrazePlugin automatic initialization" }
             this.activity?.application?.let { IntegrationInitializer.initializePlugin(it, flutterConfiguration) }
         }
+        reprocessPendingEvents()
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
