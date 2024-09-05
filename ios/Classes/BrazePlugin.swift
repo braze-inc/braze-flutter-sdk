@@ -37,6 +37,11 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         BrazePlugin.braze?.changeUser(userId: userId)
       }
 
+    case "getUserId":
+      BrazePlugin.braze?.user.id { userId in
+        result(userId)
+      }
+      
     case "setSdkAuthenticationSignature":
       guard let args = call.arguments as? [String: Any],
         Array(args.keys).contains("sdkAuthSignature"),
@@ -49,6 +54,9 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
 
     case "setSdkAuthenticationDelegate":
       BrazePlugin.braze?.sdkAuthDelegate = self
+
+    case "setBrazePluginIsReady":
+      break  // This is an Android only feature, do nothing.
 
     case "getDeviceId":
       if let deviceId = BrazePlugin.braze?.deviceId {
@@ -148,6 +156,15 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       }
       if let inAppMessage = BrazePlugin.inAppMessage(from: inAppMessageJSONString, braze: braze) {
         inAppMessage.logClick(buttonId: idNumber.stringValue, using: braze)
+      }
+      
+    case "hideCurrentInAppMessage":
+      if let inAppMessagePresenter = BrazePlugin.braze?.inAppMessagePresenter as? BrazeInAppMessageUI {
+          inAppMessagePresenter.dismiss {
+              result(nil)
+          }
+      } else {
+          print("Invalid: In-app message presenter not available or not of type BrazeInAppMessageUI, iOS method: \(call.method)")
       }
 
     case "addAlias":

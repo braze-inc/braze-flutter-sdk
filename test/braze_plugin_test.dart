@@ -10,9 +10,13 @@ void main() {
 
   final List<MethodCall> log = <MethodCall>[];
   final String mockDeviceId = '_test_device_id_';
+  final String mockUserId = '_test_user_id_';
+
+  const jsonObjectString =
+      "{\"jsonobject\":{\"string\":\"Braze1234\",\"number\":123.45,\"boolean\":true,\"datetime\":456000,\"image\":\"https://picsum.photos/200/300\",\"array\":[\"Hello\", \"World\"],\"null_value\":null,\"nested_json\":{\"string\":\"Braze1234\",\"number\":123.45,\"boolean\":true,\"datetime\":456000,\"image\":\"https://picsum.photos/200/300\",\"array\":[\"Hello\", \"World\"]}}}";
 
   final String mockFeatureFlagJson =
-      "{\"id\":\"test\",\"enabled\":true,\"properties\":{\"stringkey\":{\"type\":\"string\",\"value\":\"stringValue\"},\"booleankey\":{\"type\":\"boolean\",\"value\": true },\"number1key\":{\"type\":\"number\",\"value\": 4 },\"number2key\":{\"type\":\"number\",\"value\": 5.1}}}";
+      "{\"id\":\"test\",\"enabled\":true,\"properties\":{\"stringkey\":{\"type\":\"string\",\"value\":\"stringValue\"},\"booleankey\":{\"type\":\"boolean\",\"value\": true },\"number1key\":{\"type\":\"number\",\"value\": 4 },\"number2key\":{\"type\":\"number\",\"value\": 5.1},\"timestamp1Key\":{\"type\":\"datetime\",\"value\": 12345},\"timestamp2Key\":{\"type\":\"datetime\",\"value\": 9223372036854775807},\"jsonKey\":{\"type\":\"jsonobject\",\"value\":$jsonObjectString},\"image1Key\":{\"type\":\"image\",\"value\": \"image_name_here\"},\"image2Key\":{\"type\":\"image\",\"value\": \"https://picsum.photos/200/300\"}}}";
 
   final String mockContentCardJson =
       "{\"ca\":1234567890,\"cl\":false,\"db\":true,\"dm\":\"\",\"ds\":\"Description of Card\",\"e\":{\"timestamp\":\"1234567890\"},\"ea\":1234567890,\"id\":\"someID=\",\"p\":false,\"r\":false,\"t\":false,\"tp\":\"short_news\",\"tt\":\"Title of Card\",\"uw\":true,\"v\":false}";
@@ -29,6 +33,8 @@ void main() {
         case 'getDeviceId':
         case 'getInstallTrackingId':
           return mockDeviceId;
+        case 'getUserId':
+          return mockUserId;
         case 'getAllFeatureFlags':
           return List<String>.generate(1, (index) => mockFeatureFlagJson);
         case 'getFeatureFlagByID':
@@ -86,6 +92,18 @@ void main() {
         },
       ),
     ]);
+  });
+
+  test('should call getUserId with current user', () async {
+    BrazePlugin _braze = new BrazePlugin();
+    final result = await _braze.getUserId();
+    expect(log, <Matcher>[
+      isMethodCall(
+        'getUserId',
+        arguments: null,
+      )
+    ]);
+    expect(result, mockUserId);
   });
 
   test('should call setSdkAuthenticationSignature', () {
@@ -1038,11 +1056,22 @@ void main() {
     final result = await _braze.getFeatureFlagByID("test");
     expect(result?.id, "test");
     expect(result?.enabled, true);
-    expect(result?.properties.length, 4);
+    expect(result?.properties.length, 9);
     expect(result?.getStringProperty("stringkey"), "stringValue");
     expect(result?.getBooleanProperty("booleankey"), true);
     expect(result?.getNumberProperty("number1key"), 4);
     expect(result?.getNumberProperty("number2key"), 5.1);
+    expect(result?.getTimestampProperty("timestamp1Key"), 12345);
+    expect(result?.getTimestampProperty("timestamp2Key"), 9223372036854775807);
+    expect(
+        result?.getJSONProperty("jsonKey"), json.jsonDecode(jsonObjectString));
+
+    // Includes the entry `"null_value": null`
+    expect(result?.getJSONProperty("jsonKey")?["jsonobject"].length, 8);
+
+    expect(result?.getImageProperty("image1Key"), "image_name_here");
+    expect(
+        result?.getImageProperty("image2Key"), "https://picsum.photos/200/300");
   });
 
   test('featureFlag convenience functions return null for non-existent keys',
@@ -1052,6 +1081,9 @@ void main() {
     expect(result?.getStringProperty("keyThatDoesntExist"), null);
     expect(result?.getBooleanProperty("keyThatDoesntExist"), null);
     expect(result?.getNumberProperty("keyThatDoesntExist"), null);
+    expect(result?.getTimestampProperty("keyThatDoesntExist"), null);
+    expect(result?.getJSONProperty("keyThatDoesntExist"), null);
+    expect(result?.getImageProperty("keyThatDoesntExist"), null);
   });
 
   test('should call getFeatureFlagByID', () async {
@@ -1066,7 +1098,7 @@ void main() {
     ]);
     expect(result?.id, "test");
     expect(result?.enabled, true);
-    expect(result?.properties.length, 4);
+    expect(result?.properties.length, 9);
     expect(result?.getStringProperty("stringkey"), "stringValue");
     expect(result?.getStringProperty("stringkeyThatDoesntExist"), null);
     expect(result?.getBooleanProperty("booleankey"), true);

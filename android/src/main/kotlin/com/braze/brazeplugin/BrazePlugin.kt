@@ -25,6 +25,7 @@ import com.braze.support.BrazeLogger.Priority.W
 import com.braze.support.BrazeLogger.brazelog
 import com.braze.ui.activities.ContentCardsActivity
 import com.braze.Constants
+import com.braze.ui.inappmessage.BrazeInAppMessageManager
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -61,7 +62,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
         }
     }
 
-    override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+    override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         this.initPlugin(flutterPluginBinding.applicationContext, flutterPluginBinding.binaryMessenger)
     }
 
@@ -73,6 +74,12 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
     companion object {
         // Contains all plugins that have been initialized and are attached to a Flutter engine.
         var activePlugins = mutableListOf<BrazePlugin>()
+
+        // Contains all push events that have been received before the plugin was initialized.
+        var pendingPushEvents = mutableListOf<BrazePushEvent>()
+
+        // Indicates if the Dart layer has finished initializing
+        private var brazePluginIsReady: Boolean = false
 
         //--
         // Braze public APIs
@@ -122,14 +129,40 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
         /**
          * Used to pass in Push Notification event data from
          * the Braze SDK native layer to the Flutter layer.
+         *
+         * If there are no active Braze Plugins, it stores
+         * the event for later processing.
          */
         @JvmStatic
         fun processPushNotificationEvent(event: BrazePushEvent) {
-            if (activePlugins.isEmpty()) {
-                brazelog(W) { "There are no active Braze Plugins. Not calling 'handleBrazePushNotificationEvent'." }
+            if (activePlugins.isEmpty() || !brazePluginIsReady) {
+                brazelog(W) { "There are no active Braze Plugins. Not calling 'handleBrazePushNotificationEvent'. Storing the event for later processing." }
+                // Store the event for later processing.
+                pendingPushEvents.add(event)
                 return
             }
 
+            handlePushEvent(event)
+        }
+
+        /**
+         * Reprocesses all pending push events if there are any active plugins
+         * and the Dart layer has finished initializing.
+         */
+        private fun reprocessPendingPushEvents() {
+            if (pendingPushEvents.isNotEmpty() && activePlugins.isNotEmpty() && brazePluginIsReady) {
+                for (event in pendingPushEvents) {
+                    handlePushEvent(event)
+                }
+                pendingPushEvents.clear()
+            }
+        }
+
+        /**
+         * Handles the push event by converting it to a JSON object
+         * and sending it to the Dart layer.
+         */
+        private fun handlePushEvent(event: BrazePushEvent) {
             val pushType = when (event.eventType) {
                 BrazePushEventType.NOTIFICATION_RECEIVED -> "push_received"
                 BrazePushEventType.NOTIFICATION_OPENED -> "push_opened"
@@ -229,6 +262,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
             brazelog(I) { "Running Flutter BrazePlugin automatic initialization" }
             this.activity?.application?.let { IntegrationInitializer.initializePlugin(it, flutterConfiguration) }
         }
+        reprocessPendingPushEvents()
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
@@ -251,14 +285,27 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                         Braze.getInstance(context).changeUser(userId, sdkAuthSignature)
                     }
                 }
+                "getUserId" -> {
+                    Braze.getInstance(context).runOnUser {
+                        if (it.userId.isBlank()) {
+                            result.success(null)
+                        } else {
+                            result.success(it.userId)
+                        }
+                    }
+                }
                 "setSdkAuthenticationSignature" -> {
                     val sdkAuthSignature = call.argument<String>("sdkAuthSignature")
                     if (sdkAuthSignature != null) {
                         Braze.getInstance(context).setSdkAuthenticationSignature(sdkAuthSignature)
                     }
                 }
+                "setBrazePluginIsReady" -> {
+                    brazePluginIsReady = true
+                    reprocessPendingPushEvents()
+                }
                 "requestContentCardsRefresh" -> {
-                    Braze.getInstance(context).requestContentCardsRefresh(false)
+                    Braze.getInstance(context).requestContentCardsRefresh()
                 }
                 "launchContentCards" -> {
                     if (this.activity != null) {
@@ -312,6 +359,9 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                         }
                     }
                 }
+                "hideCurrentInAppMessage" -> {
+                    BrazeInAppMessageManager.getInstance().hideCurrentlyDisplayingInAppMessage(true)
+                }
                 "addAlias" -> {
                     val aliasName = call.argument<String>("aliasName")
                     val aliasLabel = call.argument<String>("aliasLabel")
@@ -361,7 +411,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 }
                 "setNestedCustomUserAttribute" -> {
                     val key = call.argument<String>("key")
-                    val value = JSONObject(call.argument<Map<String, *>>("value"))
+                    val value = call.argument<Map<String, *>>("value")?.let { JSONObject(it) }
                     val merge = call.argument<Boolean>("merge") ?: false
                     if (key == null || value == null) {
                         brazelog(W) { "Unexpected null parameter(s) in `setNestedCustomUserAttribute`." }
@@ -381,7 +431,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 "setCustomUserAttributeArrayOfObjects" -> {
                     val key = call.argument<String>("key")
                     val value = JSONArray(call.argument<List<Map<String, *>>>("value")?.map { JSONObject(it) })
-                    if (key == null || value == null) {
+                    if (key == null) {
                         brazelog(W) { "Unexpected null parameter(s) in `setCustomUserAttributeArrayOfObjects`." }
                         return;
                     }
@@ -678,9 +728,9 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
      */
     private fun Braze.runOnUser(block: (user: BrazeUser) -> Unit) {
         this.getCurrentUser(object : SimpleValueCallback<BrazeUser>() {
-            override fun onSuccess(user: BrazeUser) {
-                super.onSuccess(user)
-                block(user)
+            override fun onSuccess(value: BrazeUser) {
+                super.onSuccess(value)
+                block(value)
             }
         })
     }

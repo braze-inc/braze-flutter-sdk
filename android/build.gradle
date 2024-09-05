@@ -25,7 +25,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 33
+    compileSdkVersion 34
     namespace 'com.braze.brazeplugin'
 
     sourceSets {
@@ -52,7 +52,7 @@ android {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    implementation "com.braze:android-sdk-ui:30.4.0"
+    implementation "com.braze:android-sdk-ui:32.1.0"
 
     androidTestImplementation "org.mockito:mockito-android:3.12.4"
     androidTestImplementation "junit:junit:4.13.2"

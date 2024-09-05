@@ -33,15 +33,7 @@ let brazeEndpoint = "sondheim.braze.com"
     configuration.push.appGroup = "group.com.braze.flutterPluginExample.PushStories"
 
     // - Automatic push notification setup
-    configuration.push.automation = .init(
-      automaticSetup: true,
-      requestAuthorizationAtLaunch: true,
-      setNotificationCategories: true,
-      registerDeviceToken: true,
-      handleBackgroundNotification: true,
-      handleNotificationResponse: true,
-      willPresentNotification: true
-    )
+    configuration.push.automation = true
 
     let braze = BrazePlugin.initBraze(configuration)
 
@@ -57,9 +49,16 @@ let brazeEndpoint = "sondheim.braze.com"
       print("=> [Content Card Subscription] Received cards:", contentCards)
       BrazePlugin.processContentCards(contentCards)
     }
-    pushEventsSubscription = braze.notifications.subscribeToUpdates { pushEvent in
-      print("=> [Push Event Subscription] Received push event:", pushEvent)
-      BrazePlugin.processPushEvent(pushEvent)
+    pushEventsSubscription = braze.notifications.subscribeToUpdates { payload in
+      print(
+        """
+        => [Push Event Subscription] Received push event:
+           - type: \(payload.type)
+           - title: \(payload.title ?? "<empty>"))
+           - isSilent: \(payload.isSilent)
+        """
+      )
+      BrazePlugin.processPushEvent(payload)
     }
     featureFlagsSubscription = braze.featureFlags.subscribeToUpdates { featureFlags in
       print("=> [Feature Flag Subscription] Received feature Flags:", featureFlags)

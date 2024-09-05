@@ -1,4 +1,7 @@
-<img src="https://raw.githubusercontent.com/Appboy/appboy-ios-sdk/master/braze-logo.png" width="300" title="Braze Logo" />
+<p align="center">
+  <img width="480" alt="Braze Logo" src=".github/assets/logo-light.png#gh-light-mode-only" />
+  <img width="480" alt="Braze Logo" src=".github/assets/logo-dark.png#gh-dark-mode-only" />
+</p>
 
 # Braze Flutter SDK
 

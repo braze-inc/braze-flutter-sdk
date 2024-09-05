@@ -48,7 +48,7 @@ object IntegrationInitializer {
         contentCardsUpdatedSubscriber?.let {
             Braze.getInstance(ctx).subscribeToContentCardsUpdates(it)
         }
-        Braze.getInstance(ctx).requestContentCardsRefresh(true)
+        Braze.getInstance(ctx).requestContentCardsRefreshFromCache()
     }
 
     private fun subscribeToPushNotificationEvents(ctx: Context) {

@@ -169,6 +169,21 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                 });
               },
             ),
+            TextButton(
+                child: const Text('GET USER ID'),
+                onPressed: () async {
+                  _braze.getUserId().then((result) {
+                    String resultText = "";
+                    if (result == null) {
+                      resultText = "User ID not found.";
+                    } else {
+                      resultText = "User ID: $result";
+                    }
+                    ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                      content: new Text(resultText),
+                    ));
+                  });
+                }),
             TextField(
               autocorrect: false,
               controller: customEventNameController,
@@ -407,6 +422,18 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                     value: 'STRING',
                     child: Text('STRING'),
                   ),
+                  DropdownMenuItem(
+                    value: 'TIMESTAMP',
+                    child: Text('TIMESTAMP'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'JSON',
+                    child: Text('JSON'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'IMAGE',
+                    child: Text('IMAGE'),
+                  ),
                 ],
                 onChanged: (String? value) {
                   setState(() {
@@ -430,6 +457,18 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                       break;
                     case 'STRING':
                       ffProperty = ff?.getStringProperty(
+                          featureFlagPropertyController.text);
+                      break;
+                    case 'TIMESTAMP':
+                      ffProperty = ff?.getTimestampProperty(
+                          featureFlagPropertyController.text);
+                      break;
+                    case 'JSON':
+                      ffProperty = ff
+                          ?.getJSONProperty(featureFlagPropertyController.text);
+                      break;
+                    case 'IMAGE':
+                      ffProperty = ff?.getImageProperty(
                           featureFlagPropertyController.text);
                       break;
                   }
@@ -498,6 +537,12 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                   content: new Text("Listening to in-app message stream. "
                       "In-app message data will appear in snackbars."),
                 ));
+              },
+            ),
+            TextButton(
+              child: const Text('HIDE CURRENT IN-APP MESSAGE'),
+              onPressed: () {
+                _braze.hideCurrentInAppMessage();
               },
             ),
             SectionHeader("Content Cards"),
@@ -570,7 +615,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                   ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
                     content: new Text("Device ID: " + result),
                   ));
-               });
+                });
               },
             ),
             TextButton(

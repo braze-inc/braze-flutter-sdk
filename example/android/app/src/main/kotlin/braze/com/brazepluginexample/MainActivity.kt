@@ -38,9 +38,9 @@ class MainActivity : FlutterActivity() {
 
     private fun handleDeepLink(intent: Intent) {
         val binaryMessenger = flutterEngine?.dartExecutor?.binaryMessenger
-        if (intent?.action == Intent.ACTION_VIEW && binaryMessenger != null) {
+        if (intent.action == Intent.ACTION_VIEW && binaryMessenger != null) {
             MethodChannel(binaryMessenger, "deepLinkChannel")
-                .invokeMethod("receivedLink", intent?.data.toString())
+                .invokeMethod("receivedLink", intent.data.toString())
         }
     }
 }

@@ -35,7 +35,6 @@ class FlutterConfigurationTest {
     @Test
     fun whenBooleanValueDoesNotExistInResources_isAutomaticInitializationEnabled_returnsTrue() {
         val key = "com_braze_flutter_enable_automatic_integration_initializer"
-        val testResId = 1234
         val testPackageName = "foo.bar.braze"
         val mockResources = mock<Resources>() {
             on { getIdentifier(key, "bool", testPackageName) } doReturn 0

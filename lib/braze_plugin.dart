@@ -65,6 +65,9 @@ class BrazePlugin {
 
     // Called after setting up plugin settings
     _channel.setMethodCallHandler(_handleBrazeData);
+
+    // Notify the native layer that the plugin is ready
+    _setBrazePluginIsReady();
   }
 
   /// Subscribes to the stream of in-app messages and calls [onEvent] when it
@@ -134,6 +137,14 @@ class BrazePlugin {
     _channel.invokeMethod('changeUser', params);
   }
 
+  /// Returns a unique ID stored for the user.
+  /// If the user is anonymous, there is no ID stored for the user and this method will return `null`.
+  Future<String?> getUserId() {
+    return _channel
+        .invokeMethod('getUserId')
+        .then<String?>((dynamic result) => result == null ? null : result);
+  }
+
   void setSdkAuthenticationSignature(String? sdkAuthSignature) {
     final Map<String, dynamic> params = <String, dynamic>{
       "sdkAuthSignature": sdkAuthSignature
@@ -189,6 +200,11 @@ class BrazePlugin {
       "buttonId": buttonId
     };
     _channel.invokeMethod('logInAppMessageButtonClicked', params);
+  }
+
+  /// Dismisses the currently displayed in-app message.
+  void hideCurrentInAppMessage() {
+    _channel.invokeMethod('hideCurrentInAppMessage');
   }
 
   /// Add alias for current user.
@@ -659,6 +675,11 @@ class BrazePlugin {
     getAllFeatureFlags().then((ffs) => onEvent(ffs));
 
     return subscription;
+  }
+
+  /// Notifies the native layer that the plugin is ready to receive data.
+  void _setBrazePluginIsReady() {
+    _channel.invokeMethod('setBrazePluginIsReady');
   }
 
   void _callStringMethod(String methodName, String paramName, String? value) {
@@ -1413,38 +1434,64 @@ class BrazeFeatureFlag {
     properties = propertiesJson ?? Map();
   }
 
-  /// Returns a string of the additional properties for the given ID
-  /// Returns null if the key is not a string property
+  /// Returns a string value of the feature flag's properties for the given key.
+  /// Returns null if the key is not a string property or if there is no property for that key.
   String? getStringProperty(String key) {
     var data = properties[key];
-    if (data != null) {
-      if (data["type"] == "string") {
-        return data["value"];
-      }
+    if (data != null && data["type"] == "string") {
+      return data["value"];
     }
     return null;
   }
 
-  /// Returns a bool of the additional properties for the given ID
-  /// Returns null if the key is not a boolean property
+  /// Returns a boolean value of the feature flag's properties for the given key.
+  /// Returns null if the key is not a boolean property or if there is no property for that key.
   bool? getBooleanProperty(String key) {
     var data = properties[key];
-    if (data != null) {
-      if (data["type"] == "boolean") {
-        return data["value"];
-      }
+    if (data != null && data["type"] == "boolean") {
+      return data["value"];
     }
     return null;
   }
 
-  /// Returns a num of the additional properties for the given ID
-  /// Returns null if the key is not a number
+  /// Returns a number value of the feature flag's properties for the given key.
+  /// Returns null if the key is not a number or if there is no property for that key.
   num? getNumberProperty(String key) {
     var data = properties[key];
-    if (data != null) {
-      if (data["type"] == "number") {
-        return data["value"];
-      }
+    if (data != null && data["type"] == "number") {
+      return data["value"];
+    }
+    return null;
+  }
+
+  /// Returns an integer value (which can hold the value of any `long`) of the
+  /// feature flag's properties for the given key.
+  /// Returns null if the key is not an integer or if there is no property for that key.
+  int? getTimestampProperty(String key) {
+    var data = properties[key];
+    if (data != null && data["type"] == "datetime") {
+      return data["value"];
+    }
+    return null;
+  }
+
+  /// Returns a Map of the feature flag's properties for the given key.
+  /// Returns null if the key is not a Map object or if there is no property for that key.
+  Map<String, dynamic>? getJSONProperty(String key) {
+    var data = properties[key];
+    if (data != null && data["type"] == "jsonobject") {
+      return data["value"];
+    }
+    return null;
+  }
+
+  /// Returns a string representing an image of the feature flag's properties
+  /// for the given key.
+  /// Returns null if the key is not a string or if there is no property for that key.
+  String? getImageProperty(String key) {
+    var data = properties[key];
+    if (data != null && data["type"] == "image") {
+      return data["value"];
     }
     return null;
   }

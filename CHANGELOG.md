@@ -1,5 +1,24 @@
 ⚠️ In version 3.0.0, we changed the iOS bridge from AppboyKit, which is written in Objective-C, to the new [Swift SDK](https://github.com/braze-inc/braze-swift-sdk). If you are upgrading from a version below 3.0.0 to a version above 3.0.0, please read [the instructions](https://github.com/braze-inc/braze-flutter-sdk/blob/master/CHANGELOG.md#300) to ensure a smooth transition and backward compatibility.
 
+## 11.0.0
+
+##### Breaking
+- Updates the native Android bridge [from Braze Android SDK 30.4.0 to 32.1.0](https://github.com/braze-inc/braze-android-sdk/compare/v30.4.0...v32.1.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+  - Changes the behavior of `wipeData()` on Android to retain external subscriptions (like `subscribeToContentCards()`) after being called.
+- Updates the native iOS bridge [from Braze Swift SDK 9.0.0 to 10.2.0](https://github.com/braze-inc/braze-swift-sdk/compare/9.0.0...10.2.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+
+##### Added
+- Adds support for 3 new Feature Flag property types:
+  - `featureFlag.getTimestampProperty(String key)` for accessing Int Unix UTC millisecond timestamps as `int?`s.
+  - `featureFlag.getJSONProperty(String key)` for accessing JSON objects as `Map<String, dynamic>?` types.
+  - `featureFlag.getImageProperty(String key)` for accessing image URLs as `String?`s.
+- Adds the `getUserId()` method to get the ID of the current user. This method will return `null` if the current user is anonymous.
+- Adds the `hideCurrentInAppMessage()` method, which dismisses the currently displayed in-app message.
+
+##### Fixed
+- Fixes an issue on Android where push notification stream subscriptions were not receiving events after clicking on a push notification when the app was in a terminated state.
+  - Thank you @Neelansh-ns for the contribution!
+
 ## 10.1.0
 
 ##### Added
@@ -24,6 +43,7 @@
 ##### Breaking
 - Updates the native iOS bridge [from Braze Swift SDK 7.7.0 to 8.4.0](https://github.com/braze-inc/braze-swift-sdk/compare/7.7.0...8.4.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
   - The minimum iOS deployment target has been updated to 12.0.
+  - The minimum supported Xcode version is 15.2.
 - Updates the native Android bridge [from Braze Android SDK 29.0.1 to 30.3.0](https://github.com/braze-inc/braze-android-sdk/compare/v29.0.1...v30.3.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
 - The minimum supported Dart version is `2.15.0`.
 
