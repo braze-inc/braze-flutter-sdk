@@ -841,7 +841,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       return
     }
 
-      pushEventJson = updatePushEventJson(pushEventJson!, pushEvent: pushEvent)
+    pushEventJson = updatePushEventJson(pushEventJson!, pushEvent: pushEvent)
 
     // Re-serialize the updated JSON
     var options: JSONSerialization.WritingOptions = [.sortedKeys]
