@@ -834,11 +834,14 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
   ///
   /// - Parameter pushEvent: The Braze push notification event in native Swift.
   public class func processPushEvent(_ pushEvent: Braze.Notifications.Payload) {
-    guard let pushEventData = pushEvent.json(),
-          var pushEventJson = try? JSONSerialization.jsonObject(with: pushEventData, options: []) as? [String : Any]
-    else {
-      print("Invalid pushEvent: \(pushEvent)")
-      return
+    guard let pushEventData = pushEvent.json() else {
+    print("Invalid pushEvent: \(pushEvent)")
+    return
+    }
+
+    guard var pushEventJson = try? JSONSerialization.jsonObject(with: pushEventData, options: []) as? [String: Any] else {
+        print("Failed to parse JSON from pushEventData")
+        return
     }
 
     pushEventJson = updatePushEventJson(pushEventJson, pushEvent: pushEvent)
