@@ -839,14 +839,14 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
     return
     }
 
-    guard var pushEventJson = try? JSONSerialization.jsonObject(with: pushEventData, options: []) as? [String: Any] else {
-        print("Failed to parse JSON from pushEventData")
-        return
+    guard let pushEventData = try? JSONSerialization.jsonObject(with: pushEventData, options: []) as? [String: Any] else {
+    print("Failed to parse JSON from pushEventData")
+    return
     }
 
+    var pushEventJson = pushEventData
     pushEventJson = updatePushEventJson(pushEventJson, pushEvent: pushEvent)
-
-    // Re-serialize the updated JSON
+        // Re-serialize the updated JSON
     var options: JSONSerialization.WritingOptions = [.sortedKeys]
     if #available(iOS 13.0, *) {
       options.insert(.withoutEscapingSlashes)
