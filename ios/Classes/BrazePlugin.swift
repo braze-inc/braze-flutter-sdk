@@ -184,7 +184,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
       }
-      let properties = args["properties"] as? [String: Any]
+      let properties = args["properties"] as? [String: Any] ?? [:]
       BrazePlugin.braze?.logCustomEvent(name: eventName, properties: properties)
 
     case "logPurchase", "logPurchaseWithProperties":
