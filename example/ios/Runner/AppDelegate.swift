@@ -9,7 +9,7 @@ import braze_plugin
 let brazeApiKey = "9292484d-3b10-4e67-971d-ff0c0d518e21"
 let brazeEndpoint = "sondheim.braze.com"
 
-@main
+@UIApplicationMain
 @objc class AppDelegate: FlutterAppDelegate {
 
   // These subscriptions need to be retained to be active
@@ -54,7 +54,7 @@ let brazeEndpoint = "sondheim.braze.com"
         """
         => [Push Event Subscription] Received push event:
            - type: \(payload.type)
-           - title: \(payload.title ?? "<empty>")
+           - title: \(payload.title ?? "<empty>"))
            - isSilent: \(payload.isSilent)
         """
       )

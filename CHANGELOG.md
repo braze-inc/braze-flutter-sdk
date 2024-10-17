@@ -1,10 +1,5 @@
 ⚠️ In version 3.0.0, we changed the iOS bridge from AppboyKit, which is written in Objective-C, to the new [Swift SDK](https://github.com/braze-inc/braze-swift-sdk). If you are upgrading from a version below 3.0.0 to a version above 3.0.0, please read [the instructions](https://github.com/braze-inc/braze-flutter-sdk/blob/master/CHANGELOG.md#300) to ensure a smooth transition and backward compatibility.
 
-## 11.1.0
-
-##### Added
-- Updates the native iOS bridge [from Braze Swift SDK 10.2.0 to 10.3.1](https://github.com/braze-inc/braze-swift-sdk/compare/10.2.0...10.3.1#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
-
 ## 11.0.0
 
 ##### Breaking
@@ -57,7 +52,6 @@
   - On iOS, this callback can only be triggered for push click events.
   - Reference our [Flutter Push Notification documentation](https://www.braze.com/docs/developer_guide/platform_integration_guides/flutter/push_notifications) with details on how to utilize this feature.
   - This feature is compatible with the `replayCallbacksConfigKey` to replay the push event callback for any notifications that were received prior to calling `subscribeToPushNotificationEvents`.
-  - Due to [an issue in the Flutter framework](https://github.com/flutter/flutter/issues/155479), this feature is not compatible with subscribing to [iOS silent push notifications](https://developer.apple.com/documentation/usernotifications/pushing-background-updates-to-your-app#Receive-background-notifications).
 - Adds support for Braze tracking properties.
   - Adds the `updateTrackingPropertyAllowList(allowList)` method to dynamically configure Braze tracking properties.
   - For further usage details, refer to the [Swift privacy manifest documentation](https://www.braze.com/docs/developer_guide/platform_integration_guides/swift/privacy_manifest/).

@@ -20,9 +20,9 @@ Pod::Spec.new do |s|
   s.static_framework = true
 
   s.dependency 'Flutter'
-  s.dependency 'BrazeKit', '~> 10.3.1'
-  s.dependency 'BrazeLocation', '~> 10.3.1'
-  s.dependency 'BrazeUI', '~> 10.3.1'
+  s.dependency 'BrazeKit', '~> 10.2.0'
+  s.dependency 'BrazeLocation', '~> 10.2.0'
+  s.dependency 'BrazeUI', '~> 10.2.0'
 
   s.ios.deployment_target = '12.0'
 end
