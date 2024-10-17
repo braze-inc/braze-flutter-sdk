@@ -184,7 +184,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
       }
-      let properties = args["properties"] as? [String: Any]
+      let properties = args["properties"] as? [String: Any] ?? [:]
       BrazePlugin.braze?.logCustomEvent(name: eventName, properties: properties)
 
     case "logPurchase", "logPurchaseWithProperties":
@@ -197,7 +197,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
       }
-      let properties = args["properties"] as? [String: Any]
+      let properties = args["properties"] as? [String: Any] ?? [:]
       BrazePlugin.braze?.logPurchase(
         productId: productId,
         currency: currencyCode,
@@ -834,11 +834,14 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
   ///
   /// - Parameter pushEvent: The Braze push notification event in native Swift.
   public class func processPushEvent(_ pushEvent: Braze.Notifications.Payload) {
-    guard let pushEventData = pushEvent.json(),
-          var pushEventJson = try? JSONSerialization.jsonObject(with: pushEventData, options: []) as? [String : Any]
-    else {
-      print("Invalid pushEvent: \(pushEvent)")
-      return
+    guard let pushEventData = pushEvent.json() else {
+    print("Invalid pushEvent: \(pushEvent)")
+    return
+    }
+
+    guard var pushEventJson = try? JSONSerialization.jsonObject(with: pushEventData, options: []) as? [String: Any] else {
+        print("Failed to parse JSON from pushEventData")
+        return
     }
 
     pushEventJson = updatePushEventJson(pushEventJson, pushEvent: pushEvent)
