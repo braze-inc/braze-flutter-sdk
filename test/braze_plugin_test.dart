@@ -22,11 +22,19 @@ void main() {
       "{\"ca\":1234567890,\"cl\":false,\"db\":true,\"dm\":\"\",\"ds\":\"Description of Card\",\"e\":{\"timestamp\":\"1234567890\"},\"ea\":1234567890,\"id\":\"someID=\",\"p\":false,\"r\":false,\"t\":false,\"tp\":\"short_news\",\"tt\":\"Title of Card\",\"uw\":true,\"v\":false}";
 
   bool nullFeatureFlag = false;
+  bool wasInitialized = false;
 
   setUpAll(() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(MethodChannel('braze_plugin'),
             (MethodCall methodCall) async {
+      if (methodCall.method == 'setBrazePluginIsReady') {
+        wasInitialized = true;
+        return null;
+      }
+      if (!wasInitialized) {
+        throw Exception('Plugin not initialized');
+      }
       log.add(methodCall);
       // If needed to mock return values:
       switch (methodCall.method) {

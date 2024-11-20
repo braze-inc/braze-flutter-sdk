@@ -28,20 +28,20 @@ object IntegrationInitializer {
         subscribeToPushNotificationEvents(ctx)
 
         BrazeInAppMessageManager.getInstance()
-                .setCustomInAppMessageManagerListener(
-                        BrazeInAppMessageManagerListener(
-                                config.automaticIntegrationInAppMessageOperation()
-                        )
+            .setCustomInAppMessageManagerListener(
+                BrazeInAppMessageManagerListener(
+                    config.automaticIntegrationInAppMessageOperation()
                 )
+            )
         isUninitialized = false
     }
 
     private fun subscribeToContentCardsUpdatedEvent(ctx: Context) {
         Braze.getInstance(ctx)
-                .removeSingleSubscription(
-                        contentCardsUpdatedSubscriber,
-                        ContentCardsUpdatedEvent::class.java
-                )
+            .removeSingleSubscription(
+                contentCardsUpdatedSubscriber,
+                ContentCardsUpdatedEvent::class.java
+            )
         contentCardsUpdatedSubscriber = IEventSubscriber {
             BrazePlugin.processContentCards(it.allCards)
         }
@@ -53,10 +53,10 @@ object IntegrationInitializer {
 
     private fun subscribeToPushNotificationEvents(ctx: Context) {
         Braze.getInstance(ctx)
-                .removeSingleSubscription(
-                        pushNotificationsUpdatedSubscriber,
-                        BrazePushEvent::class.java
-                )
+            .removeSingleSubscription(
+                pushNotificationsUpdatedSubscriber,
+                BrazePushEvent::class.java
+            )
         pushNotificationsUpdatedSubscriber = IEventSubscriber {
             BrazePlugin.processPushNotificationEvent(it)
         }
@@ -67,10 +67,10 @@ object IntegrationInitializer {
 
     private fun subscribeToFeatureFlagsUpdatedEvent(ctx: Context) {
         Braze.getInstance(ctx)
-                .removeSingleSubscription(
-                        featureFlagsUpdatedSubscriber,
-                        FeatureFlagsUpdatedEvent::class.java
-                )
+            .removeSingleSubscription(
+                featureFlagsUpdatedSubscriber,
+                FeatureFlagsUpdatedEvent::class.java
+            )
         featureFlagsUpdatedSubscriber = IEventSubscriber {
             BrazePlugin.processFeatureFlags(it.featureFlags)
         }
@@ -81,10 +81,10 @@ object IntegrationInitializer {
     }
 
     private class BrazeInAppMessageManagerListener(
-            val defaultInAppMessageOperation: InAppMessageOperation
+        val defaultInAppMessageOperation: InAppMessageOperation
     ) : DefaultInAppMessageManagerListener() {
         override fun beforeInAppMessageDisplayed(
-                inAppMessage: IInAppMessage
+            inAppMessage: IInAppMessage
         ): InAppMessageOperation {
             super.beforeInAppMessageDisplayed(inAppMessage)
             BrazePlugin.processInAppMessage(inAppMessage)

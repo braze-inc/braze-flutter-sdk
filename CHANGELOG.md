@@ -1,5 +1,11 @@
 ⚠️ In version 3.0.0, we changed the iOS bridge from AppboyKit, which is written in Objective-C, to the new [Swift SDK](https://github.com/braze-inc/braze-swift-sdk). If you are upgrading from a version below 3.0.0 to a version above 3.0.0, please read [the instructions](https://github.com/braze-inc/braze-flutter-sdk/blob/master/CHANGELOG.md#300) to ensure a smooth transition and backward compatibility.
 
+## 12.0.0
+
+##### Breaking
+- Updates the native iOS bridge [from Braze Swift SDK 10.3.1 to 11.3.0](https://github.com/braze-inc/braze-swift-sdk/compare/10.3.1...11.3.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+- Updates the native Android bridge [from Braze Android SDK 32.1.0 to 33.1.0](https://github.com/braze-inc/braze-android-sdk/compare/v32.1.0...v33.1.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+
 ## 11.1.0
 
 ##### Added
@@ -51,6 +57,7 @@
   - The minimum supported Xcode version is 15.2.
 - Updates the native Android bridge [from Braze Android SDK 29.0.1 to 30.3.0](https://github.com/braze-inc/braze-android-sdk/compare/v29.0.1...v30.3.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
 - The minimum supported Dart version is `2.15.0`.
+- The minimum supported Swift Language Version is Swift 5.
 
 ##### Added
 - Push notification payloads are now accessible in the Dart layer by calling `subscribeToPushNotificationEvents(void Function(BrazePushEvent) onEvent)`. This allows you to run custom Dart code after a push is received or when a push is clicked.

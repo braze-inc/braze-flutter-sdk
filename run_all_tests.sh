@@ -11,6 +11,7 @@ echo "\n-> Testing Android Embedding..."
 flutter build apk
 cd android
 ./gradlew app:connectedAndroidTest -Ptarget=`pwd`/../integration_test/braze_plugin_integration_test.dart
+./gradlew braze_plugin:connectedAndroidTest
 cd ..
 
 echo "-> Done running tests! ✅"

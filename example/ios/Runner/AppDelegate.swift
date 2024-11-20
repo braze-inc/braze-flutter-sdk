@@ -99,29 +99,38 @@ extension GIFViewProvider {
       : UIImage(contentsOfFile: url.path)
   }
 }
-  
+
 // MARK: Linking
-  
+
 extension AppDelegate {
-  
+
   private func forwardURL(_ url: URL) {
-    guard let controller: FlutterViewController = window?.rootViewController as? FlutterViewController else { return }
-    let deepLinkChannel = FlutterMethodChannel(name: "deepLinkChannel", binaryMessenger: controller.binaryMessenger)
+    guard
+      let controller: FlutterViewController = window?.rootViewController as? FlutterViewController
+    else { return }
+    let deepLinkChannel = FlutterMethodChannel(
+      name: "deepLinkChannel", binaryMessenger: controller.binaryMessenger)
     deepLinkChannel.invokeMethod("receiveDeepLink", arguments: url.absoluteString)
   }
-  
+
   // Custom scheme
   // See https://developer.apple.com/documentation/xcode/defining-a-custom-url-scheme-for-your-app for more information.
-  override func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
+  override func application(
+    _ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+  ) -> Bool {
     forwardURL(url)
     return true
   }
-  
+
   // Universal link
   // See https://developer.apple.com/documentation/xcode/allowing-apps-and-websites-to-link-to-your-content for more information.
-  override func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
+  override func application(
+    _ application: UIApplication, continue userActivity: NSUserActivity,
+    restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void
+  ) -> Bool {
     guard userActivity.activityType == NSUserActivityTypeBrowsingWeb,
-          let url = userActivity.webpageURL else {
+      let url = userActivity.webpageURL
+    else {
       return false
     }
     forwardURL(url)

@@ -41,7 +41,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       BrazePlugin.braze?.user.id { userId in
         result(userId)
       }
-      
+
     case "setSdkAuthenticationSignature":
       guard let args = call.arguments as? [String: Any],
         Array(args.keys).contains("sdkAuthSignature"),
@@ -79,7 +79,9 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         let contentCardJSONString = args["contentCardString"] as? String,
         let braze = BrazePlugin.braze
       else {
-        print("Invalid args: \(argsDescription), braze: \(String(describing: braze)), iOS method: \(call.method)")
+        print(
+          "Invalid args: \(argsDescription), braze: \(String(describing: braze)), iOS method: \(call.method)"
+        )
         return
       }
       if let contentCard = BrazePlugin.contentCard(from: contentCardJSONString, braze: braze) {
@@ -91,7 +93,9 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         let contentCardJSONString = args["contentCardString"] as? String,
         let braze = BrazePlugin.braze
       else {
-        print("Invalid args: \(argsDescription), braze: \(String(describing: braze)), iOS method: \(call.method)")
+        print(
+          "Invalid args: \(argsDescription), braze: \(String(describing: braze)), iOS method: \(call.method)"
+        )
         return
       }
       if let contentCard = BrazePlugin.contentCard(from: contentCardJSONString, braze: braze) {
@@ -103,7 +107,9 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         let contentCardJSONString = args["contentCardString"] as? String,
         let braze = BrazePlugin.braze
       else {
-        print("Invalid args: \(argsDescription), braze: \(String(describing: braze)), iOS method: \(call.method)")
+        print(
+          "Invalid args: \(argsDescription), braze: \(String(describing: braze)), iOS method: \(call.method)"
+        )
         return
       }
       if let contentCard = BrazePlugin.contentCard(from: contentCardJSONString, braze: braze) {
@@ -126,7 +132,9 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         let inAppMessageJSONString = args["inAppMessageString"] as? String,
         let braze = BrazePlugin.braze
       else {
-        print("Invalid args: \(argsDescription), braze: \(String(describing: braze)), iOS method: \(call.method)")
+        print(
+          "Invalid args: \(argsDescription), braze: \(String(describing: braze)), iOS method: \(call.method)"
+        )
         return
       }
       if let inAppMessage = BrazePlugin.inAppMessage(from: inAppMessageJSONString, braze: braze) {
@@ -138,7 +146,9 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         let inAppMessageJSONString = args["inAppMessageString"] as? String,
         let braze = BrazePlugin.braze
       else {
-        print("Invalid args: \(argsDescription), braze: \(String(describing: braze)), iOS method: \(call.method)")
+        print(
+          "Invalid args: \(argsDescription), braze: \(String(describing: braze)), iOS method: \(call.method)"
+        )
         return
       }
       if let inAppMessage = BrazePlugin.inAppMessage(from: inAppMessageJSONString, braze: braze) {
@@ -151,20 +161,26 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         let idNumber = args["buttonId"] as? NSNumber,
         let braze = BrazePlugin.braze
       else {
-        print("Invalid args: \(argsDescription), braze: \(String(describing: braze)), iOS method: \(call.method)")
+        print(
+          "Invalid args: \(argsDescription), braze: \(String(describing: braze)), iOS method: \(call.method)"
+        )
         return
       }
       if let inAppMessage = BrazePlugin.inAppMessage(from: inAppMessageJSONString, braze: braze) {
         inAppMessage.logClick(buttonId: idNumber.stringValue, using: braze)
       }
-      
+
     case "hideCurrentInAppMessage":
-      if let inAppMessagePresenter = BrazePlugin.braze?.inAppMessagePresenter as? BrazeInAppMessageUI {
-          inAppMessagePresenter.dismiss {
-              result(nil)
-          }
+      if let inAppMessagePresenter = BrazePlugin.braze?.inAppMessagePresenter
+        as? BrazeInAppMessageUI
+      {
+        DispatchQueue.main.async {
+          inAppMessagePresenter.dismiss { result(nil) }
+        }
       } else {
-          print("Invalid: In-app message presenter not available or not of type BrazeInAppMessageUI, iOS method: \(call.method)")
+        print(
+          "Invalid: In-app message presenter not available or not of type BrazeInAppMessageUI, iOS method: \(call.method)"
+        )
       }
 
     case "addAlias":
@@ -426,11 +442,11 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         return
       }
       BrazePlugin.braze?.user.incrementCustomUserAttribute(key: key, by: value.intValue)
-      
+
     case "setNestedCustomUserAttribute":
       guard let args = call.arguments as? [String: Any],
-            let key = args["key"] as? String,
-            let value = args["value"] as? [String: Any?]
+        let key = args["key"] as? String,
+        let value = args["value"] as? [String: Any?]
       else {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
@@ -440,8 +456,8 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
 
     case "setCustomUserAttributeArrayOfStrings":
       guard let args = call.arguments as? [String: Any],
-            let key = args["key"] as? String,
-            let value = args["value"] as? [String]?
+        let key = args["key"] as? String,
+        let value = args["value"] as? [String]?
       else {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
@@ -450,8 +466,8 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
 
     case "setCustomUserAttributeArrayOfObjects":
       guard let args = call.arguments as? [String: Any],
-            let key = args["key"] as? String,
-            let value = args["value"] as? [[String: Any?]]
+        let key = args["key"] as? String,
+        let value = args["value"] as? [[String: Any?]]
       else {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
@@ -472,7 +488,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
 
     case "setAdTrackingEnabled":
       guard let args = call.arguments as? [String: Any],
-            let adTrackingEnabled = args["adTrackingEnabled"] as? Bool
+        let adTrackingEnabled = args["adTrackingEnabled"] as? Bool
       else {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
@@ -503,7 +519,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
       }
-      
+
       if let tokenData = token.data(using: .utf8) {
         BrazePlugin.braze?.notifications.register(deviceToken: tokenData)
       } else {
@@ -548,19 +564,20 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       BrazePlugin.braze?.enabled = true
     case "disableSDK":
       BrazePlugin.braze?.enabled = false
-      
+
     case "getFeatureFlagByID":
       guard let args = call.arguments as? [String: Any],
-            let flagId = args["id"] as? String
+        let flagId = args["id"] as? String
       else {
         print("Unexpected null id in `getFeatureFlagByID`.")
         return
       }
-      
+
       if let featureFlag = BrazePlugin.braze?.featureFlags.featureFlag(id: flagId),
-        let featureFlagJson = featureFlag.json() {
-          let featureFlagString = String(data: featureFlagJson, encoding: .utf8)
-          result(featureFlagString)
+        let featureFlagJson = featureFlag.json()
+      {
+        let featureFlagString = String(data: featureFlagJson, encoding: .utf8)
+        result(featureFlagString)
       } else {
         result(nil)
       }
@@ -578,7 +595,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       BrazePlugin.braze?.featureFlags.requestRefresh()
     case "logFeatureFlagImpression":
       guard let args = call.arguments as? [String: Any],
-            let flagId = args["id"] as? String
+        let flagId = args["id"] as? String
       else {
         print("Unexpected null id in `logFeatureFlagImpression`.")
         return
@@ -591,7 +608,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       }
       var addingSet = Set<Braze.Configuration.TrackingProperty>()
       var removingSet = Set<Braze.Configuration.TrackingProperty>()
-      
+
       if let adding = args["adding"] as? [String] {
         adding.forEach { propertyString in
           if let trackingProperty = BrazePlugin.getTrackingProperty(from: propertyString) {
@@ -632,7 +649,9 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
     }
   }
 
-  private class func inAppMessage(from jsonString: String, braze: BrazeKit.Braze) -> Braze.InAppMessage? {
+  private class func inAppMessage(from jsonString: String, braze: BrazeKit.Braze) -> Braze
+    .InAppMessage?
+  {
     let inAppMessageRaw = try? JSONDecoder().decode(
       Braze.InAppMessageRaw.self, from: Data(jsonString.utf8))
     guard let inAppMessageRaw = inAppMessageRaw else { return nil }
@@ -646,8 +665,10 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
     return nil
   }
 
-  private class func contentCard(from jsonString: String, braze: BrazeKit.Braze) -> Braze.ContentCard? {
-    let contentCardRaw = Braze.ContentCardRaw.from(json: Data(jsonString.utf8))
+  private class func contentCard(from jsonString: String, braze: BrazeKit.Braze) -> Braze
+    .ContentCard?
+  {
+    let contentCardRaw = Braze.ContentCardRaw.decoding(json: Data(jsonString.utf8))
     guard let contentCardRaw = contentCardRaw else { return nil }
 
     do {
@@ -697,8 +718,10 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       return .unknown
     }
   }
-  
-  private class func getTrackingProperty(from propertyString: String) -> Braze.Configuration.TrackingProperty? {
+
+  private class func getTrackingProperty(from propertyString: String) -> Braze.Configuration
+    .TrackingProperty?
+  {
     switch propertyString {
     case "TrackingProperty.all_custom_attributes":
       return .allCustomAttributes
@@ -749,11 +772,13 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
   /// - Parameter originalJson: The unedited push event JSON.
   /// - Parameter pushEvent: The Braze push notification event in native Swift.
   /// - Returns: The push event JSON after updating some fields.
-  private class func updatePushEventJson(_ originalJson: [String : Any], pushEvent: Braze.Notifications.Payload) -> [String : Any] {
+  private class func updatePushEventJson(
+    _ originalJson: [String: Any], pushEvent: Braze.Notifications.Payload
+  ) -> [String: Any] {
     var pushEventJson = originalJson
 
     // - Use the `"push_` prefix for consistency with Android. The Swift SDK internally uses `"opened"`.
-    if (pushEventJson["payload_type"] as? String == "opened") {
+    if pushEventJson["payload_type"] as? String == "opened" {
       pushEventJson["payload_type"] = "push_opened"
     }
 
@@ -766,8 +791,9 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
     // - If present, add the URL of the image attached to the notification.
     //   This avoids the need to extract the field from UserInfo.
     if let brazeUserInfo = pushEvent.userInfo["ab"] as? [String: Any],
-       let att = brazeUserInfo["att"] as? [String: Any],
-       let imageUrl = att["url"] as? String {
+      let att = brazeUserInfo["att"] as? [String: Any],
+      let imageUrl = att["url"] as? String
+    {
       pushEventJson["image_url"] = imageUrl
     }
 
@@ -835,7 +861,8 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
   /// - Parameter pushEvent: The Braze push notification event in native Swift.
   public class func processPushEvent(_ pushEvent: Braze.Notifications.Payload) {
     guard let pushEventData = pushEvent.json(),
-          var pushEventJson = try? JSONSerialization.jsonObject(with: pushEventData, options: []) as? [String : Any]
+      var pushEventJson = try? JSONSerialization.jsonObject(with: pushEventData, options: [])
+        as? [String: Any]
     else {
       print("Invalid pushEvent: \(pushEvent)")
       return
@@ -848,8 +875,10 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
     if #available(iOS 13.0, *) {
       options.insert(.withoutEscapingSlashes)
     }
-    guard let updatedJsonData = try? JSONSerialization.data(withJSONObject: pushEventJson, options: options),
-          let pushEventString = String(data: updatedJsonData, encoding: .utf8)
+    guard
+      let updatedJsonData = try? JSONSerialization.data(
+        withJSONObject: pushEventJson, options: options),
+      let pushEventString = String(data: updatedJsonData, encoding: .utf8)
     else {
       print("Unable to encode updated pushEventJson: \(pushEventJson)")
       return

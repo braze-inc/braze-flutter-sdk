@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import androidx.annotation.NonNull
 import com.braze.enums.Gender
 import com.braze.enums.Month
 import com.braze.enums.NotificationSubscriptionType
@@ -45,9 +44,9 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
     private lateinit var flutterConfiguration: FlutterConfiguration
     private var activity: Activity? = null
 
-    //--
+    // --
     // Setup
-    //--
+    // --
 
     private fun initPlugin(context: Context, messenger: BinaryMessenger) {
         flutterConfiguration = FlutterConfiguration(context)
@@ -71,182 +70,9 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
         channel.setMethodCallHandler(null)
     }
 
-    companion object {
-        // Contains all plugins that have been initialized and are attached to a Flutter engine.
-        var activePlugins = mutableListOf<BrazePlugin>()
-
-        // Contains all push events that have been received before the plugin was initialized.
-        var pendingPushEvents = mutableListOf<BrazePushEvent>()
-
-        // Indicates if the Dart layer has finished initializing
-        private var brazePluginIsReady: Boolean = false
-
-        //--
-        // Braze public APIs
-        //--
-
-        /**
-         * Used to pass in In App Message data from the Braze
-         * SDK native layer to the Flutter layer.
-         */
-        @JvmStatic
-        fun processInAppMessage(inAppMessage: IInAppMessage) {
-            if (activePlugins.isEmpty()) {
-                brazelog(W) { "There are no active Braze Plugins. Not calling 'handleBrazeInAppMessage'." }
-                return
-            }
-
-            val inAppMessageMap: HashMap<String, String> =
-                hashMapOf("inAppMessage" to inAppMessage.forJsonPut().toString())
-
-            executeOnAllPlugins {
-                it.channel.invokeMethod("handleBrazeInAppMessage", inAppMessageMap)
-            }
-        }
-
-        /**
-         * Used to pass in Content Card data from the Braze
-         * SDK native layer to the Flutter layer.
-         */
-        @JvmStatic
-        fun processContentCards(contentCardList: List<Card>) {
-            if (activePlugins.isEmpty()) {
-                brazelog(W) { "There are no active Braze Plugins. Not calling 'handleBrazeContentCards'." }
-                return
-            }
-
-            val cardStringList = arrayListOf<String>()
-            for (card in contentCardList) {
-                cardStringList.add(card.forJsonPut().toString())
-            }
-            val contentCardMap: HashMap<String, ArrayList<String>> = hashMapOf("contentCards" to cardStringList)
-
-            executeOnAllPlugins {
-                it.channel.invokeMethod("handleBrazeContentCards", contentCardMap)
-            }
-        }
-
-        /**
-         * Used to pass in Push Notification event data from
-         * the Braze SDK native layer to the Flutter layer.
-         *
-         * If there are no active Braze Plugins, it stores
-         * the event for later processing.
-         */
-        @JvmStatic
-        fun processPushNotificationEvent(event: BrazePushEvent) {
-            if (activePlugins.isEmpty() || !brazePluginIsReady) {
-                brazelog(W) { "There are no active Braze Plugins. Not calling 'handleBrazePushNotificationEvent'. Storing the event for later processing." }
-                // Store the event for later processing.
-                pendingPushEvents.add(event)
-                return
-            }
-
-            handlePushEvent(event)
-        }
-
-        /**
-         * Reprocesses all pending push events if there are any active plugins
-         * and the Dart layer has finished initializing.
-         */
-        private fun reprocessPendingPushEvents() {
-            if (pendingPushEvents.isNotEmpty() && activePlugins.isNotEmpty() && brazePluginIsReady) {
-                for (event in pendingPushEvents) {
-                    handlePushEvent(event)
-                }
-                pendingPushEvents.clear()
-            }
-        }
-
-        /**
-         * Handles the push event by converting it to a JSON object
-         * and sending it to the Dart layer.
-         */
-        private fun handlePushEvent(event: BrazePushEvent) {
-            val pushType = when (event.eventType) {
-                BrazePushEventType.NOTIFICATION_RECEIVED -> "push_received"
-                BrazePushEventType.NOTIFICATION_OPENED -> "push_opened"
-                else -> return Unit
-            }
-            val eventData = event.notificationPayload
-
-            val data = JSONObject().apply {
-                put("payload_type", pushType)
-                put("url", eventData.deeplink)
-                put("title", eventData.titleText)
-                put("body", eventData.contentText)
-                put("summary_text", eventData.summaryText)
-                eventData.notificationBadgeNumber?.let { put("badge_count", it) }
-                eventData.notificationExtras.getLong("braze_push_received_timestamp")
-                    .takeUnless { it == 0L }?.let {
-                        put("timestamp", it.toLong())
-                    }
-                put(
-                    "use_webview",
-                    eventData.notificationExtras.getString("ab_use_webview") == "true"
-                )
-                put(
-                    "is_silent", eventData.titleText == null && eventData.contentText == null
-                )
-                put(
-                    "is_braze_internal",
-                    eventData.isUninstallTrackingPush
-                            || eventData.shouldSyncGeofences
-                            || eventData.shouldRefreshFeatureFlags
-                )
-                put("image_url", eventData.bigImageUrl)
-                put("android", convertToMap(eventData.notificationExtras))
-            }
-            val brazePropertiesMap =
-                convertToMap(eventData.brazeExtras, setOf(Constants.BRAZE_PUSH_BIG_IMAGE_URL_KEY))
-            data.put("braze_properties", brazePropertiesMap)
-            val pushEventMap = hashMapOf("pushEvent" to data.toString())
-
-            executeOnAllPlugins {
-                it.channel.invokeMethod("handleBrazePushNotificationEvent", pushEventMap)
-            }
-        }
-
-        /**
-         * Used to pass in Feature Flag data from the Braze
-         * SDK native layer to the Flutter layer.
-         */
-        @JvmStatic
-        fun processFeatureFlags(featureFlagList: List<FeatureFlag>) {
-            if (activePlugins.isEmpty()) {
-                brazelog(W) { "There are no active Braze Plugins. Not calling 'handleBrazeFeatureFlags'." }
-                return
-            }
-
-            val ffStringList = featureFlagList.map { it.forJsonPut().toString() }
-            val featureFlagMap = hashMapOf("featureFlags" to ffStringList)
-
-            executeOnAllPlugins {
-                it.channel.invokeMethod("handleBrazeFeatureFlags", featureFlagMap)
-            }
-        }
-
-        private fun executeOnAllPlugins(block: (BrazePlugin) -> Unit) {
-            for (plugin in activePlugins) {
-                plugin.activity?.runOnUiThread {
-                    block(plugin)
-                }
-            }
-        }
-
-        private fun convertToMap(bundle: Bundle, filteringKeys: Set<String> = emptySet()): JSONObject {
-            val map = JSONObject()
-            bundle.keySet()
-                .filter { !filteringKeys.contains(it) }
-                .associateWith { @Suppress("deprecation") bundle[it] }
-                .forEach { map.put(it.key, it.value) }
-            return map
-        }
-    }
-
-    //--
+    // --
     // ActivityAware
-    //--
+    // --
 
     override fun onDetachedFromActivity() {
         this.activity = null
@@ -269,10 +95,10 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
         onDetachedFromActivity()
     }
 
-    //--
+    // --
     // Braze SDK bindings
-    //--
-
+    // --
+    @Suppress("LongMethod", "ComplexMethod", "ComplexCondition", "NestedBlockDepth", "ReturnCount")
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         try {
             when (call.method) {
@@ -301,7 +127,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     }
                 }
                 "setBrazePluginIsReady" -> {
-                    brazePluginIsReady = true
+                    isBrazePluginIsReady = true
                     reprocessPendingPushEvents()
                 }
                 "requestContentCardsRefresh" -> {
@@ -367,7 +193,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val aliasLabel = call.argument<String>("aliasLabel")
                     if (aliasName == null || aliasLabel == null) {
                         brazelog(W) { "Unexpected null parameter(s) in `addAlias`." }
-                        return;
+                        return
                     }
                     Braze.getInstance(context).runOnUser { user -> user.addAlias(aliasName, aliasLabel) }
                 }
@@ -396,7 +222,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val value = call.argument<String>("value")
                     if (key == null || value == null) {
                         brazelog(W) { "Unexpected null parameter(s) in `addToCustomAttributeArray`." }
-                        return;
+                        return
                     }
                     Braze.getInstance(context).runOnUser { user -> user.addToCustomAttributeArray(key, value) }
                 }
@@ -405,26 +231,26 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val value = call.argument<String>("value")
                     if (key == null || value == null) {
                         brazelog(W) { "Unexpected null parameter(s) in `removeFromCustomAttributeArray`." }
-                        return;
+                        return
                     }
                     Braze.getInstance(context).runOnUser { user -> user.removeFromCustomAttributeArray(key, value) }
                 }
                 "setNestedCustomUserAttribute" -> {
                     val key = call.argument<String>("key")
                     val value = call.argument<Map<String, *>>("value")?.let { JSONObject(it) }
-                    val merge = call.argument<Boolean>("merge") ?: false
+                    val shouldMerge = call.argument<Boolean>("merge") ?: false
                     if (key == null || value == null) {
                         brazelog(W) { "Unexpected null parameter(s) in `setNestedCustomUserAttribute`." }
-                        return;
+                        return
                     }
-                    Braze.getInstance(context).runOnUser { user -> user.setCustomUserAttribute(key, value, merge) }
+                    Braze.getInstance(context).runOnUser { user -> user.setCustomUserAttribute(key, value, shouldMerge) }
                 }
                 "setCustomUserAttributeArrayOfStrings" -> {
                     val key = call.argument<String>("key")
                     val value = call.argument<List<String?>>("value")?.toTypedArray()
                     if (key == null || value == null) {
                         brazelog(W) { "Unexpected null parameter(s) in `setCustomUserAttributeArrayOfStrings`." }
-                        return;
+                        return
                     }
                     Braze.getInstance(context).runOnUser { user -> user.setCustomAttributeArray(key, value) }
                 }
@@ -433,7 +259,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val value = JSONArray(call.argument<List<Map<String, *>>>("value")?.map { JSONObject(it) })
                     if (key == null) {
                         brazelog(W) { "Unexpected null parameter(s) in `setCustomUserAttributeArrayOfObjects`." }
-                        return;
+                        return
                     }
                     Braze.getInstance(context).runOnUser { user -> user.setCustomAttribute(key, value) }
                 }
@@ -442,7 +268,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val value = call.argument<String>("value")
                     if (key == null || value == null) {
                         brazelog(W) { "Unexpected null parameter(s) in `setStringCustomUserAttribute`." }
-                        return;
+                        return
                     }
                     Braze.getInstance(context).runOnUser { user -> user.setCustomUserAttribute(key, value) }
                 }
@@ -451,7 +277,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val value = call.argument<Double>("value") ?: 0.0
                     if (key == null) {
                         brazelog(W) { "Unexpected null key in `setDoubleCustomUserAttribute`" }
-                        return;
+                        return
                     }
                     Braze.getInstance(context).runOnUser { user -> user.setCustomUserAttribute(key, value) }
                 }
@@ -460,7 +286,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val value = (call.argument<Int>("value") ?: 0).toLong()
                     if (key == null) {
                         brazelog(W) { "Unexpected null key in `setDateCustomUserAttribute`." }
-                        return;
+                        return
                     }
                     Braze.getInstance(context).runOnUser { user -> user.setCustomUserAttributeToSecondsFromEpoch(key, value) }
                 }
@@ -469,7 +295,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val value = call.argument<Int>("value") ?: 0
                     if (key == null) {
                         brazelog(W) { "Unexpected null key in `setIntCustomUserAttribute`." }
-                        return;
+                        return
                     }
                     Braze.getInstance(context).runOnUser { user -> user.setCustomUserAttribute(key, value) }
                 }
@@ -478,16 +304,17 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val value = call.argument<Int>("value") ?: 0
                     if (key == null) {
                         brazelog(W) { "Unexpected null key in `incrementCustomUserAttribute`." }
-                        return;
+                        return
                     }
                     Braze.getInstance(context).runOnUser { user -> user.incrementCustomUserAttribute(key, value) }
                 }
                 "setBoolCustomUserAttribute" -> {
                     val key = call.argument<String>("key")
+                    @Suppress("BooleanPropertyNaming")
                     val value = call.argument<Boolean>("value") ?: false
                     if (key == null) {
                         brazelog(W) { "Unexpected null key in `setBoolCustomUserAttribute`." }
-                        return;
+                        return
                     }
                     Braze.getInstance(context).runOnUser { user -> user.setCustomUserAttribute(key, value) }
                 }
@@ -495,23 +322,23 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val key = call.argument<String>("key")
                     if (key == null) {
                         brazelog(W) { "Unexpected null key in `unsetCustomUserAttribute`." }
-                        return;
+                        return
                     }
                     Braze.getInstance(context).runOnUser { user -> user.unsetCustomUserAttribute(key) }
                 }
                 "setPushNotificationSubscriptionType" -> {
-                    val type = getSubscriptionType(call.argument<String>("type") ?: "")
+                    val type = getSubscriptionType(call.argument<String>("type").orEmpty())
                     if (type == null) {
                         brazelog(W) { "Unexpected null type in `setPushNotificationSubscriptionType`." }
-                        return;
+                        return
                     }
                     Braze.getInstance(context).runOnUser { user -> user.setPushNotificationSubscriptionType(type) }
                 }
                 "setEmailNotificationSubscriptionType" -> {
-                    val type = getSubscriptionType(call.argument<String>("type") ?: "")
+                    val type = getSubscriptionType(call.argument<String>("type").orEmpty())
                     if (type == null) {
                         brazelog(W) { "Unexpected null type in `setEmailNotificationSubscriptionType`." }
-                        return;
+                        return
                     }
                     Braze.getInstance(context).runOnUser { user -> user.setEmailNotificationSubscriptionType(type) }
                 }
@@ -519,7 +346,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val groupId = call.argument<String>("groupId")
                     if (groupId == null) {
                         brazelog(W) { "Unexpected null groupId in `addToSubscriptionGroup`." }
-                        return;
+                        return
                     }
                     Braze.getInstance(context).runOnUser { user -> user.addToSubscriptionGroup(groupId) }
                 }
@@ -527,7 +354,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val groupId = call.argument<String>("groupId")
                     if (groupId == null) {
                         brazelog(W) { "Unexpected null groupId in `removeFromSubscriptionGroup`." }
-                        return;
+                        return
                     }
                     Braze.getInstance(context).runOnUser { user -> user.removeFromSubscriptionGroup(groupId) }
                 }
@@ -537,7 +364,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val long = call.argument<Double>("long") ?: 0.0
                     if (key == null) {
                         brazelog(W) { "Unexpected null key in `setLocationCustomAttribute`." }
-                        return;
+                        return
                     }
                     Braze.getInstance(context).runOnUser { user -> user.setLocationCustomAttribute(key, lat, long) }
                 }
@@ -613,7 +440,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val creative = call.argument<String>("creative")
                     if (network == null || campaign == null || adGroup == null || creative == null) {
                         brazelog(W) { "Unexpected null parameter(s) in `setAttributionData`." }
-                        return;
+                        return
                     }
                     val attributionData = AttributionData(network, campaign, adGroup, creative)
                     Braze.getInstance(context).runOnUser { user -> user.setAttributionData(attributionData) }
@@ -627,13 +454,13 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 }
                 "setGoogleAdvertisingId" -> {
                     val id = call.argument<String>("id") ?: return
-                    val adTrackingEnabled = call.argument<Boolean>("adTrackingEnabled") ?: return
-                    Braze.getInstance(context).setGoogleAdvertisingId(id, adTrackingEnabled)
+                    val isAdTrackingEnabled = call.argument<Boolean>("adTrackingEnabled") ?: return
+                    Braze.getInstance(context).setGoogleAdvertisingId(id, isAdTrackingEnabled)
                 }
                 "setAdTrackingEnabled" -> {
-                    val adTrackingEnabled = call.argument<Boolean>("adTrackingEnabled") ?: return
+                    val isAdTrackingEnabled = call.argument<Boolean>("adTrackingEnabled") ?: return
                     val id = call.argument<String>("id") ?: return
-                    Braze.getInstance(context).setGoogleAdvertisingId(id, adTrackingEnabled)
+                    Braze.getInstance(context).setGoogleAdvertisingId(id, isAdTrackingEnabled)
                 }
                 "updateTrackingPropertyAllowList" -> {
                     // No-op on Android
@@ -651,7 +478,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val altitude = call.argument<Double?>("altitude")
                     if (latitude == null || longitude == null) {
                         brazelog(W) { "Unexpected null parameter(s) in `setLastKnownLocation`." }
-                        return;
+                        return
                     }
                     Braze.getInstance(context).runOnUser { user -> user.setLastKnownLocation(latitude, longitude, altitude, accuracy) }
                 }
@@ -700,9 +527,9 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
         }
     }
 
-    //--
+    // --
     // Private methods
-    //--
+    // --
     private fun handleSdkAuthenticationError(errorEvent: BrazeSdkAuthenticationErrorEvent) {
         if (activePlugins.isEmpty()) {
             brazelog(W) { "There are no active Braze Plugins. Not calling 'handleSdkAuthenticationError'." }
@@ -760,5 +587,178 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
 
         val jsonObject = JSONObject(arguments)
         return BrazeProperties(jsonObject)
+    }
+
+    companion object {
+        // Contains all plugins that have been initialized and are attached to a Flutter engine.
+        var activePlugins = mutableListOf<BrazePlugin>()
+
+        // Contains all push events that have been received before the plugin was initialized.
+        var pendingPushEvents = mutableListOf<BrazePushEvent>()
+
+        // Indicates if the Dart layer has finished initializing
+        private var isBrazePluginIsReady: Boolean = false
+
+        // --
+        // Braze public APIs
+        // --
+
+        /**
+         * Used to pass in In App Message data from the Braze
+         * SDK native layer to the Flutter layer.
+         */
+        @JvmStatic
+        fun processInAppMessage(inAppMessage: IInAppMessage) {
+            if (activePlugins.isEmpty()) {
+                brazelog(W) { "There are no active Braze Plugins. Not calling 'handleBrazeInAppMessage'." }
+                return
+            }
+
+            val inAppMessageMap: HashMap<String, String> =
+                hashMapOf("inAppMessage" to inAppMessage.forJsonPut().toString())
+
+            executeOnAllPlugins {
+                it.channel.invokeMethod("handleBrazeInAppMessage", inAppMessageMap)
+            }
+        }
+
+        /**
+         * Used to pass in Content Card data from the Braze
+         * SDK native layer to the Flutter layer.
+         */
+        @JvmStatic
+        fun processContentCards(contentCardList: List<Card>) {
+            if (activePlugins.isEmpty()) {
+                brazelog(W) { "There are no active Braze Plugins. Not calling 'handleBrazeContentCards'." }
+                return
+            }
+
+            val cardStringList = arrayListOf<String>()
+            for (card in contentCardList) {
+                cardStringList.add(card.forJsonPut().toString())
+            }
+            val contentCardMap: HashMap<String, ArrayList<String>> = hashMapOf("contentCards" to cardStringList)
+
+            executeOnAllPlugins {
+                it.channel.invokeMethod("handleBrazeContentCards", contentCardMap)
+            }
+        }
+
+        /**
+         * Used to pass in Push Notification event data from
+         * the Braze SDK native layer to the Flutter layer.
+         *
+         * If there are no active Braze Plugins, it stores
+         * the event for later processing.
+         */
+        @JvmStatic
+        fun processPushNotificationEvent(event: BrazePushEvent) {
+            if (activePlugins.isEmpty() || !isBrazePluginIsReady) {
+                brazelog(W) { "There are no active Braze Plugins. Not calling 'handleBrazePushNotificationEvent'. Storing the event for later processing." }
+                // Store the event for later processing.
+                pendingPushEvents.add(event)
+                return
+            }
+
+            handlePushEvent(event)
+        }
+
+        /**
+         * Reprocesses all pending push events if there are any active plugins
+         * and the Dart layer has finished initializing.
+         */
+        private fun reprocessPendingPushEvents() {
+            if (pendingPushEvents.isNotEmpty() && activePlugins.isNotEmpty() && isBrazePluginIsReady) {
+                for (event in pendingPushEvents) {
+                    handlePushEvent(event)
+                }
+                pendingPushEvents.clear()
+            }
+        }
+
+        /**
+         * Handles the push event by converting it to a JSON object
+         * and sending it to the Dart layer.
+         */
+        private fun handlePushEvent(event: BrazePushEvent) {
+            val pushType = when (event.eventType) {
+                BrazePushEventType.NOTIFICATION_RECEIVED -> "push_received"
+                BrazePushEventType.NOTIFICATION_OPENED -> "push_opened"
+                else -> return Unit
+            }
+            val eventData = event.notificationPayload
+
+            val data = JSONObject().apply {
+                put("payload_type", pushType)
+                put("url", eventData.deeplink)
+                put("title", eventData.titleText)
+                put("body", eventData.contentText)
+                put("summary_text", eventData.summaryText)
+                eventData.notificationBadgeNumber?.let { put("badge_count", it) }
+                eventData.notificationExtras.getLong("braze_push_received_timestamp")
+                    .takeUnless { it == 0L }?.let {
+                        put("timestamp", it.toLong())
+                    }
+                put(
+                    "use_webview",
+                    eventData.notificationExtras.getString("ab_use_webview") == "true"
+                )
+                put(
+                    "is_silent", eventData.titleText == null && eventData.contentText == null
+                )
+                put(
+                    "is_braze_internal",
+                    eventData.isUninstallTrackingPush
+                        || eventData.shouldSyncGeofences
+                        || eventData.shouldRefreshFeatureFlags
+                )
+                put("image_url", eventData.bigImageUrl)
+                put("android", convertToMap(eventData.notificationExtras))
+            }
+            val brazePropertiesMap =
+                convertToMap(eventData.brazeExtras, setOf(Constants.BRAZE_PUSH_BIG_IMAGE_URL_KEY))
+            data.put("braze_properties", brazePropertiesMap)
+            val pushEventMap = hashMapOf("pushEvent" to data.toString())
+
+            executeOnAllPlugins {
+                it.channel.invokeMethod("handleBrazePushNotificationEvent", pushEventMap)
+            }
+        }
+
+        /**
+         * Used to pass in Feature Flag data from the Braze
+         * SDK native layer to the Flutter layer.
+         */
+        @JvmStatic
+        fun processFeatureFlags(featureFlagList: List<FeatureFlag>) {
+            if (activePlugins.isEmpty()) {
+                brazelog(W) { "There are no active Braze Plugins. Not calling 'handleBrazeFeatureFlags'." }
+                return
+            }
+
+            val ffStringList = featureFlagList.map { it.forJsonPut().toString() }
+            val featureFlagMap = hashMapOf("featureFlags" to ffStringList)
+
+            executeOnAllPlugins {
+                it.channel.invokeMethod("handleBrazeFeatureFlags", featureFlagMap)
+            }
+        }
+
+        private fun executeOnAllPlugins(block: (BrazePlugin) -> Unit) {
+            for (plugin in activePlugins) {
+                plugin.activity?.runOnUiThread {
+                    block(plugin)
+                }
+            }
+        }
+
+        private fun convertToMap(bundle: Bundle, filteringKeys: Set<String> = emptySet()): JSONObject {
+            val map = JSONObject()
+            bundle.keySet()
+                .filter { !filteringKeys.contains(it) }
+                .associateWith { @Suppress("deprecation") bundle[it] }
+                .forEach { map.put(it.key, it.value) }
+            return map
+        }
     }
 }
