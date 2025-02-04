@@ -11,7 +11,15 @@ This project contains the [Braze plugin](https://pub.dev/packages/braze_plugin),
 
 ### Getting Started
 
-For information about using this package, [please reference the Braze documentation here](https://www.braze.com/docs/developer_guide/platform_integration_guides/flutter/flutter_sdk_integration/).
+For information about using this package, [please reference the Braze documentation here](https://www.braze.com/docs/developer_guide/platforms/flutter/sdk_integration).
+
+### Requirements
+- Dart SDK 2.15.0+
+- Flutter SDK 1.10.0+
+
+This SDK additionally inherits the requirements of its underlying Braze native SDKs. Be sure to also adhere to the lists below:
+* [Android SDK requirements](https://github.com/braze-inc/braze-android-sdk?tab=readme-ov-file#version-information)
+* [Swift SDK requirements](https://github.com/braze-inc/braze-swift-sdk?tab=readme-ov-file#version-information)
 
 ### Support
 
@@ -20,7 +28,3 @@ Please reach out to support@braze.com regarding any questions or issues.
 ### Sample App
 
 The `/example` folder contains a sample app illustrating how to integrate and use this package's APIs.
-
-### Requirements
-- Dart SDK 2.15.0+
-- Flutter SDK 1.10.0+

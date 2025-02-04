@@ -38,7 +38,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       }
 
     case "getUserId":
-      BrazePlugin.braze?.user.id { userId in
+      if let userId = BrazePlugin.braze?.user.id {
         result(userId)
       }
 
