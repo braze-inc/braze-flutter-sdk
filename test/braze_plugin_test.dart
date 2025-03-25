@@ -251,6 +251,7 @@ void main() {
 
   test('should call getInstallTrackingId', () async {
     BrazePlugin _braze = new BrazePlugin();
+    // ignore: deprecated_member_use_from_same_package
     final result = await _braze.getInstallTrackingId();
     expect(log, <Matcher>[
       isMethodCall(
@@ -915,6 +916,35 @@ void main() {
       isMethodCall(
         'requestLocationInitialization',
         arguments: null,
+      ),
+    ]);
+  });
+
+  test('should call requestBannersRefresh with all params', () async {
+    BrazePlugin _braze = new BrazePlugin();
+    final placementIds = ['placement1', 'placement2' 'abcdefghijkl', 'MNOPQRSTUVWXYZ', '1234567890', '!@#%^&*()?<>-_=+'];
+    _braze.requestBannersRefresh(placementIds);
+    expect(log, <Matcher>[
+      isMethodCall(
+        'requestBannersRefresh',
+        arguments: <String, dynamic>{
+          'placementIds': placementIds,
+        },
+      ),
+    ]);
+  });
+
+  test('should call getBanner with all params', () {
+    BrazePlugin _braze = new BrazePlugin();
+    final placementId = 'placement1';
+    _braze.getBanner(placementId);
+
+    expect(log, <Matcher>[
+      isMethodCall(
+        'getBanner',
+        arguments: <String, dynamic>{
+          'placementId': placementId,
+        },
       ),
     ]);
   });

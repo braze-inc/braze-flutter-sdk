@@ -8,11 +8,21 @@ var channels = [FlutterMethodChannel]()
 public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
 
   public static var braze: Braze? = nil
+  private static var bannerViewFactory: BrazeBannerViewFactory? = nil
 
   public static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(name: "braze_plugin", binaryMessenger: registrar.messenger())
     let instance = BrazePlugin()
     registrar.addMethodCallDelegate(instance, channel: channel)
+
+    // Register for Banner Cards and resizing
+    let uiHandler = BrazeUIHandler(messenger: registrar.messenger())
+    BrazePlugin.bannerViewFactory = BrazeBannerViewFactory(
+      messenger: registrar.messenger(),
+      uiHandler: uiHandler
+    )
+    registrar.register(BrazePlugin.bannerViewFactory!, withId: "BrazeBannerView")
+
     channels.append(channel)
   }
 
@@ -126,6 +136,42 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         }
       }
       result(cachedContentCards)
+
+    case "getBanner":
+      guard let args = call.arguments as? [String: Any],
+            let placementId = args["placementId"] as? String
+      else {
+        print("Unexpected null placementId in `getBanner`.")
+        result(FlutterError(code: "INVALID_ARGUMENT", message: "getBanner - Invalid placementId", details: nil))
+        return
+      }
+      
+      BrazePlugin.braze?.banners.getBanner(for: placementId) { banner in
+        if let banner = banner,
+           let bannerJsonData = banner.json() {
+          let bannerJsonString = String(data: bannerJsonData, encoding: .utf8)
+          result(bannerJsonString)
+        } else {
+          result(nil)
+        }
+      }
+    
+    case "requestBannersRefresh":
+      guard let args = call.arguments as? [String: Any],
+            let placementIds = args["placementIds"] as? [String] else {
+          print("Unexpected null placementIds in `requestBannersRefresh`.")
+          result(FlutterError(code: "INVALID_ARGUMENT", message: "requestBannersRefresh - Invalid placementIds", details: nil))
+          return
+      }
+      
+      BrazePlugin.braze?.banners.requestBannersRefresh(placementIds: placementIds) { resultBanners in
+          switch resultBanners {
+          case .success:
+              result("Refreshed Banners.")
+          case .failure(let error):
+              result(FlutterError(code: "BANNER_REFRESH_ERROR", message: "requestBannersRefresh - Failed to refresh banners: \(error.localizedDescription)", details: nil))
+          }
+      }
 
     case "logInAppMessageClicked":
       guard let args = call.arguments as? [String: Any],
@@ -809,6 +855,10 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
     configuration.api.sdkFlavor = .flutter
     let braze = Braze(configuration: configuration)
     BrazePlugin.braze = braze
+
+    // Store instance on BrazeBannerViewFactory
+    BrazePlugin.bannerViewFactory?.setBraze(braze)
+
     return braze
   }
 
@@ -851,6 +901,29 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
     let arguments = ["contentCards": cardStrings]
     for channel in channels {
       channel.invokeMethod("handleBrazeContentCards", arguments: arguments)
+    }
+  }
+
+  /// Translates each of the native banner [banners] into JSON and passes it
+  /// from the iOS layer to the Dart layer.
+  /// Note: Swift closures are unable to be translated into JSON.
+  ///
+  /// - Parameter banners: The dictionary of Braze banners in native Swift.
+  public class func processBanners(_ banners: [String: Braze.Banner]) {
+    var bannerStrings: [String] = []
+    for (_, banner) in banners {
+      if let bannerJsonData = banner.json(),
+         let bannerString = String(data: bannerJsonData, encoding: .utf8)
+      {
+        bannerStrings.append(bannerString)
+      } else {
+        print("Invalid banner: \(banner). Skipping banner.")
+      }
+    }
+
+    let arguments = ["banners": bannerStrings]
+    for channel in channels {
+      channel.invokeMethod("handleBrazeBanners", arguments: arguments)
     }
   }
 
@@ -937,5 +1010,4 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       print(error.localizedDescription)
     }
   }
-
 }

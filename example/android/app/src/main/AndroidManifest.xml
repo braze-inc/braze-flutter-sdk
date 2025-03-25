@@ -21,6 +21,9 @@
       <meta-data
           android:name="flutterEmbedding"
           android:value="2" />
+      <meta-data
+          android:name="io.flutter.embedding.android.EnableImpeller"
+          android:value="true" />
 
       <!--
       Because the example app uses native code for handling deep links, the below tag is commented out.

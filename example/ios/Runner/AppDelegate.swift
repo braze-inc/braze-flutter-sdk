@@ -14,6 +14,7 @@ let brazeEndpoint = "sondheim.braze.com"
 
   // These subscriptions need to be retained to be active
   var contentCardsSubscription: Braze.Cancellable?
+  var bannersSubscription: Braze.Cancellable?
   var pushEventsSubscription: Braze.Cancellable?
   var featureFlagsSubscription: Braze.Cancellable?
 
@@ -48,6 +49,10 @@ let brazeEndpoint = "sondheim.braze.com"
     contentCardsSubscription = braze.contentCards.subscribeToUpdates { contentCards in
       print("=> [Content Card Subscription] Received cards:", contentCards)
       BrazePlugin.processContentCards(contentCards)
+    }
+    bannersSubscription = braze.banners.subscribeToUpdates { banners in
+      print("=> [Banner Subscription] Received banners:", banners)
+      BrazePlugin.processBanners(banners)
     }
     pushEventsSubscription = braze.notifications.subscribeToUpdates { payload in
       print(

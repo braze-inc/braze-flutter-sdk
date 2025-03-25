@@ -44,24 +44,37 @@ void deepLinkAlert(String link, BuildContext context) {
 }
 
 class BrazeFunctionsState extends State<BrazeFunctions> {
+  late BrazePlugin _braze;
   String _userId = "";
   String _enabled = "";
   String _ccStreamSubscription = "DISABLED";
+  String _bannerStreamSubscription = "DISABLED";
   String _iamStreamSubscription = "DISABLED";
   String _ffStreamSubscription = "DISABLED";
   String _pushStreamSubscription = "DISABLED";
   String _featureFlagPropertyType = "BOOLEAN";
-  late BrazePlugin _braze;
+
+  // Subscriptions
+  late StreamSubscription inAppMessageStreamSubscription;
+  late StreamSubscription contentCardsStreamSubscription;
+  late StreamSubscription bannerStreamSubscription;
+  late StreamSubscription pushEventsStreamSubscription;
+  late StreamSubscription featureFlagsStreamSubscription;
+
+  // Text controllers
   final userIdController = TextEditingController();
   final customEventNameController = TextEditingController();
   final customEventPropertyKeyController = TextEditingController();
   final customEventPropertyValueController = TextEditingController();
   final featureFlagController = TextEditingController();
   final featureFlagPropertyController = TextEditingController();
-  late StreamSubscription inAppMessageStreamSubscription;
-  late StreamSubscription contentCardsStreamSubscription;
-  late StreamSubscription pushEventsStreamSubscription;
-  late StreamSubscription featureFlagsStreamSubscription;
+  final getBannerController = TextEditingController();
+  final bannerRefreshController =
+      TextEditingController(text: "placement_1, placement_2");
+
+  // ignore: unused_field
+  double _bannerHeight = 0;
+  String? _displayedPlacement = "sdk-test-2";
 
   // Change to `true` to automatically log clicks, button clicks,
   // and impressions for in-app messages and content cards.
@@ -78,6 +91,19 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
       print('Setting new signature: $newSignature, userId: $_userId');
       _braze.setSdkAuthenticationSignature(newSignature);
     });
+
+    // Populate the initial user ID, if currently set.
+    _braze.getUserId().then((userId) {
+      if (userId != null) {
+        this.setState(() {
+          _userId = userId;
+          userIdController.text = _userId;
+        });
+      }
+    });
+
+    // Perform an initial refresh of banners.
+    _refreshBanners("placement_1, placement_2, sdk-test-2");
 
     // Deep link channel
     MethodChannel('deepLinkChannel')
@@ -100,6 +126,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
     /// Stop listening to streams
     inAppMessageStreamSubscription.cancel();
     contentCardsStreamSubscription.cancel();
+    bannerStreamSubscription.cancel();
     pushEventsStreamSubscription.cancel();
     featureFlagsStreamSubscription.cancel();
     super.dispose();
@@ -145,13 +172,16 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
             Center(
                 child: Text("CC Stream Subscription: $_ccStreamSubscription")),
             Center(
+                child: Text(
+                    "Banner Stream Subscription: $_bannerStreamSubscription")),
+            Center(
               child: Text("FF Stream Subscription: $_ffStreamSubscription"),
             ),
             Center(
               child: Text(
                   "Push Notification Stream Subscription: $_pushStreamSubscription"),
             ),
-            Center(child: Text("User Id: $_userId")),
+            Center(child: Text("User ID: $_userId")),
             TextField(
               autocorrect: false,
               controller: userIdController,
@@ -177,6 +207,9 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                     if (result == null) {
                       resultText = "User ID not found.";
                     } else {
+                      this.setState(() {
+                        _userId = result;
+                      });
                       resultText = "User ID: $result";
                     }
                     ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
@@ -364,6 +397,159 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                 ));
               },
             ),
+            SectionHeader("In-app Messages"),
+            TextButton(
+              child: const Text('SUBSCRIBE VIA IN-APP MESSAGE STREAM'),
+              onPressed: () {
+                this.setState(() {
+                  _iamStreamSubscription = 'ENABLED';
+                });
+                inAppMessageStreamSubscription = _braze
+                    .subscribeToInAppMessages((BrazeInAppMessage inAppMessage) {
+                  _inAppMessageReceived(inAppMessage);
+                  return;
+                });
+                ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                  content: new Text("Listening to in-app message stream. "
+                      "In-app message data will appear in snackbars."),
+                ));
+              },
+            ),
+            TextButton(
+              child: const Text('HIDE CURRENT IN-APP MESSAGE'),
+              onPressed: () {
+                _braze.hideCurrentInAppMessage();
+              },
+            ),
+            SectionHeader("Content Cards"),
+            TextButton(
+              child: const Text('REFRESH CONTENT CARDS'),
+              onPressed: () {
+                _braze.requestContentCardsRefresh();
+              },
+            ),
+            TextButton(
+              child: const Text('LAUNCH CONTENT CARDS'),
+              onPressed: () {
+                _braze.launchContentCards();
+              },
+            ),
+            TextButton(
+              child: const Text('SUBSCRIBE VIA CONTENT CARDS STREAM'),
+              onPressed: () {
+                this.setState(() {
+                  _ccStreamSubscription = 'ENABLED';
+                });
+                contentCardsStreamSubscription = _braze.subscribeToContentCards(
+                    (List<BrazeContentCard> contentCards) {
+                  _contentCardsReceived(contentCards);
+                  return;
+                });
+                ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                  content: new Text("Listening to content cards stream. "
+                      "Content Card data will appear in snackbars."),
+                ));
+              },
+            ),
+            TextButton(
+              child: const Text('GET CACHED CONTENT CARDS'),
+              onPressed: () {
+                _braze.getCachedContentCards().then((contentCards) {
+                  print("${contentCards.length} cached Content Cards found.");
+                  contentCards.forEach((contentCard) {
+                    String contentCardString = contentCard.toString();
+                    print(contentCardString);
+                    ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                      content: new Text(contentCardString),
+                    ));
+                  });
+                });
+              },
+            ),
+            SectionHeader("Banners"),
+            TextButton(
+              child: const Text('SUBSCRIBE VIA BANNER STREAM'),
+              onPressed: () {
+                this.setState(() {
+                  _bannerStreamSubscription = 'ENABLED';
+                });
+                bannerStreamSubscription =
+                    _braze.subscribeToBanners((List<BrazeBanner> banners) {
+                  _bannersReceived(banners);
+                  return;
+                });
+                ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                  content: new Text("Listening to banner stream. "
+                      "Banner data will appear in snackbars."),
+                ));
+              },
+            ),
+            TextField(
+              autocorrect: false,
+              controller: bannerRefreshController,
+              decoration: InputDecoration(
+                  hintText: 'Please enter a comma-separated list of banners',
+                  labelText: 'List of Banners Placement IDs'),
+            ),
+            TextButton(
+              child: const Text('REFRESH BANNERS'),
+              onPressed: () {
+                _refreshBanners(bannerRefreshController.text);
+              },
+            ),
+            TextField(
+              autocorrect: false,
+              controller: getBannerController,
+              decoration: InputDecoration(
+                  hintText: 'Search for banner placement ID',
+                  labelText: 'Banner Placement ID'),
+            ),
+            TextButton(
+              child: const Text('DISPLAY & LOG BANNER'),
+              onPressed: () {
+                String searchedPlacement = getBannerController.text;
+                _braze.getBanner(searchedPlacement).then((banner) {
+                  if (banner == null) {
+                    final String errorMessage =
+                        "No Banner Found with Placement ID: ${searchedPlacement}. Nothing will be displayed.";
+                    print(errorMessage);
+                    ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                      content: new Text(errorMessage),
+                    ));
+                    this.setState(() {
+                      _displayedPlacement = null;
+                    });
+                  } else {
+                    final String successMessage =
+                        "Received banner with placement ID: ${banner.placementId}";
+                    print("${successMessage}: ${banner.toString()}");
+                    ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                      content: new Text(successMessage),
+                    ));
+                    this.setState(() {
+                      _displayedPlacement = searchedPlacement;
+                    });
+                  }
+                });
+              },
+            ),
+            BrazeBannerView(
+              placementId: _displayedPlacement,
+
+              // Uncomment the properties below for optional style overrides.
+              //
+              // In the simplest integration, only `placementId` is required.
+              // Dynamic height sizing is handled implicitly by the widget
+              // without needing `onHeightChanged`.
+
+              // height: _bannerHeight,
+              // onHeightChanged: (newHeight) {
+              //   print("Banner height changed: $newHeight");
+              //   this.setState(() {
+              //     _bannerHeight = newHeight;
+              //   });
+              // },
+            ),
             SectionHeader("Feature Flags"),
             TextField(
               autocorrect: false,
@@ -521,75 +707,6 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                 ));
               },
             ),
-            SectionHeader("In-app Messages"),
-            TextButton(
-              child: const Text('SUBSCRIBE VIA IN-APP MESSAGE STREAM'),
-              onPressed: () {
-                this.setState(() {
-                  _iamStreamSubscription = 'ENABLED';
-                });
-                inAppMessageStreamSubscription = _braze
-                    .subscribeToInAppMessages((BrazeInAppMessage inAppMessage) {
-                  _inAppMessageReceived(inAppMessage);
-                  return;
-                });
-                ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-                  content: new Text("Listening to in-app message stream. "
-                      "In-app message data will appear in snackbars."),
-                ));
-              },
-            ),
-            TextButton(
-              child: const Text('HIDE CURRENT IN-APP MESSAGE'),
-              onPressed: () {
-                _braze.hideCurrentInAppMessage();
-              },
-            ),
-            SectionHeader("Content Cards"),
-            TextButton(
-              child: const Text('REFRESH CONTENT CARDS'),
-              onPressed: () {
-                _braze.requestContentCardsRefresh();
-              },
-            ),
-            TextButton(
-              child: const Text('LAUNCH CONTENT CARDS'),
-              onPressed: () {
-                _braze.launchContentCards();
-              },
-            ),
-            TextButton(
-              child: const Text('SUBSCRIBE VIA CONTENT CARDS STREAM'),
-              onPressed: () {
-                this.setState(() {
-                  _ccStreamSubscription = 'ENABLED';
-                });
-                contentCardsStreamSubscription = _braze.subscribeToContentCards(
-                    (List<BrazeContentCard> contentCards) {
-                  _contentCardsReceived(contentCards);
-                  return;
-                });
-                ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-                  content: new Text("Listening to content cards stream. "
-                      "Content Card data will appear in snackbars."),
-                ));
-              },
-            ),
-            TextButton(
-              child: const Text('GET CACHED CONTENT CARDS'),
-              onPressed: () {
-                _braze.getCachedContentCards().then((contentCards) {
-                  print("${contentCards.length} cached Content Cards found.");
-                  contentCards.forEach((contentCard) {
-                    String contentCardString = contentCard.toString();
-                    print(contentCardString);
-                    ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-                      content: new Text(contentCardString),
-                    ));
-                  });
-                });
-              },
-            ),
             SectionHeader("Other"),
             TextButton(
               child: const Text('SET LAST KNOWN LOCATION'),
@@ -619,8 +736,9 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
               },
             ),
             TextButton(
-              child: const Text('GET INSTALL TRACKING ID(deprecated)'),
+              child: const Text('GET INSTALL TRACKING ID (deprecated)'),
               onPressed: () {
+                // ignore: deprecated_member_use
                 _braze.getInstallTrackingId().then((result) {
                   ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
                     content: new Text("Install Tracking ID: " + result),
@@ -629,8 +747,9 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
               },
             ),
             TextButton(
-              child: const Text('SET GOOGLE ADVERTISING ID'),
+              child: const Text('SET GOOGLE ADVERTISING ID (deprecated)'),
               onPressed: () {
+                // ignore: deprecated_member_use
                 _braze.setGoogleAdvertisingId("dummy-id", false);
                 ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
                     content: new Text("Set Google Advertising ID.")));
@@ -788,6 +907,21 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
     });
   }
 
+  void _bannersReceived(List<BrazeBanner> banners) {
+    if (banners.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+        content: new Text("Empty Banner update received."),
+      ));
+      return;
+    }
+    banners.forEach((banner) {
+      print("Received banner: " + banner.toString());
+      ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+        content: new Text("Received banner: ${banner.toString()}"),
+      ));
+    });
+  }
+
   void _pushNotificationEventReceived(BrazePushEvent pushEvent) {
     print("Received push notification event: " + pushEvent.toString());
     ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
@@ -827,6 +961,17 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
           "\n";
     });
     return ffString;
+  }
+
+  void _refreshBanners(String bannerPlacementIds) {
+    List<String> placementIds;
+    if (bannerPlacementIds.isEmpty) {
+      placementIds = [];
+    } else {
+      placementIds =
+          bannerPlacementIds.split(',').map((e) => e.trim()).toList();
+    }
+    _braze.requestBannersRefresh(placementIds);
   }
 
   void _pressedLogPresetEventsAndPurchasesButton() {

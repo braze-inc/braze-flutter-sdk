@@ -1,5 +1,21 @@
 ⚠️ In version 3.0.0, we changed the iOS bridge from AppboyKit, which is written in Objective-C, to the new [Swift SDK](https://github.com/braze-inc/braze-swift-sdk). If you are upgrading from a version below 3.0.0 to a version above 3.0.0, please read [the instructions](https://github.com/braze-inc/braze-flutter-sdk/blob/master/CHANGELOG.md#300) to ensure a smooth transition and backward compatibility.
 
+## 13.0.0
+
+##### Breaking
+- Updates the native Android bridge [from Braze Android SDK 33.0.0 to 35.0.0](https://github.com/braze-inc/braze-android-sdk/compare/v33.0.0...v35.0.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+  - The minimum required Android SDK version is 25. See more details [here](https://github.com/braze-inc/braze-android-sdk?tab=readme-ov-file#version-information).
+
+##### Added
+- Adds the `BrazeBannerView` widget to display a Banner Card directly in Dart.
+  - To use this feature, insert the widget `BrazeBannerView(placementId:)` into your Dart view hierarchy with the relevant `placementId`.
+  - Reference our integration in our [sample app](https://github.com/braze-inc/braze-flutter-sdk/blob/master/example/lib/main.dart).
+- Adds support for the Braze Banner Cards product and APIs to utilize them.
+  - `BrazePlugin.requestBannersRefresh(List<String> placementIds)` - to request a refresh of the banners associated with the provided placement IDs. This must be called at least once to set the list of banners to retrieve. On iOS only, failures will be logged if unsuccessful.
+  - `BrazePlugin.getBanner(String placementId)` - to get a banner with the provided placement ID if available in cache, otherwise returns null.
+  - `BrazePlugin.subscribeToBanners(void Function(List<BrazeBanner>) onEvent)` - to subscribe to the stream of banners and call [onEvent] when it receives the list of banners.
+- Updates the native iOS bridge [from Braze Swift SDK 11.6.1 to 11.9.0](https://github.com/braze-inc/braze-swift-sdk/compare/11.6.1...11.9.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+
 ## 12.1.1
 
 ##### Added

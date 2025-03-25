@@ -2,6 +2,11 @@ import 'dart:async';
 import 'dart:convert' as json;
 import 'dart:io' show Platform;
 
+import 'package:braze_plugin/braze_utils.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 /* Custom configuration keys */
@@ -15,6 +20,7 @@ class BrazePlugin {
   // To be used alongside `replayCallbacksConfigKey`
   final List<BrazeInAppMessage> _queuedInAppMessages = [];
   final List<BrazeContentCard> _queuedContentCards = [];
+  final List<BrazeBanner> _queuedBanners = [];
   final List<BrazePushEvent> _queuedPushEvents = [];
   final List<BrazeFeatureFlag> _queuedFeatureFlags = [];
 
@@ -25,6 +31,10 @@ class BrazePlugin {
   /// Broadcast stream to listen for content cards.
   StreamController<List<BrazeContentCard>> contentCardsStreamController =
       StreamController<List<BrazeContentCard>>.broadcast();
+
+  /// Broadcast stream to listen for banners.
+  StreamController<List<BrazeBanner>> bannersStreamController =
+      StreamController<List<BrazeBanner>>.broadcast();
 
   /// Broadcast stream to listen for push notification events.
   StreamController<BrazePushEvent> pushEventStreamController =
@@ -44,6 +54,7 @@ class BrazePlugin {
       {Function(BrazeInAppMessage)? inAppMessageHandler,
       Function(BrazeSdkAuthenticationError)? brazeSdkAuthenticationErrorHandler,
       Function(List<BrazeContentCard>)? contentCardsHandler,
+      Function(List<BrazeBanner>)? bannersHandler,
       Function(List<BrazeFeatureFlag>)? featureFlagsHandler,
       Function(BrazePushEvent)? pushEventHandler,
       Map<String, bool>? customConfigs}) {
@@ -55,6 +66,9 @@ class BrazePlugin {
     }
     if (contentCardsHandler != null) {
       subscribeToContentCards(contentCardsHandler);
+    }
+    if (bannersHandler != null) {
+      subscribeToBanners(bannersHandler);
     }
     if (featureFlagsHandler != null) {
       subscribeToFeatureFlags(featureFlagsHandler);
@@ -99,6 +113,21 @@ class BrazePlugin {
 
     StreamSubscription subscription =
         contentCardsStreamController.stream.listen(onEvent);
+    return subscription;
+  }
+
+  /// Subscribes to the stream of banners and calls [onEvent] when it
+  /// receives the list of banners.
+  StreamSubscription subscribeToBanners(
+      void Function(List<BrazeBanner>) onEvent) {
+    if (_replayCallbacksConfigEnabled() && _queuedBanners.isNotEmpty) {
+      print("Replaying stream onEvent for previously queued BrazeBanners.");
+      onEvent(_queuedBanners);
+      _queuedBanners.clear();
+    }
+
+    StreamSubscription subscription =
+        bannersStreamController.stream.listen(onEvent);
     return subscription;
   }
 
@@ -174,6 +203,32 @@ class BrazePlugin {
       "contentCardString": contentCard.contentCardJsonString
     };
     _channel.invokeMethod('logContentCardDismissed', params);
+  }
+
+  /// Gets a banner with the provided placement ID if available in cache, otherwise returns null.
+  Future<BrazeBanner?> getBanner(String placementId) {
+    final Map<String, dynamic> params = <String, dynamic>{
+      "placementId": placementId
+    };
+    return _channel.invokeMethod('getBanner', params).then<BrazeBanner?>(
+        (dynamic result) => result == null ? null : BrazeBanner(result));
+  }
+
+  /// Requests a refresh of the banners associated with the provided placement IDs.
+  ///
+  /// If the banners are unsuccessfully refreshed, a failure will be logged on iOS only.
+  void requestBannersRefresh(List<String> placementIds) async {
+    final Map<String, dynamic> params = <String, dynamic>{
+      "placementIds": placementIds,
+    };
+
+    try {
+      final result =
+          await _channel.invokeMethod('requestBannersRefresh', params);
+      print('Success: $result');
+    } catch (error) {
+      print('Failure: $error');
+    }
   }
 
   /// Logs a click for the provided in-app message data.
@@ -723,6 +778,24 @@ class BrazePlugin {
           _queuedContentCards.addAll(brazeCards);
         }
 
+        return Future<void>.value();
+
+      case "handleBrazeBanners":
+        final Map<dynamic, dynamic> argumentsMap = call.arguments;
+        List<BrazeBanner> brazeBanners = [];
+        for (dynamic banner in argumentsMap['banners']) {
+          brazeBanners.add(BrazeBanner(banner));
+        }
+        if (bannersStreamController.hasListener) {
+          bannersStreamController.add(brazeBanners);
+        } else {
+          print(
+              "Braze banner subscription not present. Removing any queued banners and adding only the recent refresh.");
+          _queuedBanners.clear();
+          _queuedBanners.addAll(brazeBanners);
+        }
+        print(
+            "Received banner placementIds: ${brazeBanners.map((banner) => banner.placementId.toString()).join(', ')}.");
         return Future<void>.value();
 
       case "handleBrazePushNotificationEvent":
@@ -1305,6 +1378,230 @@ class BrazePushEvent {
   @override
   String toString() {
     return pushEventJsonString;
+  }
+}
+
+class BrazeBanner {
+  /// The tracking string of the campaign and message variation IDs.
+  String trackingId = "";
+
+  /// The placement ID this banner is matched to.
+  String placementId = "";
+
+  /// Whether the banner is from a test send.
+  bool isTestSend = false;
+
+  /// Whether the banner is a control banner.
+  bool isControl = false;
+
+  /// The HTML to display for the banner.
+  String html = "";
+
+  /// A Unix timestamp of the expiration date and time. A value of -1 means the banner never expires.
+  int expiresAt = -1;
+
+  /// The BrazeBanner object initializer.
+  BrazeBanner(String _data) {
+    var bannerJson = json.jsonDecode(_data);
+
+    var trackingIdJson = bannerJson["id"];
+    if (trackingIdJson is String) {
+      trackingId = trackingIdJson;
+    }
+
+    var placementIdJson = bannerJson["placement_id"];
+    if (placementIdJson is String) {
+      placementId = placementIdJson;
+    }
+
+    var isTestSendJson = bannerJson["is_test_send"];
+    if (isTestSendJson is bool) {
+      isTestSend = isTestSendJson;
+    }
+
+    var isControlJson = bannerJson["is_control"];
+    if (isControlJson is bool) {
+      isControl = isControlJson;
+    }
+
+    var htmlJson = bannerJson["html"];
+    if (htmlJson is String) {
+      html = htmlJson;
+    }
+
+    var expiresAtJson = bannerJson["expires_at"];
+    if (expiresAtJson is int) {
+      expiresAt = expiresAtJson;
+    }
+  }
+
+  @override
+  String toString() {
+    return "BrazeBanner trackingId:" +
+        trackingId +
+        " placementId:" +
+        placementId +
+        " isTestSend:" +
+        isTestSend.toString() +
+        " isControl:" +
+        isControl.toString() +
+        " expiresAt:" +
+        expiresAt.toString() +
+        " html:" +
+        html;
+  }
+}
+
+/// The default UI for a Braze Banner Card.
+class BrazeBannerView extends StatefulWidget {
+  /// The placement ID of the Banner Card.
+  final String? placementId;
+
+  /// User-specified width of the banner view.
+  ///
+  /// By default, this is matched to 100% of the parent widget.
+  final double? width;
+
+  /// User-specified height of the banner view.
+  ///
+  /// By default, this is calculated on the Braze bridge from the intrinsic
+  /// content size of the HTML.
+  final double? height;
+
+  /// Optional handler for responding to calculated height changes.
+  ///
+  /// This callback returns the calculated height of the HTML on banner load
+  /// and whenever a resize has been detected.
+  final Function(double)? onHeightChanged;
+
+  BrazeBannerView({
+    Key? key,
+    required this.placementId,
+    this.width,
+    this.height,
+    this.onHeightChanged,
+  }) : super(key: key);
+
+  @override
+  State<BrazeBannerView> createState() => _BrazeBannerViewState();
+}
+
+class _BrazeBannerViewState extends State<BrazeBannerView>
+    with AutomaticKeepAliveClientMixin {
+  /// Identifier for the view instance's entire lifecycle, managed internally.
+  String get containerId => _containerId;
+  late final String _containerId = UniqueKey().toString();
+
+  /// Calculated height of the banner container.
+  /// This will be updated from the native layers using the Braze bridge.
+  double calculatedHeight = 0;
+
+  /// Prevents the widget from being disposed when not visible.
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    BrazeBannerResizeManager.subscribeToResizeEvents(
+        (Map<String, dynamic> args) {
+      var eventIdentifier = args["containerId"];
+      var height = args["height"];
+      if (eventIdentifier == null ||
+          height == null ||
+          eventIdentifier != containerId) {
+        // The resize event is invalid or not for this view instance
+        return;
+      }
+      resizeHeight(height);
+    });
+  }
+
+  /// Resizes the banner container's height and notifies any relevant
+  /// `onHeightChanged` handler.
+  void resizeHeight(double height) {
+    print("Resizing height of banner `${widget.placementId}` to $height");
+    setState(() {
+      calculatedHeight = height;
+    });
+    widget.onHeightChanged?.call(calculatedHeight);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Required for AutomaticKeepAliveClientMixin.
+    super.build(context);
+
+    final Key key = PageStorageKey(widget.placementId);
+    const String viewType = 'BrazeBannerView';
+    Widget bannerView;
+
+    // Pass parameters to the native layers
+    final Map<String, String?> creationParams = <String, String?>{
+      'placementId': widget.placementId,
+      'containerId': containerId,
+    };
+
+    // Use the overridden height or the calculated height from the JavaScript bridge.
+    double finalHeight = widget.height ?? calculatedHeight;
+
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        if (finalHeight <= 0) {
+          // To force the native Android Banner view to render and set its resize
+          // callback, set the container height to 1 and make it transparent.
+          finalHeight = 1;
+        }
+
+        bannerView = PlatformViewLink(
+          key: key,
+          viewType: viewType,
+          surfaceFactory: (context, controller) {
+            return AndroidViewSurface(
+              controller: controller as AndroidViewController,
+              gestureRecognizers: const <Factory<
+                  OneSequenceGestureRecognizer>>{},
+              hitTestBehavior: PlatformViewHitTestBehavior.opaque,
+            );
+          },
+          onCreatePlatformView: (params) {
+            return PlatformViewsService.initExpensiveAndroidView(
+              id: params.id,
+              viewType: viewType,
+              layoutDirection: TextDirection.ltr,
+              creationParams: creationParams,
+              creationParamsCodec: const StandardMessageCodec(),
+              onFocus: () {
+                params.onFocusChanged(true);
+              },
+            )
+              ..addOnPlatformViewCreatedListener(params.onPlatformViewCreated)
+              ..create();
+          },
+        );
+        break;
+
+      case TargetPlatform.iOS:
+        bannerView = UiKitView(
+          key: key,
+          viewType: viewType,
+          layoutDirection: TextDirection.ltr,
+          creationParams: creationParams,
+          creationParamsCodec: const StandardMessageCodec(),
+        );
+        break;
+
+      default:
+        throw UnsupportedError('Unsupported platform view.');
+    }
+
+    return Container(
+      color: Colors.transparent,
+      height: finalHeight,
+      width: widget.width ?? MediaQuery.of(context).size.width,
+      child: bannerView,
+    );
   }
 }
 

@@ -4,15 +4,17 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.StrictMode
 import android.os.StrictMode.ThreadPolicy
+import android.util.Log
 import com.braze.Braze
+import com.braze.support.BrazeLogger
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugins.GeneratedPluginRegistrant
 
-
 class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
         GeneratedPluginRegistrant.registerWith(flutterEngine)
         Braze.getInstance(this).logCustomEvent("flutter_sample_opened")
     }
@@ -26,6 +28,7 @@ class MainActivity : FlutterActivity() {
                 .penaltyLog()
                 .build()
         )
+        BrazeLogger.logLevel = Log.VERBOSE
 
         super.onCreate(savedInstanceState)
         handleDeepLink(intent)

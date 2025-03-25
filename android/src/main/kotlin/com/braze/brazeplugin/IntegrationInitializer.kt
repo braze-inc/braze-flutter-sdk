@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import com.braze.Braze
 import com.braze.BrazeActivityLifecycleCallbackListener
+import com.braze.events.BannersUpdatedEvent
 import com.braze.events.BrazePushEvent
 import com.braze.events.ContentCardsUpdatedEvent
 import com.braze.events.FeatureFlagsUpdatedEvent
@@ -17,6 +18,7 @@ import com.braze.ui.inappmessage.listeners.DefaultInAppMessageManagerListener
 object IntegrationInitializer {
     var isUninitialized = true
     private var contentCardsUpdatedSubscriber: IEventSubscriber<ContentCardsUpdatedEvent>? = null
+    private var bannersUpdatedSubscriber: IEventSubscriber<BannersUpdatedEvent>? = null
     private var featureFlagsUpdatedSubscriber: IEventSubscriber<FeatureFlagsUpdatedEvent>? = null
     private var pushNotificationsUpdatedSubscriber: IEventSubscriber<BrazePushEvent>? = null
 
@@ -24,6 +26,7 @@ object IntegrationInitializer {
         application.registerActivityLifecycleCallbacks(BrazeActivityLifecycleCallbackListener())
         val ctx = application.applicationContext
         subscribeToContentCardsUpdatedEvent(ctx)
+        subscribeToBannersUpdatedEvent(ctx)
         subscribeToFeatureFlagsUpdatedEvent(ctx)
         subscribeToPushNotificationEvents(ctx)
 
@@ -49,6 +52,20 @@ object IntegrationInitializer {
             Braze.getInstance(ctx).subscribeToContentCardsUpdates(it)
         }
         Braze.getInstance(ctx).requestContentCardsRefreshFromCache()
+    }
+
+    private fun subscribeToBannersUpdatedEvent(ctx: Context) {
+        Braze.getInstance(ctx)
+            .removeSingleSubscription(
+                bannersUpdatedSubscriber,
+                BannersUpdatedEvent::class.java
+            )
+        bannersUpdatedSubscriber = IEventSubscriber {
+            BrazePlugin.processBanners(it.banners)
+        }
+        bannersUpdatedSubscriber?.let {
+            Braze.getInstance(ctx).subscribeToBannersUpdates(it)
+        }
     }
 
     private fun subscribeToPushNotificationEvents(ctx: Context) {

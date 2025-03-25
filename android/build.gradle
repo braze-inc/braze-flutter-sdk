@@ -2,7 +2,7 @@ group 'com.braze.brazeplugin'
 version '1.0-SNAPSHOT'
 
 buildscript {
-    ext.kotlin_version = '1.6.21'
+    ext.kotlin_version = '2.0.20'
     ext.detekt_version = '1.19.0'
 
     repositories {
@@ -36,7 +36,7 @@ android {
         main.java.srcDirs += 'src/main/kotlin'
     }
     defaultConfig {
-        minSdkVersion 21
+        minSdkVersion 25
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     lintOptions {
@@ -86,7 +86,7 @@ detekt {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    implementation "com.braze:android-sdk-ui:33.1.0"
+    implementation "com.braze:android-sdk-ui:35.0.0"
 
     androidTestImplementation "org.mockito:mockito-android:3.12.4"
     androidTestImplementation "junit:junit:4.13.2"
