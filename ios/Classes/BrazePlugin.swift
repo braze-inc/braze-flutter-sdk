@@ -48,9 +48,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       }
 
     case "getUserId":
-      if let userId = BrazePlugin.braze?.user.id {
-        result(userId)
-      }
+      result(BrazePlugin.braze?.user.id)
 
     case "setSdkAuthenticationSignature":
       guard let args = call.arguments as? [String: Any],
@@ -69,9 +67,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       break  // This is an Android only feature, do nothing.
 
     case "getDeviceId":
-      if let deviceId = BrazePlugin.braze?.deviceId {
-        result(deviceId)
-      }
+      result(BrazePlugin.braze?.deviceId)
 
     case "requestContentCardsRefresh":
       BrazePlugin.braze?.contentCards.requestRefresh { _ in }
@@ -331,7 +327,8 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
       }
-      let calendar = Calendar.current
+      // Use the Gregorian calendar to standardize the input regardless of user's device settings.
+      let calendar = Calendar(identifier: .gregorian)
       var components = DateComponents()
       components.setValue(day.intValue, for: .day)
       components.setValue(month.intValue, for: .month)

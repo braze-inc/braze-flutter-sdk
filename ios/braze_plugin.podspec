@@ -7,7 +7,7 @@ require 'yaml'
 pubspec = YAML.load_file(File.join(__dir__, '../pubspec.yaml'))
 flutter_version = pubspec['version']
 
-braze_swift_version = '11.9.0'
+braze_swift_version = '12.0.0'
 
 Pod::Spec.new do |s|
   s.name             = 'braze_plugin'

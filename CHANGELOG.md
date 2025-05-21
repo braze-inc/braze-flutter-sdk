@@ -1,5 +1,23 @@
 ⚠️ In version 3.0.0, we changed the iOS bridge from AppboyKit, which is written in Objective-C, to the new [Swift SDK](https://github.com/braze-inc/braze-swift-sdk). If you are upgrading from a version below 3.0.0 to a version above 3.0.0, please read [the instructions](https://github.com/braze-inc/braze-flutter-sdk/blob/master/CHANGELOG.md#300) to ensure a smooth transition and backward compatibility.
 
+## 14.0.0
+
+> [!IMPORTANT]
+> This release reverts the increase to the minimum Android SDK version of the Braze Android SDK from API 21 to API 25 introduced in 34.0.0. This allows the SDK to once again be compiled into apps supporting as early as API 21. However, we are not reintroducing formal support for < API 25. Read more [here](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#3600).
+
+##### Breaking
+- Updates the native Android bridge [from Braze Android SDK 35.0.0 to 36.0.0](https://github.com/braze-inc/braze-android-sdk/compare/v35.0.0...v36.0.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+- Updates the native iOS bridge [from Braze Swift SDK 11.9.0 to 12.0.0](https://github.com/braze-inc/braze-swift-sdk/compare/11.9.0...12.0.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+
+##### Fixed
+- Fixes an issue on iOS where `getUserId()` would not return any value if the user was anonymous.
+  - This API will now return `null` if the user is anonymous.
+- Fixes the iOS implementation of `setDateOfBirth` to correctly report dates using the Gregorian calendar instead of the user's device calendar.
+  - Previously, the SDK would re-format the input date components with the device's calendar settings if they were non-Gregorian.
+- Fixes the in-app message data model to reflect the correct types under the following circumstances:
+  - HTML in-app messages will now reflect their correct type `html`, instead of the default `slideup` type.
+  - Full in-app messages will now reflect their correct type `full`, instead of incorrectly being marked as `html_full`. HTML full messages will still continue to work as expected.
+
 ## 13.0.0
 
 ##### Breaking

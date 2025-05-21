@@ -86,7 +86,7 @@ detekt {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    implementation "com.braze:android-sdk-ui:35.0.0"
+    implementation "com.braze:android-sdk-ui:36.0.0"
 
     androidTestImplementation "org.mockito:mockito-android:3.12.4"
     androidTestImplementation "junit:junit:4.13.2"

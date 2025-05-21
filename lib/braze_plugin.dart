@@ -458,7 +458,10 @@ class BrazePlugin {
     _callStringMethod('setEmail', 'email', email);
   }
 
-  /// Sets the dob default user attribute.
+  /// Sets the date of birth default user attribute.
+  ///
+  /// This value will be reported to the Braze platform using the
+  /// Gregorian calendar, regardless of the user's device settings.
   void setDateOfBirth(int year, int month, int day) {
     final Map<String, dynamic> params = <String, dynamic>{
       'year': year,
@@ -885,7 +888,7 @@ enum DismissType { swipe, auto_dismiss }
 enum ClickAction { news_feed, uri, none }
 
 /// Braze in-app message types
-enum MessageType { slideup, modal, full, html_full }
+enum MessageType { slideup, modal, full, html_full, html }
 
 /// Braze property types to be marked for user tracking
 enum TrackingProperty {
@@ -1197,33 +1200,27 @@ class BrazeInAppMessage {
     var clickActionJson = inAppMessageJson["click_action"];
     if (clickActionJson is String) {
       for (ClickAction action in ClickAction.values) {
-        if (action
-            .toString()
-            .toLowerCase()
-            .endsWith(clickActionJson.toLowerCase())) {
+        if (action.name.toLowerCase() == clickActionJson.toLowerCase()) {
           clickAction = action;
+          break;
         }
       }
     }
     var dismissTypeJson = inAppMessageJson["message_close"];
     if (dismissTypeJson is String) {
       for (DismissType type in DismissType.values) {
-        if (type
-            .toString()
-            .toLowerCase()
-            .endsWith(dismissTypeJson.toLowerCase())) {
+        if (type.name.toLowerCase() == dismissTypeJson.toLowerCase()) {
           dismissType = type;
+          break;
         }
       }
     }
     var messageTypeJson = inAppMessageJson["type"];
     if (messageTypeJson is String) {
       for (MessageType type in MessageType.values) {
-        if (type
-            .toString()
-            .toLowerCase()
-            .endsWith(messageTypeJson.toLowerCase())) {
+        if (type.name.toLowerCase() == messageTypeJson.toLowerCase()) {
           messageType = type;
+          break;
         }
       }
     }
@@ -1637,11 +1634,9 @@ class BrazeButton {
     var clickActionJson = buttonJson["click_action"];
     if (clickActionJson is String) {
       for (ClickAction action in ClickAction.values) {
-        if (action
-            .toString()
-            .toLowerCase()
-            .endsWith(clickActionJson.toLowerCase())) {
+        if (action.name.toLowerCase() == clickActionJson.toLowerCase()) {
           clickAction = action;
+          break;
         }
       }
     }

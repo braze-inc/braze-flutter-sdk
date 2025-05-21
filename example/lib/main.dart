@@ -5,6 +5,7 @@ import 'package:braze_plugin/braze_plugin.dart';
 import 'package:braze_plugin_example/jwt_generator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'log_console.dart';
 
 void main() => runApp(MyApp());
 
@@ -53,6 +54,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
   String _ffStreamSubscription = "DISABLED";
   String _pushStreamSubscription = "DISABLED";
   String _featureFlagPropertyType = "BOOLEAN";
+  bool _showBrazeConsole = false;
 
   // Subscriptions
   late StreamSubscription inAppMessageStreamSubscription;
@@ -138,7 +140,25 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
       appBar: AppBar(
         title: Text('Braze Sample'),
       ),
-      body: _buildListView(),
+      body: Column(children: [
+        Visibility(
+          visible: _showBrazeConsole,
+          maintainState: true,
+          maintainSize: false,
+          maintainAnimation: true,
+          child: Column(
+            children: [
+              LogConsole(
+                height: 200,
+              ),
+              Divider(height: 1, thickness: 1),
+            ],
+          ),
+        ),
+        Expanded(
+          child: _buildListView(),
+        )
+      ]),
     );
   }
 
@@ -165,6 +185,15 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
           shrinkWrap: true,
           padding: const EdgeInsets.all(20.0),
           children: <Widget>[
+            Center(
+              child: TextButton(
+                  child: const Text('Toggle Braze Log Console'),
+                  onPressed: () {
+                    setState(() {
+                      _showBrazeConsole = !_showBrazeConsole;
+                    });
+                  }),
+            ),
             Center(child: Text("SDK Status: $_enabled")),
             Center(
                 child:
@@ -202,20 +231,19 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
             TextButton(
                 child: const Text('GET USER ID'),
                 onPressed: () async {
-                  _braze.getUserId().then((result) {
-                    String resultText = "";
-                    if (result == null) {
-                      resultText = "User ID not found.";
-                    } else {
-                      this.setState(() {
-                        _userId = result;
-                      });
-                      resultText = "User ID: $result";
-                    }
-                    ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-                      content: new Text(resultText),
-                    ));
-                  });
+                  String? userId = await _braze.getUserId();
+                  String userIdText = "";
+                  if (userId == null) {
+                    userIdText = "User ID not found.";
+                  } else {
+                    this.setState(() {
+                      _userId = userId;
+                    });
+                    userIdText = "User ID: $userId";
+                  }
+                  ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
+                    content: new Text(userIdText),
+                  ));
                 }),
             TextField(
               autocorrect: false,
@@ -867,7 +895,8 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
   }
 
   void _inAppMessageReceived(BrazeInAppMessage inAppMessage) {
-    print("Received message: ${inAppMessage.toString()}");
+    print(
+        "Received message of type ${inAppMessage.messageType.name}: ${inAppMessage.toString()}");
     ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
       content: new Text("Received message: ${inAppMessage.toString()}"),
     ));

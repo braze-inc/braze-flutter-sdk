@@ -922,7 +922,13 @@ void main() {
 
   test('should call requestBannersRefresh with all params', () async {
     BrazePlugin _braze = new BrazePlugin();
-    final placementIds = ['placement1', 'placement2' 'abcdefghijkl', 'MNOPQRSTUVWXYZ', '1234567890', '!@#%^&*()?<>-_=+'];
+    final placementIds = [
+      'placement1',
+      'placement2' 'abcdefghijkl',
+      'MNOPQRSTUVWXYZ',
+      '1234567890',
+      '!@#%^&*()?<>-_=+'
+    ];
     _braze.requestBannersRefresh(placementIds);
     expect(log, <Matcher>[
       isMethodCall(
@@ -1222,8 +1228,69 @@ void main() {
     expect(inAppMessage.inAppMessageJsonString, equals(testJson));
     expect(
         inAppMessage.buttons[0].toString(), equals(testButtons[0].toString()));
+    expect(inAppMessage.buttons[0].clickAction.name, equals("uri"));
     expect(
         inAppMessage.buttons[1].toString(), equals(testButtons[1].toString()));
+    expect(inAppMessage.buttons[1].clickAction.name, equals("none"));
+
+    String slideupJson = '{\"message\":\"$testMessageBody\",\"type\":\"'
+        'SLIDEUP\",\"text_align_message\":\"CENTER\",\"click_action\":\"'
+        '$testClickAction\",\"message_close\":\"SWIPE\",\"extras\":$testExtras,\"h'
+        'eader\":\"$testHeader\",\"text_align_header\":\"CENTER\",\"image_url\":\"'
+        '$testImageUrl\",\"image_style\":\"TOP\",\"btns\":$testButtonString,\"clos'
+        'e_btn_color\":4291085508,\"bg_color\":4294243575,\"frame_color\":32078036'
+        '99,\"text_color\":4280624421,\"header_text_color\":4280624421,\"trigger_i'
+        'd\":\"NWJhNTMxOThiZjVjZWE0NDZiMTUzYjZiXyRfbXY9NWJhNTMxOThiZjVjZWE0NDZiMTU'
+        'zYjc1JnBpPWNtcA==\",\"uri\":\"$testUri\",\"zipped_assets_url\":\"'
+        '$testZippedAssetsUrl\",\"duration\":$testDuration,\"message_close\":\"'
+        'SWIPE\",\"use_webview\":$testUseWebView}';
+    BrazeInAppMessage slideupMessage = new BrazeInAppMessage(slideupJson);
+    expect(slideupMessage.messageType.name, equals('slideup'));
+    expect(slideupMessage.dismissType.name, equals('swipe'));
+
+    String fullJson = '{\"message\":\"$testMessageBody\",\"type\":\"'
+        'FULL\",\"text_align_message\":\"CENTER\",\"click_action\":\"'
+        '$testClickAction\",\"message_close\":\"SWIPE\",\"extras\":$testExtras,\"h'
+        'eader\":\"$testHeader\",\"text_align_header\":\"CENTER\",\"image_url\":\"'
+        '$testImageUrl\",\"image_style\":\"TOP\",\"btns\":$testButtonString,\"clos'
+        'e_btn_color\":4291085508,\"bg_color\":4294243575,\"frame_color\":32078036'
+        '99,\"text_color\":4280624421,\"header_text_color\":4280624421,\"trigger_i'
+        'd\":\"NWJhNTMxOThiZjVjZWE0NDZiMTUzYjZiXyRfbXY9NWJhNTMxOThiZjVjZWE0NDZiMTU'
+        'zYjc1JnBpPWNtcA==\",\"uri\":\"$testUri\",\"zipped_assets_url\":\"'
+        '$testZippedAssetsUrl\",\"duration\":$testDuration,\"message_close\":\"'
+        'AUTO_DISMISS\",\"use_webview\":$testUseWebView}';
+    BrazeInAppMessage fullMessage = new BrazeInAppMessage(fullJson);
+    expect(fullMessage.messageType.name, equals('full'));
+    expect(fullMessage.dismissType.name, equals('auto_dismiss'));
+
+    String htmlJson = '{\"message\":\"$testMessageBody\",\"type\":\"'
+        'HTML\",\"text_align_message\":\"CENTER\",\"click_action\":\"'
+        '$testClickAction\",\"message_close\":\"SWIPE\",\"extras\":$testExtras,\"h'
+        'eader\":\"$testHeader\",\"text_align_header\":\"CENTER\",\"image_url\":\"'
+        '$testImageUrl\",\"image_style\":\"TOP\",\"btns\":$testButtonString,\"clos'
+        'e_btn_color\":4291085508,\"bg_color\":4294243575,\"frame_color\":32078036'
+        '99,\"text_color\":4280624421,\"header_text_color\":4280624421,\"trigger_i'
+        'd\":\"NWJhNTMxOThiZjVjZWE0NDZiMTUzYjZiXyRfbXY9NWJhNTMxOThiZjVjZWE0NDZiMTU'
+        'zYjc1JnBpPWNtcA==\",\"uri\":\"$testUri\",\"zipped_assets_url\":\"'
+        '$testZippedAssetsUrl\",\"duration\":$testDuration,\"message_close\":\"'
+        '$testDismissType\",\"use_webview\":$testUseWebView}';
+    BrazeInAppMessage htmlMessage = new BrazeInAppMessage(htmlJson);
+    expect(htmlMessage.messageType.name, equals('html'));
+
+    String htmlFullJson = '{\"message\":\"$testMessageBody\",\"type\":\"'
+        'HTML_FULL\",\"text_align_message\":\"CENTER\",\"click_action\":\"'
+        '$testClickAction\",\"message_close\":\"SWIPE\",\"extras\":$testExtras,\"h'
+        'eader\":\"$testHeader\",\"text_align_header\":\"CENTER\",\"image_url\":\"'
+        '$testImageUrl\",\"image_style\":\"TOP\",\"btns\":$testButtonString,\"clos'
+        'e_btn_color\":4291085508,\"bg_color\":4294243575,\"frame_color\":32078036'
+        '99,\"text_color\":4280624421,\"header_text_color\":4280624421,\"trigger_i'
+        'd\":\"NWJhNTMxOThiZjVjZWE0NDZiMTUzYjZiXyRfbXY9NWJhNTMxOThiZjVjZWE0NDZiMTU'
+        'zYjc1JnBpPWNtcA==\",\"uri\":\"$testUri\",\"zipped_assets_url\":\"'
+        '$testZippedAssetsUrl\",\"duration\":$testDuration,\"message_close\":\"'
+        '$testDismissType\",\"use_webview\":$testUseWebView}';
+    BrazeInAppMessage htmlFullMessage = new BrazeInAppMessage(htmlFullJson);
+    expect(htmlFullMessage.messageType.name,
+        equals('html_full'));
   });
 
   test('instantiate a BrazeInAppMessage object with expected defaults', () {
