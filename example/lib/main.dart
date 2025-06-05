@@ -105,7 +105,8 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
     });
 
     // Perform an initial refresh of banners.
-    _refreshBanners("placement_1, placement_2, sdk-test-2");
+    _refreshBanners(
+        "placement_1, placement_2, sdk-test-2, sdk-test-1, sdk-test-3, dynamic-height");
 
     // Deep link channel
     MethodChannel('deepLinkChannel')

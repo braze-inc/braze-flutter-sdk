@@ -86,10 +86,10 @@ class BrazeBannerView: NSObject, FlutterPlatformView {
     )
   }
   
-  deinit {
-    // Flutter doesn't automatically resize after destroying the view.
-    resizeView(height: 0)
-  }
+  // deinit {
+  //   // Flutter doesn't automatically resize after destroying the view.
+  //   resizeView(height: 0)
+  // }
 
   func view() -> UIView {
     return _hostView
