@@ -1,4 +1,11 @@
-⚠️ In version 3.0.0, we changed the iOS bridge from AppboyKit, which is written in Objective-C, to the new [Swift SDK](https://github.com/braze-inc/braze-swift-sdk). If you are upgrading from a version below 3.0.0 to a version above 3.0.0, please read [the instructions](https://github.com/braze-inc/braze-flutter-sdk/blob/master/CHANGELOG.md#300) to ensure a smooth transition and backward compatibility.
+## 14.0.2
+
+> [!IMPORTANT]
+> This release reverts the increase to the minimum Android SDK version of the Braze Android SDK from API 21 to API 25 introduced in 34.0.0. This allows the SDK to once again be compiled into apps supporting as early as API 21. However, we are not reintroducing formal support for < API 25. Read more [here](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#3600).
+
+##### Fixed
+- Fixes a display issue introduced in `14.0.1` when changing a Banner dynamically.
+- The `minSdk` enforced by the Flutter Android layer is now downgraded from `25` to `21`, matching the `minSdk` in the Android native layer.
 
 ## 14.0.1
 
@@ -8,8 +15,7 @@
 
 ## 14.0.0
 
-> [!IMPORTANT]
-> This release reverts the increase to the minimum Android SDK version of the Braze Android SDK from API 21 to API 25 introduced in 34.0.0. This allows the SDK to once again be compiled into apps supporting as early as API 21. However, we are not reintroducing formal support for < API 25. Read more [here](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#3600).
+⚠️ **Important:** This version has a known issue related to Banners. Upgrade to version `14.0.2` instead.
 
 ##### Breaking
 - Updates the native Android bridge [from Braze Android SDK 35.0.0 to 36.0.0](https://github.com/braze-inc/braze-android-sdk/compare/v35.0.0...v36.0.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
@@ -25,6 +31,8 @@
   - Full in-app messages will now reflect their correct type `full`, instead of incorrectly being marked as `html_full`. HTML full messages will still continue to work as expected.
 
 ## 13.0.0
+
+⚠️ **Important:** This version has a known issue related to Banners. Upgrade to version `14.0.2` instead.
 
 ##### Breaking
 - Updates the native Android bridge [from Braze Android SDK 33.0.0 to 35.0.0](https://github.com/braze-inc/braze-android-sdk/compare/v33.0.0...v35.0.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).

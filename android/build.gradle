@@ -1,6 +1,10 @@
 group 'com.braze.brazeplugin'
 version '1.0-SNAPSHOT'
 
+def safeExtGet(prop, fallback) {
+  rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+}
+
 buildscript {
     ext.kotlin_version = '2.0.20'
     ext.detekt_version = '1.19.0'
@@ -29,14 +33,14 @@ apply plugin: 'kotlin-android'
 apply plugin: 'io.gitlab.arturbosch.detekt'
 
 android {
-    compileSdkVersion 35
+    compileSdkVersion safeExtGet('compileSdkVersion', 35)
     namespace 'com.braze.brazeplugin'
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
     }
     defaultConfig {
-        minSdkVersion 25
+        minSdkVersion safeExtGet('minSdkVersion', 21)
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     lintOptions {

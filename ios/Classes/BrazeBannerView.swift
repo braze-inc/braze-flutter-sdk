@@ -85,11 +85,6 @@ class BrazeBannerView: NSObject, FlutterPlatformView {
       placementId: placementId ?? ""
     )
   }
-  
-  // deinit {
-  //   // Flutter doesn't automatically resize after destroying the view.
-  //   resizeView(height: 0)
-  // }
 
   func view() -> UIView {
     return _hostView
@@ -117,6 +112,10 @@ class BrazeBannerView: NSObject, FlutterPlatformView {
         }
       }
     }
+
+    // Flutter doesn't automatically resize when changing placements.
+    // This allows us to create new native views with a fresh height.
+    resizeView(height: 0)
 
     _hostView.addSubview(bannerView)
     bannerView.translatesAutoresizingMaskIntoConstraints = false

@@ -53,7 +53,10 @@ let brazeEndpoint = "sondheim.braze.com"
           logLevel = "debug"
         }
         let arguments = ["logString": logString, "level": logLevel]
-        brazeLogChannel.invokeMethod("printLog", arguments: arguments)
+        // Sending messages on a native platform channel must be done on the main thread.
+        DispatchQueue.main.async {
+            brazeLogChannel.invokeMethod("printLog", arguments: arguments)
+        }
       }
       return true
     }
@@ -142,7 +145,10 @@ extension AppDelegate {
     else { return }
     let deepLinkChannel = FlutterMethodChannel(
       name: "deepLinkChannel", binaryMessenger: controller.binaryMessenger)
-    deepLinkChannel.invokeMethod("receiveDeepLink", arguments: url.absoluteString)
+    // Sending messages on a native platform channel must be done on the main thread.
+    DispatchQueue.main.async {
+      deepLinkChannel.invokeMethod("receiveDeepLink", arguments: url.absoluteString)
+    }
   }
 
   // Custom scheme
