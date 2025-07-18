@@ -1,11 +1,16 @@
+## 14.0.3
+
+#### Fixed
+- Fixes missing `Braze` symbol error in `BrazeBannerViewFactory` when using dynamically-linked frameworks.
+
 ## 14.0.2
 
 > [!IMPORTANT]
-> This release reverts the increase to the minimum Android SDK version of the Braze Android SDK from API 21 to API 25 introduced in 34.0.0. This allows the SDK to once again be compiled into apps supporting as early as API 21. However, we are not reintroducing formal support for < API 25. Read more [here](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#3600).
+> - This release reverts the increase to the minimum Android SDK version of the Braze Android SDK from API 21 to API 25 introduced in 34.0.0. This allows the SDK to once again be compiled into apps supporting as early as API 21. However, we are not reintroducing formal support for < API 25. Read more [here](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#3600).
 
 ##### Fixed
 - Fixes a display issue introduced in `14.0.1` when changing a Banner dynamically.
-- The `minSdk` enforced by the Flutter Android layer is now downgraded from `25` to `21`, matching the `minSdk` in the Android native layer.
+- The `minSdk` enforced by the Android Flutter layer is now downgraded from `25` to `21`, matching the `minSdk` in the Android native layer.
 
 ## 14.0.1
 
