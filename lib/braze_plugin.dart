@@ -1519,9 +1519,10 @@ class _BrazeBannerViewState extends State<BrazeBannerView>
   /// `onHeightChanged` handler.
   void resizeHeight(double height) {
     print("Resizing height of banner `${widget.placementId}` to $height");
-    setState(() {
-      calculatedHeight = height;
-    });
+    calculatedHeight = height;
+    if(mounted) {
+      setState(() {});
+    }
     widget.onHeightChanged?.call(calculatedHeight);
   }
 
@@ -1596,8 +1597,16 @@ class _BrazeBannerViewState extends State<BrazeBannerView>
     return Container(
       color: Colors.transparent,
       height: finalHeight,
-      width: widget.width ?? MediaQuery.of(context).size.width,
-      child: bannerView,
+      width: widget.width ?? MediaQuery.sizeOf(context).width,
+      child: LayoutBuilder(
+        // Ensures the PlatformView has a size before being rendered.
+        builder: (context, constraints) {
+          return ConstrainedBox(
+            constraints: constraints,
+            child: bannerView,
+          );
+        }
+      ),
     );
   }
 }
