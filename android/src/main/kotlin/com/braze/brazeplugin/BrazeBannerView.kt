@@ -2,13 +2,12 @@ package com.braze.brazeplugin
 
 import android.app.Activity
 import android.content.Context
-import android.view.View
 import android.graphics.Color
+import android.view.View
 import com.braze.support.BrazeLogger.Priority.W
 import com.braze.support.BrazeLogger.brazelog
 import com.braze.ui.banners.BannerView
 import io.flutter.plugin.platform.PlatformView
-import BrazeUIHandler
 
 internal class BrazeBannerView(
     context: Context,

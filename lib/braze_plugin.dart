@@ -442,18 +442,17 @@ class BrazePlugin {
     _callStringMethod('unsetCustomUserAttribute', 'key', key);
   }
 
-  /// Sets the first name default user attribute.
-  void setFirstName(String firstName) {
+  /// Sets the first name default user attribute. A `null` value will unset the first name for this user.
+  void setFirstName(String? firstName) {
     _callStringMethod('setFirstName', 'firstName', firstName);
   }
 
-  /// Sets the last name default user attribute.
-  void setLastName(String lastName) {
+  /// Sets the last name default user attribute. A `null` value will unset the last name for this user.
+  void setLastName(String? lastName) {
     _callStringMethod('setLastName', 'lastName', lastName);
   }
 
-  /// Sets the email default user attribute.
-  /// Pass in `null` to unset the user's email.
+  /// Sets the email default user attribute. A `null` value will unset the email for this user.
   void setEmail(String? email) {
     _callStringMethod('setEmail', 'email', email);
   }
@@ -472,27 +471,30 @@ class BrazePlugin {
   }
 
   /// Sets the gender default user attribute.
-  void setGender(String gender) {
+  ///
+  /// The accepted values are: "M" (male), "F" (female), "O" (other), "N" (not applicable), "P" (prefer not to say), "U" (unknown).
+  /// A `null` value will be represented as "Unknown" on the user profile.
+  void setGender(String? gender) {
     _callStringMethod('setGender', 'gender', gender);
   }
 
-  /// Sets the language default user attribute.
-  void setLanguage(String language) {
+  /// Sets the language default user attribute. A `null` value will unset the language for this user.
+  void setLanguage(String? language) {
     _callStringMethod('setLanguage', 'language', language);
   }
 
-  /// Sets the country default user attribute.
-  void setCountry(String country) {
+  /// Sets the country default user attribute. A `null` value will unset the country for this user.
+  void setCountry(String? country) {
     _callStringMethod('setCountry', 'country', country);
   }
 
-  /// Sets the home city default user attribute.
-  void setHomeCity(String homeCity) {
+  /// Sets the home city default user attribute. A `null` value will unset the home city for this user.
+  void setHomeCity(String? homeCity) {
     _callStringMethod('setHomeCity', 'homeCity', homeCity);
   }
 
-  /// Sets the phone number default user attribute.
-  void setPhoneNumber(String phoneNumber) {
+  /// Sets the phone number default user attribute. A `null` value will unset the phone number for this user.
+  void setPhoneNumber(String? phoneNumber) {
     _callStringMethod('setPhoneNumber', 'phoneNumber', phoneNumber);
   }
 

@@ -395,7 +395,14 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                 _braze.unsetCustomUserAttribute("stringAttribute2");
                 _braze.incrementCustomUserAttribute("intAttribute", 2);
                 _braze.removeFromSubscriptionGroup("sampleGroup");
+                _braze.setFirstName(null);
+                _braze.setLastName(null);
                 _braze.setEmail(null);
+                _braze.setGender(null);
+                _braze.setLanguage(null);
+                _braze.setCountry(null);
+                _braze.setHomeCity(null);
+                _braze.setPhoneNumber(null);
                 ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
                   content: new Text("Unset/increment attributes"),
                 ));

@@ -1,16 +1,34 @@
+## 15.0.0
+
+##### Breaking
+- Updates the native Android bridge [from Braze Android SDK 36.0.0 to 39.0.0](https://github.com/braze-inc/braze-android-sdk/compare/v36.0.0...v39.0.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+- Updates the native iOS bridge [from Braze Swift SDK 12.0.0 to 13.2.0](https://github.com/braze-inc/braze-swift-sdk/compare/12.0.0...13.2.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+  - This includes Xcode 26 support.
+
+##### Added
+- Adds the ability to unset the following user attributes by setting these values to `null`:
+  - First name
+  - Last name
+  - Phone number
+  - Email
+  - Gender
+  - Language
+  - Home city
+  - Country
+
 ## 14.0.3
 
-#### Fixed
+##### Fixed
 - Fixes missing `Braze` symbol error in `BrazeBannerViewFactory` when using dynamically-linked frameworks.
 
 ## 14.0.2
 
 > [!IMPORTANT]
-> - This release reverts the increase to the minimum Android SDK version of the Braze Android SDK from API 21 to API 25 introduced in 34.0.0. This allows the SDK to once again be compiled into apps supporting as early as API 21. However, we are not reintroducing formal support for < API 25. Read more [here](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#3600).
+> This release reverts the increase to the minimum Android SDK version of the Braze Android SDK from API 21 to API 25 introduced in 34.0.0. This allows the SDK to once again be compiled into apps supporting as early as API 21. However, we are not reintroducing formal support for < API 25. Read more [here](https://github.com/braze-inc/braze-android-sdk/blob/master/CHANGELOG.md#3600).
 
 ##### Fixed
 - Fixes a display issue introduced in `14.0.1` when changing a Banner dynamically.
-- The `minSdk` enforced by the Android Flutter layer is now downgraded from `25` to `21`, matching the `minSdk` in the Android native layer.
+- The `minSdk` enforced by the Flutter Android layer is now downgraded from `25` to `21`, matching the `minSdk` in the Android native layer.
 
 ## 14.0.1
 

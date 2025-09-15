@@ -1,5 +1,4 @@
 buildscript {
-    ext.kotlin_version = '2.0.20'
     repositories {
         google()
         gradlePluginPortal()
@@ -8,10 +7,16 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.1.1'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath 'com.google.gms:google-services:4.3.15'
+        classpath 'com.google.gms:google-services:4.4.3'
     }
+}
+
+plugins {
+    id "io.gitlab.arturbosch.detekt" version "1.23.7"
+}
+
+dependencies {
+  detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.23.7")
 }
 
 allprojects {
@@ -31,4 +36,19 @@ subprojects {
 
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
+}
+
+detekt {
+    // This is the root directory of the public/android project with the bridge logic
+    def brazePluginDirectory = rootProject.file("../../android")
+    println("brazePluginDirectory for detekt: $brazePluginDirectory")
+
+    source = files(
+        "src/main/kotlin",
+        new File(brazePluginDirectory, "src"),
+    )
+
+    source.each {
+        println(it)
+    }
 }

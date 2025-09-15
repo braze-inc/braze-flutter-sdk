@@ -669,6 +669,17 @@ void main() {
     ]);
   });
 
+  test('should call setFirstName with null', () {
+    BrazePlugin _braze = new BrazePlugin();
+    _braze.setFirstName(null);
+    expect(log, <Matcher>[
+      isMethodCall(
+        'setFirstName',
+        arguments: <String, dynamic>{'firstName': null},
+      ),
+    ]);
+  });
+
   test('should call setLastName', () {
     BrazePlugin _braze = new BrazePlugin();
     String _lastName = 'someLastName';
@@ -681,6 +692,17 @@ void main() {
     ]);
   });
 
+  test('should call setLastName with null', () {
+    BrazePlugin _braze = new BrazePlugin();
+    _braze.setLastName(null);
+    expect(log, <Matcher>[
+      isMethodCall(
+        'setLastName',
+        arguments: <String, dynamic>{'lastName': null},
+      ),
+    ]);
+  });
+
   test('should call setEmail', () {
     BrazePlugin _braze = new BrazePlugin();
     String _email = 'someEmail';
@@ -689,6 +711,17 @@ void main() {
       isMethodCall(
         'setEmail',
         arguments: <String, dynamic>{'email': _email},
+      ),
+    ]);
+  });
+
+  test('should call setEmail with null', () {
+    BrazePlugin _braze = new BrazePlugin();
+    _braze.setEmail(null);
+    expect(log, <Matcher>[
+      isMethodCall(
+        'setEmail',
+        arguments: <String, dynamic>{'email': null},
       ),
     ]);
   });
@@ -723,6 +756,17 @@ void main() {
     ]);
   });
 
+  test('should call setGender with null', () {
+    BrazePlugin _braze = new BrazePlugin();
+    _braze.setGender(null);
+    expect(log, <Matcher>[
+      isMethodCall(
+        'setGender',
+        arguments: <String, dynamic>{'gender': null},
+      ),
+    ]);
+  });
+
   test('should call setLanguage', () {
     BrazePlugin _braze = new BrazePlugin();
     String _language = 'es';
@@ -731,6 +775,17 @@ void main() {
       isMethodCall(
         'setLanguage',
         arguments: <String, dynamic>{'language': _language},
+      ),
+    ]);
+  });
+
+  test('should call setLanguage with null', () {
+    BrazePlugin _braze = new BrazePlugin();
+    _braze.setLanguage(null);
+    expect(log, <Matcher>[
+      isMethodCall(
+        'setLanguage',
+        arguments: <String, dynamic>{'language': null},
       ),
     ]);
   });
@@ -747,6 +802,17 @@ void main() {
     ]);
   });
 
+  test('should call setCountry with null', () {
+    BrazePlugin _braze = new BrazePlugin();
+    _braze.setCountry(null);
+    expect(log, <Matcher>[
+      isMethodCall(
+        'setCountry',
+        arguments: <String, dynamic>{'country': null},
+      ),
+    ]);
+  });
+
   test('should call setHomeCity', () {
     BrazePlugin _braze = new BrazePlugin();
     String _homeCity = 'someHomeCity';
@@ -759,6 +825,17 @@ void main() {
     ]);
   });
 
+  test('should call setHomeCity with null', () {
+    BrazePlugin _braze = new BrazePlugin();
+    _braze.setHomeCity(null);
+    expect(log, <Matcher>[
+      isMethodCall(
+        'setHomeCity',
+        arguments: <String, dynamic>{'homeCity': null},
+      ),
+    ]);
+  });
+
   test('should call setPhoneNumber', () {
     BrazePlugin _braze = new BrazePlugin();
     String _phoneNumber = '8675309';
@@ -767,6 +844,17 @@ void main() {
       isMethodCall(
         'setPhoneNumber',
         arguments: <String, dynamic>{'phoneNumber': _phoneNumber},
+      ),
+    ]);
+  });
+
+  test('should call setPhoneNumber with null', () {
+    BrazePlugin _braze = new BrazePlugin();
+    _braze.setPhoneNumber(null);
+    expect(log, <Matcher>[
+      isMethodCall(
+        'setPhoneNumber',
+        arguments: <String, dynamic>{'phoneNumber': null},
       ),
     ]);
   });

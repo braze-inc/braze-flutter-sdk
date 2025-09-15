@@ -1,13 +1,17 @@
+package com.braze.brazeplugin
+
 import android.content.Context
 import android.content.res.Resources
-import com.braze.brazeplugin.FlutterConfiguration
 import com.braze.ui.inappmessage.InAppMessageOperation
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class FlutterConfigurationTest {
 
     @Test
@@ -16,12 +20,12 @@ class FlutterConfigurationTest {
         val testResId = 1234
         val value = false
         val testPackageName = "foo.bar.braze"
-        val mockResources = mock<Resources>() {
+        val mockResources = mock<Resources> {
             on { getIdentifier(key, "bool", testPackageName) } doReturn 1234
             on { getBoolean(testResId) } doReturn value
         }
 
-        val context: Context = mock<Context>() {
+        val context: Context = mock<Context> {
             on { resources } doReturn mockResources
             on { packageName } doReturn testPackageName
         }
@@ -36,11 +40,11 @@ class FlutterConfigurationTest {
     fun whenBooleanValueDoesNotExistInResources_isAutomaticInitializationEnabled_returnsTrue() {
         val key = "com_braze_flutter_enable_automatic_integration_initializer"
         val testPackageName = "foo.bar.braze"
-        val mockResources = mock<Resources>() {
+        val mockResources = mock<Resources> {
             on { getIdentifier(key, "bool", testPackageName) } doReturn 0
         }
 
-        val context: Context = mock<Context>() {
+        val context: Context = mock<Context> {
             on { resources } doReturn mockResources
             on { packageName } doReturn testPackageName
         }
@@ -56,12 +60,12 @@ class FlutterConfigurationTest {
         val testResId = 1234
         val value = "DISCARD"
         val testPackageName = "foo.bar.braze"
-        val mockResources = mock<Resources>() {
+        val mockResources = mock<Resources> {
             on { getIdentifier(key, "string", testPackageName) } doReturn 1234
             on { getString(testResId) } doReturn value
         }
 
-        val context: Context = mock<Context>() {
+        val context: Context = mock<Context> {
             on { resources } doReturn mockResources
             on { packageName } doReturn testPackageName
         }
@@ -76,11 +80,11 @@ class FlutterConfigurationTest {
     fun whenStringValueDoesNotExistInResources_automaticIntegrationInAppMessageOperation_returnsDisplayNow() {
         val key = "com_braze_flutter_automatic_integration_iam_operation"
         val testPackageName = "foo.bar.braze"
-        val mockResources = mock<Resources>() {
+        val mockResources = mock<Resources> {
             on { getIdentifier(key, "string", testPackageName) } doReturn 1234
         }
 
-        val context: Context = mock<Context>() {
+        val context: Context = mock<Context> {
             on { resources } doReturn mockResources
             on { packageName } doReturn testPackageName
         }
@@ -97,12 +101,12 @@ class FlutterConfigurationTest {
         val testResId = 1234
         val value = "yeet_it"
         val testPackageName = "foo.bar.braze"
-        val mockResources = mock<Resources>() {
+        val mockResources = mock<Resources> {
             on { getIdentifier(key, "string", testPackageName) } doReturn 1234
             on { getString(testResId) } doReturn value
         }
 
-        val context: Context = mock<Context>() {
+        val context: Context = mock<Context> {
             on { resources } doReturn mockResources
             on { packageName } doReturn testPackageName
         }
@@ -119,12 +123,12 @@ class FlutterConfigurationTest {
         val testResId = 1234
         val value = "DiSpLay_LaTeR"
         val testPackageName = "foo.bar.braze"
-        val mockResources = mock<Resources>() {
+        val mockResources = mock<Resources> {
             on { getIdentifier(key, "string", testPackageName) } doReturn 1234
             on { getString(testResId) } doReturn value
         }
 
-        val context: Context = mock<Context>() {
+        val context: Context = mock<Context> {
             on { resources } doReturn mockResources
             on { packageName } doReturn testPackageName
         }

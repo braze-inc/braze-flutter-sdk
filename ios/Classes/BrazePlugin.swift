@@ -265,58 +265,58 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       )
 
     case "setFirstName":
-      guard let args = call.arguments as? [String: Any],
+      if let args = call.arguments as? [String: Any],
         let firstName = args["firstName"] as? String
-      else {
-        print("Invalid args: \(argsDescription), iOS method: \(call.method)")
-        return
+      {
+        BrazePlugin.braze?.user.set(firstName: firstName)
+      } else {
+        BrazePlugin.braze?.user.set(firstName: nil)
       }
-      BrazePlugin.braze?.user.set(firstName: firstName)
 
     case "setLastName":
-      guard let args = call.arguments as? [String: Any],
+      if let args = call.arguments as? [String: Any],
         let lastName = args["lastName"] as? String
-      else {
-        print("Invalid args: \(argsDescription), iOS method: \(call.method)")
-        return
+      {
+        BrazePlugin.braze?.user.set(lastName: lastName)
+      } else {
+        BrazePlugin.braze?.user.set(lastName: nil)
       }
-      BrazePlugin.braze?.user.set(lastName: lastName)
 
     case "setLanguage":
-      guard let args = call.arguments as? [String: Any],
+      if let args = call.arguments as? [String: Any],
         let language = args["language"] as? String
-      else {
-        print("Invalid args: \(argsDescription), iOS method: \(call.method)")
-        return
+      {
+        BrazePlugin.braze?.user.set(language: language)
+      } else {
+        BrazePlugin.braze?.user.set(language: nil)
       }
-      BrazePlugin.braze?.user.set(language: language)
 
     case "setCountry":
-      guard let args = call.arguments as? [String: Any],
+      if let args = call.arguments as? [String: Any],
         let country = args["country"] as? String
-      else {
-        print("Invalid args: \(argsDescription), iOS method: \(call.method)")
-        return
+      {
+        BrazePlugin.braze?.user.set(country: country)
+      } else {
+        BrazePlugin.braze?.user.set(country: nil)
       }
-      BrazePlugin.braze?.user.set(country: country)
 
     case "setGender":
-      guard let args = call.arguments as? [String: Any],
+      if let args = call.arguments as? [String: Any],
         let gender = args["gender"] as? String
-      else {
-        print("Invalid args: \(argsDescription), iOS method: \(call.method)")
-        return
+      {
+        BrazePlugin.braze?.user.set(gender: BrazePlugin.parseUserGenderInput(gender))
+      } else {
+        BrazePlugin.braze?.user.set(gender: nil)
       }
-      BrazePlugin.setGender(gender)
 
     case "setHomeCity":
-      guard let args = call.arguments as? [String: Any],
+      if let args = call.arguments as? [String: Any],
         let homeCity = args["homeCity"] as? String
-      else {
-        print("Invalid args: \(argsDescription), iOS method: \(call.method)")
-        return
+      {
+        BrazePlugin.braze?.user.set(homeCity: homeCity)
+      } else {
+        BrazePlugin.braze?.user.set(homeCity: nil)
       }
-      BrazePlugin.braze?.user.set(homeCity: homeCity)
 
     case "setDateOfBirth":
       guard let args = call.arguments as? [String: Any],
@@ -346,13 +346,13 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       }
 
     case "setPhoneNumber":
-      guard let args = call.arguments as? [String: Any],
+      if let args = call.arguments as? [String: Any],
         let phoneNumber = args["phoneNumber"] as? String
-      else {
-        print("Invalid args: \(argsDescription), iOS method: \(call.method)")
-        return
+      {
+        BrazePlugin.braze?.user.set(phoneNumber: phoneNumber)
+      } else {
+        BrazePlugin.braze?.user.set(phoneNumber: nil)
       }
-      BrazePlugin.braze?.user.set(phoneNumber: phoneNumber)
 
     case "setPushNotificationSubscriptionType":
       guard let args = call.arguments as? [String: Any],
@@ -736,11 +736,6 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
     default:
       return .unsubscribed
     }
-  }
-
-  private class func setGender(_ gender: String) {
-    let genderInputType = parseUserGenderInput(gender)
-    BrazePlugin.braze?.user.set(gender: genderInputType)
   }
 
   private class func parseUserGenderInput(_ gender: String) -> Braze.User.Gender {

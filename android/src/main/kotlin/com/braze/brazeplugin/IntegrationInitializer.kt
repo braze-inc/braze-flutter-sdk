@@ -106,7 +106,8 @@ object IntegrationInitializer {
             super.beforeInAppMessageDisplayed(inAppMessage)
             BrazePlugin.processInAppMessage(inAppMessage)
             brazelog {
-                "Returning $defaultInAppMessageOperation in Flutter automatic integration IInAppMessageManagerListener#beforeInAppMessageDisplayed()"
+                "Returning $defaultInAppMessageOperation in Flutter automatic integration " +
+                    "IInAppMessageManagerListener#beforeInAppMessageDisplayed()"
             }
             return defaultInAppMessageOperation
         }

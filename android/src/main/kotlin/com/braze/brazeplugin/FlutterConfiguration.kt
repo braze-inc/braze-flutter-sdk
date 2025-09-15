@@ -8,7 +8,11 @@ class FlutterConfiguration(private val context: Context) {
     @SuppressLint("DiscouragedApi")
     fun isAutomaticInitializationEnabled(): Boolean {
         val isEnabledDefaultValue = true
-        val resId = context.resources.getIdentifier(ENABLE_AUTOMATIC_INTEGRATION_INITIALIZER, "bool", context.packageName)
+        val resId = context.resources.getIdentifier(
+            ENABLE_AUTOMATIC_INTEGRATION_INITIALIZER,
+            "bool",
+            context.packageName
+        )
         if (resId == MISSING_RESOURCE_IDENTIFIER) {
             return isEnabledDefaultValue
         }
@@ -23,7 +27,11 @@ class FlutterConfiguration(private val context: Context) {
     @SuppressLint("DiscouragedApi")
     fun automaticIntegrationInAppMessageOperation(): InAppMessageOperation {
         val defaultValue = InAppMessageOperation.DISPLAY_NOW
-        val resId = context.resources.getIdentifier(AUTOMATIC_INTEGRATION_IAM_OPERATION, "string", context.packageName)
+        val resId = context.resources.getIdentifier(
+            AUTOMATIC_INTEGRATION_IAM_OPERATION,
+            "string",
+            context.packageName
+        )
         if (resId == MISSING_RESOURCE_IDENTIFIER) {
             return defaultValue
         }

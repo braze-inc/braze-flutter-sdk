@@ -7,7 +7,6 @@ def safeExtGet(prop, fallback) {
 
 buildscript {
     ext.kotlin_version = '2.0.20'
-    ext.detekt_version = '1.19.0'
 
     repositories {
         google()
@@ -15,9 +14,8 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.1.1'
+        classpath 'com.android.tools.build:gradle:8.12.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath "io.gitlab.arturbosch.detekt:detekt-gradle-plugin:$detekt_version"
     }
 }
 
@@ -30,19 +28,21 @@ rootProject.allprojects {
 
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
-apply plugin: 'io.gitlab.arturbosch.detekt'
 
 android {
-    compileSdkVersion safeExtGet('compileSdkVersion', 35)
+    compileSdkVersion safeExtGet('compileSdkVersion', 36)
     namespace 'com.braze.brazeplugin'
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
+        test.java.srcDirs += 'src/test/kotlin'
     }
+
     defaultConfig {
         minSdkVersion safeExtGet('minSdkVersion', 21)
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
+    
     lintOptions {
         disable 'InvalidPackage'
     }
@@ -56,47 +56,30 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-}
 
-detekt {
-    // Preconfigure defaults
-    buildUponDefaultConfig = true
-    // Activate all available (even unstable) rules.
-    allRules = false
-    // Point to your custom config defining rules to run, overwriting default behavior
-    config = files("config/detekt/detekt.yml")
-    // A way of suppressing issues before introducing detekt
-    baseline = file("$rootDir/config/detekt/baseline.xml")
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
 
-    source = files(
-            "src/main/kotlin",
-            "src/androidTest/java",
-            "src/debug/java",
-            "src/test/java",
-    )
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_11
+                targetCompatibility JavaVersion.VERSION_11
+            }
 
-    reports {
-        // Observe findings in your browser with structure and code snippets
-        html.enabled = true
-        // Checkstyle like format mainly for integrations like Jenkins
-        xml.enabled = true
-        // similar to the console output, contains issue signature to manually edit baseline files
-        txt.enabled = true
-        // Standardized SARIF format (https://sarifweb.azurewebsites.net/) to support integrations with Github Code Scanning
-        sarif.enabled = true
+            kotlinOptions {
+                jvmTarget = "11"
+            }
+        }
     }
-    parallel = true
 }
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    implementation "com.braze:android-sdk-ui:36.0.0"
+    implementation "com.braze:android-sdk-ui:39.0.0"
 
-    androidTestImplementation "org.mockito:mockito-android:3.12.4"
-    androidTestImplementation "junit:junit:4.13.2"
-    androidTestImplementation "org.mockito:mockito-core:3.12.4"
-    androidTestImplementation "org.mockito.kotlin:mockito-kotlin:3.2.0"
-    androidTestImplementation("androidx.test:runner:1.5.2")
-
-    detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.21.0")
+    // Unit test dependencies
+    testImplementation "junit:junit:4.13.2"
+    testImplementation "org.mockito.kotlin:mockito-kotlin:6.0.0"
+    testImplementation "org.robolectric:robolectric:4.16"
+    testImplementation "androidx.test:core:1.7.0"
 }

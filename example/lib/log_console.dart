@@ -119,7 +119,7 @@ class _LogConsoleState extends State<LogConsole> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: widget.backgroundColor.withOpacity(0.8),
+                  color: widget.backgroundColor.withValues(alpha: 0.8),
                   borderRadius:
                       const BorderRadius.vertical(top: Radius.circular(8)),
                 ),
@@ -174,7 +174,7 @@ class _LogConsoleState extends State<LogConsole> {
                                     vertical: 3, horizontal: 5),
                                 decoration: BoxDecoration(
                                   color: log.isExpanded
-                                      ? Colors.grey.withOpacity(0.2)
+                                      ? Colors.grey.withValues(alpha: 0.2)
                                       : Colors.transparent,
                                   borderRadius: BorderRadius.circular(4),
                                 ),

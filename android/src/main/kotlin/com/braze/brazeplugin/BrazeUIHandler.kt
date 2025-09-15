@@ -1,7 +1,11 @@
-import io.flutter.plugin.common.EventChannel
-import io.flutter.plugin.common.BinaryMessenger
+package com.braze.brazeplugin
 
-// Handles UI events for native Android views.
+import io.flutter.plugin.common.BinaryMessenger
+import io.flutter.plugin.common.EventChannel
+
+/**
+ * Handles UI events for native Android views.
+ */
 class BrazeUIHandler(binaryMessenger: BinaryMessenger) : EventChannel.StreamHandler {
     private var eventSink: EventChannel.EventSink? = null
 

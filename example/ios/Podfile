@@ -1,5 +1,5 @@
 # Uncomment this line to define a global platform for your project
-platform :ios, '12.0'
+platform :ios, '13.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -38,12 +38,12 @@ end
 
 # Pods for sample Braze Rich Push Notifications integration.
 target 'BrazeFlutterRichPush' do
-  pod 'BrazeNotificationService', '~> 12.0.0'
+  pod 'BrazeNotificationService', '~> 13.2.0'
 end
 
 # Pods for sample Braze Push Stories integration.
 target 'BrazeFlutterPushStory' do
-  pod 'BrazePushStory', '~> 12.0.0'
+  pod 'BrazePushStory', '~> 13.2.0'
 end
 
 post_install do |installer|
