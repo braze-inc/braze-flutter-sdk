@@ -26,5 +26,5 @@ Pod::Spec.new do |s|
   s.dependency 'BrazeLocation', "~> #{braze_swift_version}"
   s.dependency 'BrazeUI', "~> #{braze_swift_version}"
 
-  s.ios.deployment_target = '16.6'
+  s.ios.deployment_target = '12.0'
 end
