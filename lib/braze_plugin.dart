@@ -1,13 +1,16 @@
+library braze_plugin;
+
 import 'dart:async';
 import 'dart:convert' as json;
 import 'dart:io' show Platform;
 
-import 'package:braze_plugin/braze_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+
+part './braze_utils.dart';
 
 /* Custom configuration keys */
 const String replayCallbacksConfigKey = 'ReplayCallbacksKey';
@@ -1399,6 +1402,15 @@ class BrazeBanner {
   /// A Unix timestamp of the expiration date and time. A value of -1 means the banner never expires.
   int expiresAt = -1;
 
+  /// Additional properties of the banner.
+  Map get properties => _campaignProperties._properties;
+
+  set properties(Map value) {
+    _campaignProperties._properties = value;
+  }
+
+  _CampaignProperties _campaignProperties = _CampaignProperties(Map());
+
   /// The BrazeBanner object initializer.
   BrazeBanner(String _data) {
     var bannerJson = json.jsonDecode(_data);
@@ -1432,6 +1444,9 @@ class BrazeBanner {
     if (expiresAtJson is int) {
       expiresAt = expiresAtJson;
     }
+
+    var propertiesJson = bannerJson["properties"] ?? Map();
+    _campaignProperties = _CampaignProperties(propertiesJson);
   }
 
   @override
@@ -1446,8 +1461,48 @@ class BrazeBanner {
         isControl.toString() +
         " expiresAt:" +
         expiresAt.toString() +
+        " properties:" +
+        properties.toString() +
         " html:" +
         html;
+  }
+
+  /// Returns a string value of the banner's properties for the given key.
+  /// Returns null if the key is not a string property or if there is no property for that key.
+  String? getStringProperty(String key) {
+    return _campaignProperties.getStringProperty(key);
+  }
+
+  /// Returns a boolean value of the banner's properties for the given key.
+  /// Returns null if the key is not a boolean property or if there is no property for that key.
+  bool? getBooleanProperty(String key) {
+    return _campaignProperties.getBooleanProperty(key);
+  }
+
+  /// Returns a number value of the banner's properties for the given key.
+  /// Returns null if the key is not a number or if there is no property for that key.
+  num? getNumberProperty(String key) {
+    return _campaignProperties.getNumberProperty(key);
+  }
+
+  /// Returns an integer value (which can hold the value of any `long`) of the
+  /// banner's properties for the given key.
+  /// Returns null if the key is not an integer or if there is no property for that key.
+  int? getTimestampProperty(String key) {
+    return _campaignProperties.getTimestampProperty(key);
+  }
+
+  /// Returns a Map of the banner's properties for the given key.
+  /// Returns null if the key is not a Map object or if there is no property for that key.
+  Map<String, dynamic>? getJSONProperty(String key) {
+    return _campaignProperties.getJSONProperty(key);
+  }
+
+  /// Returns a string representing an image of the banner's properties
+  /// for the given key.
+  /// Returns null if the key is not a string or if there is no property for that key.
+  String? getImageProperty(String key) {
+    return _campaignProperties.getImageProperty(key);
   }
 }
 
@@ -1708,8 +1763,14 @@ class BrazeFeatureFlag {
   /// Is this flag currently enabled?
   bool enabled = false;
 
-  /// Map of optional additional properties of the feature flag
-  Map properties = Map();
+  /// Additional properties of the feature flag.
+  Map get properties => _campaignProperties._properties;
+
+  set properties(Map value) {
+    _campaignProperties._properties = value;
+  }
+
+  _CampaignProperties _campaignProperties = _CampaignProperties(Map());
 
   BrazeFeatureFlag(String _data) {
     var featureFlagJson = json.jsonDecode(_data);
@@ -1724,69 +1785,45 @@ class BrazeFeatureFlag {
       enabled = enabledJson;
     }
 
-    var propertiesJson = featureFlagJson["properties"];
-    properties = propertiesJson ?? Map();
+    var propertiesJson = featureFlagJson["properties"] ?? Map();
+    _campaignProperties = _CampaignProperties(propertiesJson);
   }
 
   /// Returns a string value of the feature flag's properties for the given key.
   /// Returns null if the key is not a string property or if there is no property for that key.
   String? getStringProperty(String key) {
-    var data = properties[key];
-    if (data != null && data["type"] == "string") {
-      return data["value"];
-    }
-    return null;
+    return _campaignProperties.getStringProperty(key);
   }
 
   /// Returns a boolean value of the feature flag's properties for the given key.
   /// Returns null if the key is not a boolean property or if there is no property for that key.
   bool? getBooleanProperty(String key) {
-    var data = properties[key];
-    if (data != null && data["type"] == "boolean") {
-      return data["value"];
-    }
-    return null;
+    return _campaignProperties.getBooleanProperty(key);
   }
 
   /// Returns a number value of the feature flag's properties for the given key.
   /// Returns null if the key is not a number or if there is no property for that key.
   num? getNumberProperty(String key) {
-    var data = properties[key];
-    if (data != null && data["type"] == "number") {
-      return data["value"];
-    }
-    return null;
+    return _campaignProperties.getNumberProperty(key);
   }
 
   /// Returns an integer value (which can hold the value of any `long`) of the
   /// feature flag's properties for the given key.
   /// Returns null if the key is not an integer or if there is no property for that key.
   int? getTimestampProperty(String key) {
-    var data = properties[key];
-    if (data != null && data["type"] == "datetime") {
-      return data["value"];
-    }
-    return null;
+    return _campaignProperties.getTimestampProperty(key);
   }
 
   /// Returns a Map of the feature flag's properties for the given key.
   /// Returns null if the key is not a Map object or if there is no property for that key.
   Map<String, dynamic>? getJSONProperty(String key) {
-    var data = properties[key];
-    if (data != null && data["type"] == "jsonobject") {
-      return data["value"];
-    }
-    return null;
+    return _campaignProperties.getJSONProperty(key);
   }
 
   /// Returns a string representing an image of the feature flag's properties
   /// for the given key.
   /// Returns null if the key is not a string or if there is no property for that key.
   String? getImageProperty(String key) {
-    var data = properties[key];
-    if (data != null && data["type"] == "image") {
-      return data["value"];
-    }
-    return null;
+    return _campaignProperties.getImageProperty(key);
   }
 }

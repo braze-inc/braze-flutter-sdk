@@ -54,6 +54,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
   String _ffStreamSubscription = "DISABLED";
   String _pushStreamSubscription = "DISABLED";
   String _featureFlagPropertyType = "BOOLEAN";
+  String _bannerPropertyType = "BOOLEAN";
   bool _showBrazeConsole = false;
 
   // Subscriptions
@@ -70,9 +71,10 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
   final customEventPropertyValueController = TextEditingController();
   final featureFlagController = TextEditingController();
   final featureFlagPropertyController = TextEditingController();
-  final getBannerController = TextEditingController();
+  final bannerController = TextEditingController();
   final bannerRefreshController =
       TextEditingController(text: "placement_1, placement_2");
+  final bannerPropertyController = TextEditingController();
 
   // ignore: unused_field
   double _bannerHeight = 0;
@@ -124,6 +126,9 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
     customEventPropertyValueController.dispose();
     featureFlagController.dispose();
     featureFlagPropertyController.dispose();
+    bannerController.dispose();
+    bannerRefreshController.dispose();
+    bannerPropertyController.dispose();
 
     /// Stop listening to streams
     inAppMessageStreamSubscription.cancel();
@@ -534,7 +539,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
             ),
             TextField(
               autocorrect: false,
-              controller: getBannerController,
+              controller: bannerController,
               decoration: InputDecoration(
                   hintText: 'Search for banner placement ID',
                   labelText: 'Banner Placement ID'),
@@ -542,7 +547,7 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
             TextButton(
               child: const Text('DISPLAY & LOG BANNER'),
               onPressed: () {
-                String searchedPlacement = getBannerController.text;
+                String searchedPlacement = bannerController.text;
                 _braze.getBanner(searchedPlacement).then((banner) {
                   if (banner == null) {
                     final String errorMessage =
@@ -584,6 +589,53 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
               //     _bannerHeight = newHeight;
               //   });
               // },
+            ),
+            TextField(
+              autocorrect: false,
+              controller: bannerPropertyController,
+              decoration: InputDecoration(
+                hintText: 'Please enter a Banner property key',
+                labelText: 'Banner Property Key'),
+            ),
+            PropertyTypeDropdown(
+              currentValue: _bannerPropertyType,
+              onChanged: (String? value) {
+                setState(() {
+                  _bannerPropertyType = value!;
+                });
+              },
+            ),
+            TextButton(
+              child: const Text('GET BANNER PROPERTY'),
+              onPressed: () {
+                String placementId = bannerController.text;
+                _braze.getBanner(placementId).then((banner) {
+                  var bannerProperty;
+                  switch (_bannerPropertyType) {
+                    case 'BOOLEAN':
+                      bannerProperty = banner?.getBooleanProperty(bannerPropertyController.text);
+                      break;
+                    case 'NUMBER':
+                      bannerProperty = banner?.getNumberProperty(bannerPropertyController.text);
+                      break;
+                    case 'STRING':
+                      bannerProperty = banner?.getStringProperty(bannerPropertyController.text);
+                      break;
+                    case 'TIMESTAMP':
+                      bannerProperty = banner?.getTimestampProperty(bannerPropertyController.text);
+                      break;
+                    case 'JSON':
+                      bannerProperty = banner?.getJSONProperty(bannerPropertyController.text);
+                      break;
+                    case 'IMAGE':
+                      bannerProperty = banner?.getImageProperty(bannerPropertyController.text);
+                      break;
+                  }
+                  print('Property found: $bannerProperty');
+                  ScaffoldMessenger.of(context).showSnackBar(new SnackBar(content: new Text('Property found: $bannerProperty'),
+                  ));
+                });
+              },
             ),
             SectionHeader("Feature Flags"),
             TextField(
@@ -627,40 +679,14 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                   hintText: 'Please enter a Feature Flag property key',
                   labelText: 'Feature Flag Property Key'),
             ),
-            DropdownButton<String>(
-                value: _featureFlagPropertyType,
-                alignment: Alignment.center,
-                items: [
-                  DropdownMenuItem(
-                    value: 'BOOLEAN',
-                    child: Text('BOOLEAN'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'NUMBER',
-                    child: Text('NUMBER'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'STRING',
-                    child: Text('STRING'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'TIMESTAMP',
-                    child: Text('TIMESTAMP'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'JSON',
-                    child: Text('JSON'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'IMAGE',
-                    child: Text('IMAGE'),
-                  ),
-                ],
-                onChanged: (String? value) {
-                  setState(() {
-                    _featureFlagPropertyType = value!;
-                  });
-                }),
+            PropertyTypeDropdown(
+              currentValue: _featureFlagPropertyType,
+              onChanged: (String? value) {
+                setState(() {
+                  _featureFlagPropertyType = value!;
+                });
+              },
+            ),
             TextButton(
               child: const Text('GET FEATURE FLAG PROPERTY'),
               onPressed: () {
@@ -1082,5 +1108,33 @@ class SectionHeader extends StatelessWidget {
         ),
       ),
     ]);
+  }
+}
+
+class PropertyTypeDropdown extends StatelessWidget {
+  final String currentValue;
+  final Function(String?) onChanged;
+
+  const PropertyTypeDropdown({
+    Key? key,
+    required this.currentValue,
+    required this.onChanged,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButton<String>(
+      value: currentValue,
+      alignment: Alignment.center,
+      items: const [
+        DropdownMenuItem(value: 'BOOLEAN', child: Text('BOOLEAN')),
+        DropdownMenuItem(value: 'NUMBER', child: Text('NUMBER')),
+        DropdownMenuItem(value: 'STRING', child: Text('STRING')),
+        DropdownMenuItem(value: 'TIMESTAMP', child: Text('TIMESTAMP')),
+        DropdownMenuItem(value: 'JSON', child: Text('JSON')),
+        DropdownMenuItem(value: 'IMAGE', child: Text('IMAGE')),
+      ],
+      onChanged: onChanged,
+    );
   }
 }

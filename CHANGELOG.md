@@ -1,3 +1,14 @@
+## 15.1.0
+
+##### Added
+- Adds support for Banner properties via new public methods for `BrazeBanner`.
+  - `banner.getStringProperty(key:)` for accessing `String` properties.
+  - `banner.getNumberProperty(key:)` for accessing `num` properties.
+  - `banner.getTimestampProperty(key:)` for accessing `int` Unix UTC millisecond timestamp  properties.
+  - `banner.getBooleanProperty(key:)` for accessing `bool` properties.
+  - `banner.getImageProperty(key:)` for accessing image URL properties as `String`s.
+  - `banner.getJSONProperty(key:)` for accessing JSON properties as `Map<String, dynamic>`.
+
 ## 15.0.0
 
 ##### Breaking

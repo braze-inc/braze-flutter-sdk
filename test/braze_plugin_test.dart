@@ -21,6 +21,9 @@ void main() {
   final String mockContentCardJson =
       "{\"ca\":1234567890,\"cl\":false,\"db\":true,\"dm\":\"\",\"ds\":\"Description of Card\",\"e\":{\"timestamp\":\"1234567890\"},\"ea\":1234567890,\"id\":\"someID=\",\"p\":false,\"r\":false,\"t\":false,\"tp\":\"short_news\",\"tt\":\"Title of Card\",\"uw\":true,\"v\":false}";
 
+  final String mockBannerJson =
+      "{\"id\":\"test\",\"placement_id\":\"test_placement_id\",\"is_test_send\": false,\"is_control\":false,\"html\":\"<p>Test</p>\",\"expires_at\":-1,\"properties\":{\"stringkey\":{\"type\":\"string\",\"value\":\"stringValue\"},\"booleankey\":{\"type\":\"boolean\",\"value\": true },\"number1key\":{\"type\":\"number\",\"value\": 4 },\"number2key\":{\"type\":\"number\",\"value\": 5.1},\"timestamp1Key\":{\"type\":\"datetime\",\"value\": 12345},\"timestamp2Key\":{\"type\":\"datetime\",\"value\": 9223372036854775807},\"jsonKey\":{\"type\":\"jsonobject\",\"value\":$jsonObjectString},\"image1Key\":{\"type\":\"image\",\"value\": \"image_name_here\"},\"image2Key\":{\"type\":\"image\",\"value\": \"https://picsum.photos/200/300\"}}}";
+
   bool nullFeatureFlag = false;
   bool wasInitialized = false;
 
@@ -1043,6 +1046,45 @@ void main() {
     ]);
   });
 
+  test('banner convenience functions work', () async {
+    BrazeBanner result = new BrazeBanner(mockBannerJson);
+    expect(result.trackingId, "test");
+    expect(result.properties.length, 9);
+    expect(result.getStringProperty("stringkey"), "stringValue");
+    expect(result.getBooleanProperty("booleankey"), true);
+    expect(result.getNumberProperty("number1key"), 4);
+    expect(result.getNumberProperty("number2key"), 5.1);
+    expect(result.getTimestampProperty("timestamp1Key"), 12345);
+    expect(result.getTimestampProperty("timestamp2Key"), 9223372036854775807);
+    expect(
+      result.getJSONProperty("jsonKey"),
+      json.jsonDecode(jsonObjectString),
+    );
+
+    // Includes the entry `"null_value": null`
+    expect(result.getJSONProperty("jsonKey")?["jsonobject"].length, 8);
+
+    expect(result.getImageProperty("image1Key"), "image_name_here");
+    expect(
+      result.getImageProperty("image2Key"),
+      "https://picsum.photos/200/300",
+    );
+  });
+
+  test(
+    'banner convenience functions return null for non-existent keys',
+    () async {
+      BrazePlugin _braze = new BrazePlugin();
+      final result = await _braze.getBanner("test_placement_id");
+      expect(result?.getStringProperty("keyThatDoesntExist"), null);
+      expect(result?.getBooleanProperty("keyThatDoesntExist"), null);
+      expect(result?.getNumberProperty("keyThatDoesntExist"), null);
+      expect(result?.getTimestampProperty("keyThatDoesntExist"), null);
+      expect(result?.getJSONProperty("keyThatDoesntExist"), null);
+      expect(result?.getImageProperty("keyThatDoesntExist"), null);
+    },
+  );
+
   test('should call setLastKnownLocation with all params', () {
     BrazePlugin _braze = new BrazePlugin();
     _braze.setLastKnownLocation(
@@ -1377,8 +1419,7 @@ void main() {
         '$testZippedAssetsUrl\",\"duration\":$testDuration,\"message_close\":\"'
         '$testDismissType\",\"use_webview\":$testUseWebView}';
     BrazeInAppMessage htmlFullMessage = new BrazeInAppMessage(htmlFullJson);
-    expect(htmlFullMessage.messageType.name,
-        equals('html_full'));
+    expect(htmlFullMessage.messageType.name, equals('html_full'));
   });
 
   test('instantiate a BrazeInAppMessage object with expected defaults', () {
