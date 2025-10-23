@@ -38,12 +38,12 @@ end
 
 # Pods for sample Braze Rich Push Notifications integration.
 target 'BrazeFlutterRichPush' do
-  pod 'BrazeNotificationService', '~> 13.2.0'
+  pod 'BrazeNotificationService', '~> 13.3.0'
 end
 
 # Pods for sample Braze Push Stories integration.
 target 'BrazeFlutterPushStory' do
-  pod 'BrazePushStory', '~> 13.2.0'
+  pod 'BrazePushStory', '~> 13.3.0'
 end
 
 post_install do |installer|

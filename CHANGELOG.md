@@ -1,3 +1,16 @@
+## 16.0.0
+
+##### Breaking
+- Updates the native Android bridge [from Braze Android SDK 39.0.0 to 40.0.0](https://github.com/braze-inc/braze-android-sdk/compare/v39.0.0...v40.0.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+
+##### Fixed
+- Banner views will no longer call `setState` extraneously if the view component is not mounted.
+  - Previously, this could cause an exception to occur if the Banner tried to update its height while the view was not mounted within the widget hierarchy.
+- Fixes UI flickering and display issues with `BrazeBannerView` when navigating between screens on Android
+
+##### Added
+- - Updates the native iOS bridge [from Braze Swift SDK 13.2.0 to 13.3.0](https://github.com/braze-inc/braze-swift-sdk/compare/13.2.0...13.3.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+
 ## 15.1.0
 
 ##### Added

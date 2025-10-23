@@ -5,9 +5,7 @@ import 'dart:convert' as json;
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 part './braze_utils.dart';
@@ -1554,11 +1552,14 @@ class _BrazeBannerViewState extends State<BrazeBannerView>
   @override
   bool get wantKeepAlive => true;
 
+  /// The subscription for observing Banner resize events.
+  StreamSubscription<Map<String, dynamic>>? _resizeSubscription;
+
   @override
   void initState() {
     super.initState();
 
-    BrazeBannerResizeManager.subscribeToResizeEvents(
+    _resizeSubscription = BrazeBannerResizeManager.subscribeToResizeEvents(
         (Map<String, dynamic> args) {
       var eventIdentifier = args["containerId"];
       var height = args["height"];
@@ -1572,13 +1573,22 @@ class _BrazeBannerViewState extends State<BrazeBannerView>
     });
   }
 
+  @override
+  void dispose() {
+    _resizeSubscription?.cancel();
+    super.dispose();
+  }
+
   /// Resizes the banner container's height and notifies any relevant
   /// `onHeightChanged` handler.
   void resizeHeight(double height) {
     print("Resizing height of banner `${widget.placementId}` to $height");
-    setState(() {
-      calculatedHeight = height;
-    });
+    // Always update the calculated height, even if the widget
+    // is not mounted, so that the widget's state is always accurate.
+    calculatedHeight = height;
+    if (mounted) {
+      setState(() {});
+    }
     widget.onHeightChanged?.call(calculatedHeight);
   }
 
@@ -1608,31 +1618,12 @@ class _BrazeBannerViewState extends State<BrazeBannerView>
           finalHeight = 1;
         }
 
-        bannerView = PlatformViewLink(
+        bannerView = AndroidView(
           key: key,
           viewType: viewType,
-          surfaceFactory: (context, controller) {
-            return AndroidViewSurface(
-              controller: controller as AndroidViewController,
-              gestureRecognizers: const <Factory<
-                  OneSequenceGestureRecognizer>>{},
-              hitTestBehavior: PlatformViewHitTestBehavior.opaque,
-            );
-          },
-          onCreatePlatformView: (params) {
-            return PlatformViewsService.initExpensiveAndroidView(
-              id: params.id,
-              viewType: viewType,
-              layoutDirection: TextDirection.ltr,
-              creationParams: creationParams,
-              creationParamsCodec: const StandardMessageCodec(),
-              onFocus: () {
-                params.onFocusChanged(true);
-              },
-            )
-              ..addOnPlatformViewCreatedListener(params.onPlatformViewCreated)
-              ..create();
-          },
+          layoutDirection: TextDirection.ltr,
+          creationParams: creationParams,
+          creationParamsCodec: const StandardMessageCodec(),
         );
         break;
 

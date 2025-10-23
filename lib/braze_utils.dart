@@ -15,8 +15,8 @@ class BrazeBannerResizeManager {
   }
 
   /// Subscribes to banner card resize events
-  static void subscribeToResizeEvents(Function(Map<String, dynamic>) onResize) {
-    bannerResizeStream.listen(onResize);
+  static StreamSubscription<Map<String, dynamic>> subscribeToResizeEvents(Function(Map<String, dynamic>) onResize) {
+    return bannerResizeStream.listen(onResize);
   }
 }
 
