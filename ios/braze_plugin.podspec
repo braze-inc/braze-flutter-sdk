@@ -17,8 +17,7 @@ Pod::Spec.new do |s|
   s.license          = { :file => '../LICENSE' }
   s.authors          = 'Braze, Inc.'
   s.source           = { :path => '.' }
-  s.source_files = 'Classes/**/*'
-  s.public_header_files = 'Classes/**/*.h'
+  s.source_files = 'braze_plugin/Sources/braze_plugin/**/*'
   s.static_framework = true
 
   s.dependency 'Flutter'

@@ -10,13 +10,13 @@
 
 ## Quickstart
 
-``` shell
+```shell
 flutter pub add braze_plugin
 ```
 
 ### Android
 
-``` xml
+```xml
 <!-- android/res/values/braze.xml -->
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
@@ -25,7 +25,7 @@ flutter pub add braze_plugin
 </resources>
 ```
 
-``` xml
+```xml
 <!-- AndroidManifest.xml -->
 <uses-permission android:name="android.permission.INTERNET" />
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -33,7 +33,7 @@ flutter pub add braze_plugin
 
 ### iOS
 
-``` swift
+```swift
 // AppDelegate.swift
 import BrazeKit
 import braze_plugin
@@ -62,7 +62,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 ### Dart
 
-``` dart
+```dart
 import 'package:braze_plugin/braze_plugin.dart';
 
 // ...
@@ -76,10 +76,12 @@ See [the Braze Developer Guide](https://www.braze.com/docs/developer_guide/sdk_i
 
 ## Version Support
 
-Tool | Minimum Supported Version
-:----|:---
-Dart SDK | 2.15.0+
-Flutter SDK | 1.10.0+
+| Tool                                                         | Minimum Supported Version |
+| :----------------------------------------------------------- | :------------------------ |
+| Dart                                                         | 2.15.0+                   |
+| Flutter (integration via CocoaPods)                          | 1.10.0+                   |
+| Flutter (integration via CocoaPods or Swift Package Manager) | 3.24.0+                   |
+| iOS Deployment Target                                        | 12.0+                     |
 
 This SDK additionally inherits the requirements of its underlying Braze native SDKs. Be sure to also adhere to version support information defined in [braze-inc/braze-android-sdk](github.com/braze-inc/braze-android-sdk) and [braze-inc/braze-swift-sdk](github.com/braze-inc/braze-swift-sdk)
 
