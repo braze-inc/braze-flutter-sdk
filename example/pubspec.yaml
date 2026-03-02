@@ -4,7 +4,8 @@ publish_to: 'none'
 version: 1.0.0
 
 environment:
-  sdk: ">=2.15.0 <4.0.0"
+  sdk: ">=3.5.0 <4.0.0"
+  flutter: ">=3.24.0"
 
 dependencies:
   flutter:
@@ -27,6 +28,10 @@ dev_dependencies:
 
 # The following section is specific to Flutter.
 flutter:
+  # Uncomment the `config` below to enable Swift Package Manager for iOS dependencies _for this specific project_.
+  # Alternatively, call `flutter config --enable-swift-package-manager` to enable SPM globally on your machine
+  # config:
+  #   enable-swift-package-manager: true
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

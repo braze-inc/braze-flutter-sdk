@@ -1,3 +1,14 @@
+## 17.1.0
+
+##### Added
+- Adds support to import the Flutter iOS package via Swift Package Manager (SPM).
+  - The Braze Flutter SDK still supports CocoaPods integrations at this time.
+  - For instructions on how to migrate from CocoaPods to SPM, reference [Flutter's official docs](https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers).
+  - The minimum Flutter version of the Braze SDK remains unchanged, but integration with SPM requires Flutter version `3.24.0` or higher.
+- The Flutter iOS sample app has been updated to use SPM to import the Braze SDK.
+  - This also removes all relevant files to the CocoaPods integration for the sample app.
+- Updates the native Android bridge [from Braze Android SDK 41.0.0 to 41.1.1](https://github.com/braze-inc/braze-android-sdk/compare/v41.0.0...v41.1.1#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+
 ## 17.0.0
 
 ##### Breaking
