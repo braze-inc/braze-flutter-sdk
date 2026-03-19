@@ -153,6 +153,18 @@ class BrazePlugin {
     _brazeSdkAuthenticationErrorHandler = callback;
   }
 
+  /// Initializes Braze with the provided API key and endpoint.
+  ///
+  /// This should be called when you want to initialize Braze programmatically
+  /// instead of using XML configuration (Android) or AppDelegate setup (iOS).
+  void initialize(String apiKey, String endpoint) {
+    final Map<String, dynamic> params = <String, dynamic>{
+      "apiKey": apiKey,
+      "endpoint": endpoint
+    };
+    _channel.invokeMethod('initialize', params);
+  }
+
   /// Changes the current Braze userId.
   /// If [sdkAuthSignature] is present, passes that token to the native layer.
   ///
@@ -539,9 +551,16 @@ class BrazePlugin {
   }
 
   /// Registers a push token for the current device with Braze.
-  /// 
-  /// Only use this method if you are not already registering for push notifications in the 
+  ///
+  /// Only use this method if you are not already registering for push notifications in the
   /// native Android or iOS code of your application.
+  ///
+  /// The [pushToken] format is platform-specific:
+  ///
+  /// * **Android:** FCM registration token string (from Firebase Messaging or equivalent).
+  ///   Use the string as returned by `FirebaseMessaging.instance.getToken()`.
+  ///
+  /// * **iOS:** A string whose UTF-8 bytes are the raw device token (not encoded 64-char hex string).
   void registerPushToken(String pushToken) {
     _callStringMethod('registerPushToken', 'pushToken', pushToken);
   }
@@ -1562,7 +1581,7 @@ class _BrazeBannerViewState extends State<BrazeBannerView>
     with AutomaticKeepAliveClientMixin {
   /// Identifier for the view instance's entire lifecycle, managed internally.
   String get containerId => _containerId;
-  late final String _containerId = UniqueKey().toString();
+  String _containerId = UniqueKey().toString();
 
   /// Calculated height of the banner container.
   /// This will be updated from the native layers using the Braze bridge.
@@ -1578,7 +1597,10 @@ class _BrazeBannerViewState extends State<BrazeBannerView>
   @override
   void initState() {
     super.initState();
+    _subscribeToResizeEvents();
+  }
 
+  void _subscribeToResizeEvents() {
     _resizeSubscription = BrazeBannerResizeManager.subscribeToResizeEvents(
         (Map<String, dynamic> args) {
       var eventIdentifier = args["containerId"];

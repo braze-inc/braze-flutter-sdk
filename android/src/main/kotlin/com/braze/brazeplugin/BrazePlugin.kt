@@ -8,6 +8,7 @@ import androidx.annotation.RestrictTo
 import com.braze.Braze
 import com.braze.BrazeUser
 import com.braze.Constants
+import com.braze.configuration.BrazeConfig
 import com.braze.enums.BrazePushEventType
 import com.braze.enums.Gender
 import com.braze.enums.Month
@@ -23,6 +24,7 @@ import com.braze.models.inappmessage.IInAppMessageImmersive
 import com.braze.models.outgoing.AttributionData
 import com.braze.models.outgoing.BrazeProperties
 import com.braze.support.BrazeLogger.Priority.I
+import com.braze.support.BrazeLogger.Priority.V
 import com.braze.support.BrazeLogger.Priority.W
 import com.braze.support.BrazeLogger.brazelog
 import com.braze.ui.activities.ContentCardsActivity
@@ -129,6 +131,50 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         try {
             when (call.method) {
+                "initialize" -> {
+                    val apiKey = call.argument<String>("apiKey")
+                    val endpoint = call.argument<String>("endpoint")
+                    if (apiKey == null || endpoint == null) {
+                        brazelog(W) {
+                            "Unexpected null parameter(s) in `initialize`. apiKey and endpoint are required."
+                        }
+                        result.error("INVALID_ARGUMENTS", "apiKey and endpoint are required", null)
+                        return
+                    }
+                    brazelog(V) { "Initializing the Braze Flutter SDK with API key: $apiKey and endpoint: $endpoint" }
+
+                    // First disable the SDK.
+                    // This allows us to re-configure the SDK.
+                    Braze.disableSdk(context)
+
+                    // Then re-configure with the new API keys.
+                    val brazeConfig = BrazeConfig.Builder()
+                        .setApiKey(apiKey)
+                        .setCustomEndpoint(endpoint)
+                        .build()
+                    Braze.configure(context, brazeConfig)
+
+                    // Then disable delayed init (if applicable).
+                    if (Braze.isDelayedInitializationEnabled) {
+                        brazelog(V) { "Disabling delayed initialization for the Braze Flutter SDK." }
+                        Braze.disableDelayedInitialization(context)
+                    }
+
+                    // re-enable the SDK
+                    Braze.enableSdk(context)
+
+                    // Initialize the Flutter plugin integration if not already initialized
+                    // This sets up event subscriptions and lifecycle callbacks
+                    if (IntegrationInitializer.isUninitialized) {
+                        val application = context.applicationContext as? android.app.Application
+                        application?.let {
+                            IntegrationInitializer.initializePlugin(it, flutterConfiguration)
+                        }
+                    }
+
+                    result.success(null)
+                }
+
                 "changeUser" -> {
                     val userId = call.argument<String>("userId")
                     val sdkAuthSignature = call.argument<String>("sdkAuthSignature")

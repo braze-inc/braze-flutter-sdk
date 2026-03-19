@@ -7,13 +7,30 @@ var channels = [FlutterMethodChannel]()
 
 public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
 
-  public static var braze: Braze? = nil
+  public static let shared: BrazePlugin = .init()
+
   private static var bannerViewFactory: BrazeBannerViewFactory? = nil
+  
+  /// Stores the configuration closure to be applied when the Dart `initialize` method is called.
+  private static var configure: ((Braze.Configuration) -> Void)?
+  /// Stores the post-initialization closure to be executed after the Braze instance is created.
+  private static var postInitialization: ((Braze) -> Void)?
+
+  private static var brazeSubscriptionManager: ChannelSubscriptionManager? = nil
+
+  /// Default return values for methods with non-nullable Dart return types,
+  /// used when the SDK is not yet initialized.
+  private static let uninitializedDefaultResults: [String: Any] = [
+    "getDeviceId": "",
+    "getAllFeatureFlags": [] as [Any],
+    "getCachedContentCards": [] as [Any],
+  ]
+
+  var brazeClient: BrazeProviding?
 
   public static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(name: "braze_plugin", binaryMessenger: registrar.messenger())
-    let instance = BrazePlugin()
-    registrar.addMethodCallDelegate(instance, channel: channel)
+    registrar.addMethodCallDelegate(shared, channel: channel)
 
     // Register for Banner Cards and resizing
     let uiHandler = BrazeUIHandler(messenger: registrar.messenger())
@@ -28,7 +45,38 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     let argsDescription = String(describing: call.arguments)
+
+    if brazeClient == nil && call.method != "initialize" {
+      print("""
+        [BrazePlugin] Braze SDK is not initialized. \
+        Ignoring '\(call.method)'. \
+        Call `initialize(apiKey, endpoint)` first.
+        """)
+      result(BrazePlugin.uninitializedDefaultResults[call.method] ?? NSNull())
+      return
+    }
+
     switch call.method {
+    case "initialize":
+      guard let args = call.arguments as? [String: Any],
+            let apiKey = args["apiKey"] as? String,
+            let endpoint = args["endpoint"] as? String
+      else {
+        result(FlutterError(
+          code: "INVALID_ARGUMENTS",
+          message: "apiKey and endpoint are required",
+          details: nil
+        ))
+        return
+      }
+      let configuration = Braze.Configuration(apiKey: apiKey, endpoint: endpoint)
+      BrazePlugin.configure?(configuration)
+      DispatchQueue.main.async {
+        let braze = BrazePlugin.createBrazeInstance(configuration)
+        BrazePlugin.postInitialization?(braze)
+        result(nil)
+      }
+
     case "changeUser":
       guard let args = call.arguments as? [String: Any],
         let userId = args["userId"] as? String
@@ -42,13 +90,13 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
           print("Invalid args: \(argsDescription), iOS method: \(call.method)")
           return
         }
-        BrazePlugin.braze?.changeUser(userId: userId, sdkAuthSignature: sdkAuthSignature)
+        brazeClient?.braze.changeUser(userId: userId, sdkAuthSignature: sdkAuthSignature)
       } else {
-        BrazePlugin.braze?.changeUser(userId: userId)
+        brazeClient?.braze.changeUser(userId: userId)
       }
 
     case "getUserId":
-      result(BrazePlugin.braze?.user.id)
+      result(brazeClient?.braze.user.id)
 
     case "setSdkAuthenticationSignature":
       guard let args = call.arguments as? [String: Any],
@@ -58,22 +106,22 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
       }
-      BrazePlugin.braze?.set(sdkAuthenticationSignature: sdkAuthSignature)
+      brazeClient?.braze.set(sdkAuthenticationSignature: sdkAuthSignature)
 
     case "setSdkAuthenticationDelegate":
-      BrazePlugin.braze?.sdkAuthDelegate = self
+      brazeClient?.braze.sdkAuthDelegate = self
 
     case "setBrazePluginIsReady":
       break  // This is an Android only feature, do nothing.
 
     case "getDeviceId":
-      result(BrazePlugin.braze?.deviceId)
+      result(brazeClient?.braze.deviceId ?? "")
 
     case "requestContentCardsRefresh":
-      BrazePlugin.braze?.contentCards.requestRefresh { _ in }
+      brazeClient?.braze.contentCards.requestRefresh { _ in }
 
     case "launchContentCards":
-      guard let braze = BrazePlugin.braze,
+      guard let braze = brazeClient?.braze,
         let mainViewController = UIApplication.shared.keyWindow?.rootViewController
       else { return }
       let modalViewController = BrazeContentCardUI.ModalViewController(braze: braze)
@@ -83,7 +131,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
     case "logContentCardClicked":
       guard let args = call.arguments as? [String: Any],
         let contentCardJSONString = args["contentCardString"] as? String,
-        let braze = BrazePlugin.braze
+        let braze = brazeClient?.braze
       else {
         print(
           "Invalid args: \(argsDescription), braze: \(String(describing: braze)), iOS method: \(call.method)"
@@ -97,7 +145,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
     case "logContentCardDismissed":
       guard let args = call.arguments as? [String: Any],
         let contentCardJSONString = args["contentCardString"] as? String,
-        let braze = BrazePlugin.braze
+        let braze = brazeClient?.braze
       else {
         print(
           "Invalid args: \(argsDescription), braze: \(String(describing: braze)), iOS method: \(call.method)"
@@ -111,7 +159,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
     case "logContentCardImpression":
       guard let args = call.arguments as? [String: Any],
         let contentCardJSONString = args["contentCardString"] as? String,
-        let braze = BrazePlugin.braze
+        let braze = brazeClient?.braze
       else {
         print(
           "Invalid args: \(argsDescription), braze: \(String(describing: braze)), iOS method: \(call.method)"
@@ -123,7 +171,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       }
 
     case "getCachedContentCards":
-      let cachedContentCards = BrazePlugin.braze?.contentCards.cards.compactMap { card in
+      let cachedContentCards = brazeClient?.braze.contentCards.cards.compactMap { card in
         if let contentCardJson = card.json() {
           return String(data: contentCardJson, encoding: .utf8)
         } else {
@@ -131,7 +179,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
           return nil
         }
       }
-      result(cachedContentCards)
+      result(cachedContentCards ?? [])
 
     case "getBanner":
       guard let args = call.arguments as? [String: Any],
@@ -142,7 +190,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         return
       }
       
-      BrazePlugin.braze?.banners.getBanner(for: placementId) { banner in
+      brazeClient?.braze.banners.getBanner(for: placementId) { banner in
         if let banner = banner,
            let bannerJsonData = banner.json() {
           let bannerJsonString = String(data: bannerJsonData, encoding: .utf8)
@@ -160,7 +208,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
           return
       }
       
-      BrazePlugin.braze?.banners.requestBannersRefresh(placementIds: placementIds) { resultBanners in
+      brazeClient?.braze.banners.requestBannersRefresh(placementIds: placementIds) { resultBanners in
           switch resultBanners {
           case .success:
               result("Refreshed Banners.")
@@ -172,7 +220,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
     case "logBannerClicked":
       guard let args = call.arguments as? [String: Any],
         let placementId = args["placementId"] as? String,
-        let braze = BrazePlugin.braze
+        let braze = brazeClient?.braze
       else {
         print(
           "Invalid args: \(argsDescription), braze: \(String(describing: braze)), iOS method: \(call.method)"
@@ -180,7 +228,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         return
       }
       let buttonId = args["buttonId"] as? String
-      BrazePlugin.braze?.banners.getBanner(for: placementId) { banner in
+      braze.banners.getBanner(for: placementId) { banner in
         if let banner = banner {
           banner.logClick(buttonId: buttonId, using: braze)
         }
@@ -189,14 +237,14 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
     case "logBannerImpression":
       guard let args = call.arguments as? [String: Any],
         let placementId = args["placementId"] as? String,
-        let braze = BrazePlugin.braze
+        let braze = brazeClient?.braze
       else {
         print(
           "Invalid args: \(argsDescription), braze: \(String(describing: braze)), iOS method: \(call.method)"
         )
         return
       }
-      BrazePlugin.braze?.banners.getBanner(for: placementId) { banner in
+      braze.banners.getBanner(for: placementId) { banner in
         if let banner = banner {
           banner.logImpression(using: braze)
         }
@@ -205,7 +253,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
     case "logInAppMessageClicked":
       guard let args = call.arguments as? [String: Any],
         let inAppMessageJSONString = args["inAppMessageString"] as? String,
-        let braze = BrazePlugin.braze
+        let braze = brazeClient?.braze
       else {
         print(
           "Invalid args: \(argsDescription), braze: \(String(describing: braze)), iOS method: \(call.method)"
@@ -219,7 +267,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
     case "logInAppMessageImpression":
       guard let args = call.arguments as? [String: Any],
         let inAppMessageJSONString = args["inAppMessageString"] as? String,
-        let braze = BrazePlugin.braze
+        let braze = brazeClient?.braze
       else {
         print(
           "Invalid args: \(argsDescription), braze: \(String(describing: braze)), iOS method: \(call.method)"
@@ -234,7 +282,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       guard let args = call.arguments as? [String: Any],
         let inAppMessageJSONString = args["inAppMessageString"] as? String,
         let idNumber = args["buttonId"] as? NSNumber,
-        let braze = BrazePlugin.braze
+        let braze = brazeClient?.braze
       else {
         print(
           "Invalid args: \(argsDescription), braze: \(String(describing: braze)), iOS method: \(call.method)"
@@ -246,7 +294,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       }
 
     case "hideCurrentInAppMessage":
-      if let inAppMessagePresenter = BrazePlugin.braze?.inAppMessagePresenter
+      if let inAppMessagePresenter = brazeClient?.braze.inAppMessagePresenter
         as? BrazeInAppMessageUI
       {
         DispatchQueue.main.async {
@@ -266,7 +314,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
       }
-      BrazePlugin.braze?.user.add(alias: aliasName, label: aliasLabel)
+      brazeClient?.braze.user.add(alias: aliasName, label: aliasLabel)
 
     case "logCustomEvent", "logCustomEventWithProperties":
       guard let args = call.arguments as? [String: Any],
@@ -276,7 +324,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         return
       }
       let properties = args["properties"] as? [String: Any]
-      BrazePlugin.braze?.logCustomEvent(name: eventName, properties: properties)
+      brazeClient?.braze.logCustomEvent(name: eventName, properties: properties)
 
     case "logPurchase", "logPurchaseWithProperties":
       guard let args = call.arguments as? [String: Any],
@@ -289,7 +337,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         return
       }
       let properties = args["properties"] as? [String: Any]
-      BrazePlugin.braze?.logPurchase(
+      brazeClient?.braze.logPurchase(
         productId: productId,
         currency: currencyCode,
         price: price,
@@ -301,54 +349,54 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       if let args = call.arguments as? [String: Any],
         let firstName = args["firstName"] as? String
       {
-        BrazePlugin.braze?.user.set(firstName: firstName)
+        brazeClient?.braze.user.set(firstName: firstName)
       } else {
-        BrazePlugin.braze?.user.set(firstName: nil)
+        brazeClient?.braze.user.set(firstName: nil)
       }
 
     case "setLastName":
       if let args = call.arguments as? [String: Any],
         let lastName = args["lastName"] as? String
       {
-        BrazePlugin.braze?.user.set(lastName: lastName)
+        brazeClient?.braze.user.set(lastName: lastName)
       } else {
-        BrazePlugin.braze?.user.set(lastName: nil)
+        brazeClient?.braze.user.set(lastName: nil)
       }
 
     case "setLanguage":
       if let args = call.arguments as? [String: Any],
         let language = args["language"] as? String
       {
-        BrazePlugin.braze?.user.set(language: language)
+        brazeClient?.braze.user.set(language: language)
       } else {
-        BrazePlugin.braze?.user.set(language: nil)
+        brazeClient?.braze.user.set(language: nil)
       }
 
     case "setCountry":
       if let args = call.arguments as? [String: Any],
         let country = args["country"] as? String
       {
-        BrazePlugin.braze?.user.set(country: country)
+        brazeClient?.braze.user.set(country: country)
       } else {
-        BrazePlugin.braze?.user.set(country: nil)
+        brazeClient?.braze.user.set(country: nil)
       }
 
     case "setGender":
       if let args = call.arguments as? [String: Any],
         let gender = args["gender"] as? String
       {
-        BrazePlugin.braze?.user.set(gender: BrazePlugin.parseUserGenderInput(gender))
+        brazeClient?.braze.user.set(gender: BrazePlugin.parseUserGenderInput(gender))
       } else {
-        BrazePlugin.braze?.user.set(gender: nil)
+        brazeClient?.braze.user.set(gender: nil)
       }
 
     case "setHomeCity":
       if let args = call.arguments as? [String: Any],
         let homeCity = args["homeCity"] as? String
       {
-        BrazePlugin.braze?.user.set(homeCity: homeCity)
+        brazeClient?.braze.user.set(homeCity: homeCity)
       } else {
-        BrazePlugin.braze?.user.set(homeCity: nil)
+        brazeClient?.braze.user.set(homeCity: nil)
       }
 
     case "setDateOfBirth":
@@ -367,24 +415,24 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       components.setValue(month.intValue, for: .month)
       components.setValue(year.intValue, for: .year)
       let dateOfBirth = calendar.date(from: components)
-      BrazePlugin.braze?.user.set(dateOfBirth: dateOfBirth)
+      brazeClient?.braze.user.set(dateOfBirth: dateOfBirth)
 
     case "setEmail":
       if let callArguments = call.arguments as? [String: Any],
         let email = callArguments["email"] as? String
       {
-        BrazePlugin.braze?.user.set(email: email)
+        brazeClient?.braze.user.set(email: email)
       } else {
-        BrazePlugin.braze?.user.set(email: nil)
+        brazeClient?.braze.user.set(email: nil)
       }
 
     case "setPhoneNumber":
       if let args = call.arguments as? [String: Any],
         let phoneNumber = args["phoneNumber"] as? String
       {
-        BrazePlugin.braze?.user.set(phoneNumber: phoneNumber)
+        brazeClient?.braze.user.set(phoneNumber: phoneNumber)
       } else {
-        BrazePlugin.braze?.user.set(phoneNumber: nil)
+        brazeClient?.braze.user.set(phoneNumber: nil)
       }
 
     case "setPushNotificationSubscriptionType":
@@ -395,7 +443,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         return
       }
       let pushNotificationSubscriptionType = BrazePlugin.getSubscriptionType(type)
-      BrazePlugin.braze?.user.set(
+      brazeClient?.braze.user.set(
         pushNotificationSubscriptionState: pushNotificationSubscriptionType)
 
     case "setEmailNotificationSubscriptionType":
@@ -406,7 +454,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         return
       }
       let subscriptionType = BrazePlugin.getSubscriptionType(type)
-      BrazePlugin.braze?.user.set(emailSubscriptionState: subscriptionType)
+      brazeClient?.braze.user.set(emailSubscriptionState: subscriptionType)
 
     case "addToSubscriptionGroup":
       guard let args = call.arguments as? [String: Any],
@@ -415,7 +463,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
       }
-      BrazePlugin.braze?.user.addToSubscriptionGroup(id: groupId)
+      brazeClient?.braze.user.addToSubscriptionGroup(id: groupId)
 
     case "removeFromSubscriptionGroup":
       guard let args = call.arguments as? [String: Any],
@@ -424,7 +472,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
       }
-      BrazePlugin.braze?.user.removeFromSubscriptionGroup(id: groupId)
+      brazeClient?.braze.user.removeFromSubscriptionGroup(id: groupId)
 
     case "setStringCustomUserAttribute":
       guard let args = call.arguments as? [String: Any],
@@ -434,7 +482,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
       }
-      BrazePlugin.braze?.user.setCustomAttribute(key: key, value: value)
+      brazeClient?.braze.user.setCustomAttribute(key: key, value: value)
 
     case "setIntCustomUserAttribute":
       guard let args = call.arguments as? [String: Any],
@@ -444,7 +492,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
       }
-      BrazePlugin.braze?.user.setCustomAttribute(key: key, value: value.intValue)
+      brazeClient?.braze.user.setCustomAttribute(key: key, value: value.intValue)
 
     case "setDoubleCustomUserAttribute":
       guard let args = call.arguments as? [String: Any],
@@ -454,7 +502,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
       }
-      BrazePlugin.braze?.user.setCustomAttribute(key: key, value: value.doubleValue)
+      brazeClient?.braze.user.setCustomAttribute(key: key, value: value.doubleValue)
 
     case "setBoolCustomUserAttribute":
       guard let args = call.arguments as? [String: Any],
@@ -464,7 +512,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
       }
-      BrazePlugin.braze?.user.setCustomAttribute(key: key, value: value)
+      brazeClient?.braze.user.setCustomAttribute(key: key, value: value)
 
     case "setDateCustomUserAttribute":
       guard let args = call.arguments as? [String: Any],
@@ -475,7 +523,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         return
       }
       let date = Date.init(timeIntervalSince1970: value.doubleValue)
-      BrazePlugin.braze?.user.setCustomAttribute(key: key, value: date)
+      brazeClient?.braze.user.setCustomAttribute(key: key, value: date)
 
     case "setLocationCustomAttribute":
       guard let args = call.arguments as? [String: Any],
@@ -486,7 +534,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
       }
-      BrazePlugin.braze?.user.setLocationCustomAttribute(
+      brazeClient?.braze.user.setLocationCustomAttribute(
         key: key, latitude: lat.doubleValue, longitude: longitude.doubleValue)
 
     case "addToCustomAttributeArray":
@@ -497,7 +545,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
       }
-      BrazePlugin.braze?.user.addToCustomAttributeStringArray(key: key, value: value)
+      brazeClient?.braze.user.addToCustomAttributeStringArray(key: key, value: value)
 
     case "removeFromCustomAttributeArray":
       guard let args = call.arguments as? [String: Any],
@@ -507,7 +555,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
       }
-      BrazePlugin.braze?.user.removeFromCustomAttributeStringArray(key: key, value: value)
+      brazeClient?.braze.user.removeFromCustomAttributeStringArray(key: key, value: value)
 
     case "incrementCustomUserAttribute":
       guard let args = call.arguments as? [String: Any],
@@ -517,7 +565,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
       }
-      BrazePlugin.braze?.user.incrementCustomUserAttribute(key: key, by: value.intValue)
+      brazeClient?.braze.user.incrementCustomUserAttribute(key: key, by: value.intValue)
 
     case "setNestedCustomUserAttribute":
       guard let args = call.arguments as? [String: Any],
@@ -528,7 +576,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         return
       }
       let merge = args["merge"] as? Bool ?? false
-      BrazePlugin.braze?.user.setCustomAttribute(key: key, dictionary: value, merge: merge)
+      brazeClient?.braze.user.setCustomAttribute(key: key, dictionary: value, merge: merge)
 
     case "setCustomUserAttributeArrayOfStrings":
       guard let args = call.arguments as? [String: Any],
@@ -538,7 +586,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
       }
-      BrazePlugin.braze?.user.setCustomAttribute(key: key, array: value)
+      brazeClient?.braze.user.setCustomAttribute(key: key, array: value)
 
     case "setCustomUserAttributeArrayOfObjects":
       guard let args = call.arguments as? [String: Any],
@@ -548,7 +596,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
       }
-      BrazePlugin.braze?.user.setCustomAttribute(key: key, array: value)
+      brazeClient?.braze.user.setCustomAttribute(key: key, array: value)
 
     case "unsetCustomUserAttribute":
       guard let args = call.arguments as? [String: Any],
@@ -557,7 +605,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
       }
-      BrazePlugin.braze?.user.unsetCustomAttribute(key: key)
+      brazeClient?.braze.user.unsetCustomAttribute(key: key)
 
     case "setGoogleAdvertisingId":
       break  // Android-only features, do nothing.
@@ -569,10 +617,10 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
         return
       }
-      BrazePlugin.braze?.set(adTrackingEnabled: adTrackingEnabled)
+      brazeClient?.braze.set(adTrackingEnabled: adTrackingEnabled)
 
     case "requestImmediateDataFlush":
-      BrazePlugin.braze?.requestImmediateDataFlush()
+      brazeClient?.braze.requestImmediateDataFlush()
 
     case "setAttributionData":
       guard let args = call.arguments as? [String: Any],
@@ -586,7 +634,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       }
       let attributionData = Braze.User.AttributionData(
         network: network, campaign: campaign, adGroup: adGroup, creative: creative)
-      BrazePlugin.braze?.user.set(attributionData: attributionData)
+      brazeClient?.braze.user.set(attributionData: attributionData)
 
     case "registerPushToken":
       guard let args = call.arguments as? [String: Any],
@@ -597,13 +645,13 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       }
 
       if let tokenData = token.data(using: .utf8) {
-        BrazePlugin.braze?.notifications.register(deviceToken: tokenData)
+        brazeClient?.braze.notifications.register(deviceToken: tokenData)
       } else {
         print("Invalid Push Token String: \(token)")
       }
 
     case "wipeData":
-      BrazePlugin.braze?.wipeData()
+      brazeClient?.braze.wipeData()
 
     case "requestLocationInitialization":
       break  // This is an Android only feature, do nothing.
@@ -621,7 +669,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         let verticalAccuracy = args["verticalAccuracy"] as? Double,
         verticalAccuracy > 0.0
       {
-        BrazePlugin.braze?.user.setLastKnownLocation(
+        brazeClient?.braze.user.setLastKnownLocation(
           latitude: latitude,
           longitude: longitude,
           altitude: altitude,
@@ -629,7 +677,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
           verticalAccuracy: verticalAccuracy
         )
       } else {
-        BrazePlugin.braze?.user.setLastKnownLocation(
+        brazeClient?.braze.user.setLastKnownLocation(
           latitude: latitude,
           longitude: longitude,
           horizontalAccuracy: accuracy
@@ -637,9 +685,9 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       }
 
     case "enableSDK":
-      BrazePlugin.braze?.enabled = true
+      brazeClient?.braze.enabled = true
     case "disableSDK":
-      BrazePlugin.braze?.enabled = false
+      brazeClient?.braze.enabled = false
 
     case "getFeatureFlagByID":
       guard let args = call.arguments as? [String: Any],
@@ -649,7 +697,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         return
       }
 
-      if let featureFlag = BrazePlugin.braze?.featureFlags.featureFlag(id: flagId),
+      if let featureFlag = brazeClient?.braze.featureFlags.featureFlag(id: flagId),
         let featureFlagJson = featureFlag.json()
       {
         let featureFlagString = String(data: featureFlagJson, encoding: .utf8)
@@ -658,7 +706,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         result(nil)
       }
     case "getAllFeatureFlags":
-      let featureFlags = BrazePlugin.braze?.featureFlags.featureFlags.compactMap { flag in
+      let featureFlags = brazeClient?.braze.featureFlags.featureFlags.compactMap { flag in
         if let featureFlagJson = flag.json() {
           return String(data: featureFlagJson, encoding: .utf8)
         } else {
@@ -666,9 +714,9 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
           return nil
         }
       }
-      result(featureFlags)
+      result(featureFlags ?? [])
     case "refreshFeatureFlags":
-      BrazePlugin.braze?.featureFlags.requestRefresh()
+      brazeClient?.braze.featureFlags.requestRefresh()
     case "logFeatureFlagImpression":
       guard let args = call.arguments as? [String: Any],
         let flagId = args["id"] as? String
@@ -676,7 +724,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         print("Unexpected null id in `logFeatureFlagImpression`.")
         return
       }
-      BrazePlugin.braze?.featureFlags.logFeatureFlagImpression(id: flagId)
+      brazeClient?.braze.featureFlags.logFeatureFlagImpression(id: flagId)
     case "updateTrackingPropertyAllowList":
       guard let args = call.arguments as? [String: Any] else {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
@@ -715,7 +763,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       if let removingCustomAttributes = args["removingCustomAttributes"] as? [String] {
         removingSet.insert(.customAttribute(Set(removingCustomAttributes)))
       }
-      BrazePlugin.braze?.updateTrackingAllowList(
+      brazeClient?.braze.updateTrackingAllowList(
         adding: addingSet,
         removing: removingSet
       )
@@ -873,18 +921,70 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
 
   // MARK: - Public methods
 
-  /// The intialization method to create a Braze instance.
-  /// Call this method in your AppDelegate `didFinishLaunching` method.
-  public class func initBraze(_ configuration: Braze.Configuration) -> Braze {
+  /// Stores configurations to be applied when the Braze instance is initialized
+  /// via the Dart `initialize` method for delayed initialization.
+  ///
+  /// - Important: Call this method as early as possible in your AppDelegate `didFinishLaunching` method to set up
+  /// non-API key configurations (e.g., `sessionTimeout`, `push.automation`)
+  /// before the Dart layer triggers initialization.
+  ///
+  /// - Parameters:
+  ///   - configure: A closure that receives a `Braze.Configuration` instance.
+  ///     Use this to set all desired configuration properties.
+  ///   - postInitialization: An optional closure that is executed after the
+  ///     Braze instance is created. Use this to perform any setup that requires
+  ///     the live `Braze` instance (e.g., setting a custom in-app message presenter).
+  public static func configure(
+    _ configure: @escaping (Braze.Configuration) -> Void,
+    postInitialization: ((Braze) -> Void)? = nil
+  ) {
+    Braze.prepareForDelayedInitialization()
+    BrazePlugin.configure = configure
+    BrazePlugin.postInitialization = postInitialization
+  }
+
+  /// Creates and configures a Braze instance with the provided configuration.
+  ///
+  /// This method can be called multiple times to re-initialize the SDK with a
+  /// different configuration (e.g., to change the API environment mid-flight).
+  /// Each call destroys the previous Braze instance and creates a new one.
+  ///
+  /// This method is called internally by the Dart `initialize` method. Use
+  /// `BrazePlugin.configure(_:postInitialization:)` to store configuration
+  /// in your AppDelegate, then call `initialize(apiKey, endpoint)` from Dart.
+  @MainActor
+  @discardableResult
+  private class func createBrazeInstance(_ configuration: Braze.Configuration) -> Braze {
+    // Cancel previous subscriptions to prevent potential reference cycle.
+    brazeSubscriptionManager?.cancelAllSubscriptions()
+
+    // Tear down the previous Braze instance to prevent unexpected behavior.
+    BrazePlugin.shared.brazeClient?.braze.inAppMessagePresenter = nil
+    BrazePlugin.shared.brazeClient = nil
+
+    // Create a new Braze instance.
     configuration.api.addSDKMetadata([.flutter])
     configuration.api.sdkFlavor = .flutter
     let braze = Braze(configuration: configuration)
-    BrazePlugin.braze = braze
+    let brazeClient = BrazeFlutterClient(braze: braze)
+    BrazePlugin.shared.brazeClient = brazeClient
 
     // Store instance on BrazeBannerViewFactory
     BrazePlugin.bannerViewFactory?.setBraze(braze)
 
+    BrazePlugin.brazeSubscriptionManager = BrazeSubscriptionManager.init(brazeClient)
+    
+    // Create channel subscriptions and begin forwarding to the Dart layer.
+    brazeSubscriptionManager?.subscribeToAllChannels()
     return braze
+  }
+
+  /// Creates and configures a Braze instance with the provided configuration.
+  @available(*, deprecated, message: "Use BrazePlugin.configure(_:postInitialization:) to set up configuration, then call initialize(apiKey, endpoint) from Dart.")
+  @MainActor
+  @discardableResult
+  public class func initBraze(_ configuration: Braze.Configuration) -> Braze {
+    return createBrazeInstance(configuration)
   }
 
   /// Translates the native [inAppMessage] into JSON and passes it from the iOS layer

@@ -77,6 +77,22 @@ void main() {
       'xt_color\":4280624421,\"trigger_id\":\"NWJhNTMxOThiZjVjZWE0NDZiMTUzYjZiXyRfb'
       'XY9NWJhNTMxOThiZjVjZWE0NDZiMTUzYjc1JnBpPWNtcA==\", \"is_test_send\":false}';
 
+  test('should call initialize', () {
+    BrazePlugin _braze = new BrazePlugin();
+    String _apiKey = 'test-api-key';
+    String _endpoint = 'test-endpoint';
+    _braze.initialize(_apiKey, _endpoint);
+    expect(log, <Matcher>[
+      isMethodCall(
+        'initialize',
+        arguments: <String, dynamic>{
+          'apiKey': _apiKey,
+          'endpoint': _endpoint
+        },
+      ),
+    ]);
+  });
+
   test('should call changeUser', () {
     BrazePlugin _braze = new BrazePlugin();
     String _testUser = 'thistestuser';
