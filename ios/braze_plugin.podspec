@@ -7,7 +7,7 @@ require 'yaml'
 pubspec = YAML.load_file(File.join(__dir__, '../pubspec.yaml'))
 flutter_version = pubspec['version']
 
-braze_swift_version = '14.0.1'
+braze_swift_version = '14.0.4'
 
 Pod::Spec.new do |s|
   s.name             = 'braze_plugin'
@@ -17,7 +17,10 @@ Pod::Spec.new do |s|
   s.license          = { :file => '../LICENSE' }
   s.authors          = 'Braze, Inc.'
   s.source           = { :path => '.' }
-  s.source_files = 'braze_plugin/Sources/braze_plugin/**/*'
+  s.source_files = [
+    'braze_plugin/Sources/braze_plugin/*.swift',
+    'braze_plugin/Sources/braze_plugin/BrazeFlutterPlugin/*.swift'
+  ]
   s.static_framework = true
 
   s.dependency 'Flutter'

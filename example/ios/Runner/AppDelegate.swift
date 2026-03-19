@@ -6,17 +6,8 @@ import SDWebImage
 import UIKit
 import braze_plugin
 
-let brazeApiKey = "9292484d-3b10-4e67-971d-ff0c0d518e21"
-let brazeEndpoint = "sondheim.braze.com"
-
 @main
 @objc class AppDelegate: FlutterAppDelegate {
-
-  // These subscriptions need to be retained to be active
-  var contentCardsSubscription: Braze.Cancellable?
-  var bannersSubscription: Braze.Cancellable?
-  var pushEventsSubscription: Braze.Cancellable?
-  var featureFlagsSubscription: Braze.Cancellable?
 
   override func application(
     _ application: UIApplication,
@@ -24,103 +15,80 @@ let brazeEndpoint = "sondheim.braze.com"
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
 
-    // - Setup Braze
-    let configuration = Braze.Configuration(apiKey: brazeApiKey, endpoint: brazeEndpoint)
-    configuration.sessionTimeout = 1
-    configuration.triggerMinimumTimeInterval = 0
-    configuration.location.automaticLocationCollection = true
-    configuration.location.brazeLocationProvider = BrazeLocationProvider()
-    configuration.logger.level = .debug
-    
-    // - Flush Braze SDK logs to the Dart layer.
-    // This is strictly for testing purposes to display logs in the sample app.
     let controller = window?.rootViewController as? FlutterViewController
-    configuration.logger.print = { [weak controller] logString, level in
-      if let controller {
-        let brazeLogChannel = FlutterMethodChannel(
-          name: "brazeLogChannel", binaryMessenger: controller.binaryMessenger)
-        var logLevel = "debug"
-        switch level {
-        case .debug:
-          logLevel = "debug"
-        case .info:
-          logLevel = "info"
-        case .error:
-          logLevel = "error"
-        case .disabled:
-          logLevel = "disabled"
-        @unknown default:
-          logLevel = "debug"
+
+    // Store Braze configuration for delayed initialization.
+    // The Braze instance will be created when initialize(apiKey, endpoint) is called from Dart.
+    BrazePlugin.configure(
+      { configuration in
+        configuration.sessionTimeout = 1
+        configuration.triggerMinimumTimeInterval = 0
+        configuration.location.automaticLocationCollection = true
+        configuration.location.brazeLocationProvider = BrazeLocationProvider()
+        configuration.logger.level = .debug
+
+        // Flush Braze SDK logs to the Dart layer.
+        // This is strictly for testing purposes to display logs in the sample app.
+        configuration.logger.print = { [weak controller] logString, level in
+          if let controller {
+            let brazeLogChannel = FlutterMethodChannel(
+              name: "brazeLogChannel", binaryMessenger: controller.binaryMessenger)
+            var logLevel = "debug"
+            switch level {
+            case .debug:
+              logLevel = "debug"
+            case .info:
+              logLevel = "info"
+            case .error:
+              logLevel = "error"
+            case .disabled:
+              logLevel = "disabled"
+            @unknown default:
+              logLevel = "debug"
+            }
+            let arguments = ["logString": logString, "level": logLevel]
+            DispatchQueue.main.async {
+              brazeLogChannel.invokeMethod("printLog", arguments: arguments)
+            }
+          }
+          return true
         }
-        let arguments = ["logString": logString, "level": logLevel]
-        // Sending messages on a native platform channel must be done on the main thread.
-        DispatchQueue.main.async {
-            brazeLogChannel.invokeMethod("printLog", arguments: arguments)
-        }
+
+        configuration.push.appGroup = "group.com.braze.flutterPluginExample.PushStories"
+        configuration.push.automation = true
+      },
+      postInitialization: { braze in
+        // Use this closure to customize the Braze instance after creation.
+        // For example, set a custom in-app message presenter:
+        let customPresenter = CustomInAppMessagePresenter()
+        braze.inAppMessagePresenter = customPresenter
       }
-      return true
-    }
-    
-    configuration.push.appGroup = "group.com.braze.flutterPluginExample.PushStories"
-
-    // - Automatic push notification setup
-    configuration.push.automation = true
-
-    let braze = BrazePlugin.initBraze(configuration)
+    )
 
     // - GIF support
     GIFViewProvider.shared = .sdWebImage
-
-    // - InAppMessage UI
-    let inAppMessageUI = CustomInAppMessagePresenter()
-    braze.inAppMessagePresenter = inAppMessageUI
-
-    // - Subscribe to various features and pass each model to the Dart layer
-    contentCardsSubscription = braze.contentCards.subscribeToUpdates { contentCards in
-      print("=> [Content Card Subscription] Received cards:", contentCards)
-      BrazePlugin.processContentCards(contentCards)
-    }
-    bannersSubscription = braze.banners.subscribeToUpdates { banners in
-      print("=> [Banner Subscription] Received banners:", banners)
-      BrazePlugin.processBanners(banners)
-    }
-    pushEventsSubscription = braze.notifications.subscribeToUpdates { payload in
-      print(
-        """
-        => [Push Event Subscription] Received push event:
-           - type: \(payload.type)
-           - title: \(payload.title ?? "<empty>")
-           - isSilent: \(payload.isSilent)
-        """
-      )
-      BrazePlugin.processPushEvent(payload)
-    }
-    featureFlagsSubscription = braze.featureFlags.subscribeToUpdates { featureFlags in
-      print("=> [Feature Flag Subscription] Received feature Flags:", featureFlags)
-      BrazePlugin.processFeatureFlags(featureFlags)
-    }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 }
 
-// MARK: In-app message UI
+// MARK: - Custom In-App Message Presenter
 
 class CustomInAppMessagePresenter: BrazeInAppMessageUI {
 
   override func present(message: Braze.InAppMessage) {
-    print("=> [In-app Message] Received message from Braze:", message)
+    print("=> [Custom In-App Message Presenter] Received message:", message)
 
-    // Pass in-app message data to the Dart layer.
+    // Forward in-app message data to the Dart layer.
     BrazePlugin.processInAppMessage(message)
 
-    // If you want the default UI to display the in-app message.
+    // Present the default Braze UI for the in-app message.
     super.present(message: message)
   }
 
 }
 
-// MARK: GIF support
+// MARK: - GIF support
 
 extension GIFViewProvider {
   public static let sdWebImage = Self(

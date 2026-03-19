@@ -1,0 +1,497 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0B7815332F3FA85C00543E77 /* BrazeFlutterClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B7815322F3FA85600543E77 /* BrazeFlutterClient.swift */; };
+		0B7815342F3FA85C00543E77 /* BrazeFlutterClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B7815322F3FA85600543E77 /* BrazeFlutterClient.swift */; };
+		0B7815372F3FBC5300543E77 /* BrazeKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B7815362F3FBC5300543E77 /* BrazeKit */; };
+		0B7815392F3FBC5300543E77 /* BrazeUI in Frameworks */ = {isa = PBXBuildFile; productRef = 0B7815382F3FBC5300543E77 /* BrazeUI */; };
+		36AF900A2E9FFEE3005E7F39 /* libBrazeFlutterPlugin.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 36AF8FF22E9FFEA0005E7F39 /* libBrazeFlutterPlugin.a */; platformFilter = ios; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		36AF900B2E9FFEE3005E7F39 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 36AF8FEA2E9FFEA0005E7F39 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 36AF8FF12E9FFEA0005E7F39;
+			remoteInfo = BrazeFlutterPlugin;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		36AF8FF02E9FFEA0005E7F39 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "include/$(PRODUCT_NAME)";
+			dstSubfolderSpec = 16;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		0B7815322F3FA85600543E77 /* BrazeFlutterClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrazeFlutterClient.swift; sourceTree = "<group>"; };
+		36AF8FF22E9FFEA0005E7F39 /* libBrazeFlutterPlugin.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libBrazeFlutterPlugin.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		36AF90062E9FFEE3005E7F39 /* BrazeFlutterPluginTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BrazeFlutterPluginTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		36AF90072E9FFEE3005E7F39 /* BrazeFlutterPluginTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = BrazeFlutterPluginTests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		36AF8FEF2E9FFEA0005E7F39 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0B7815372F3FBC5300543E77 /* BrazeKit in Frameworks */,
+				0B7815392F3FBC5300543E77 /* BrazeUI in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		36AF90032E9FFEE3005E7F39 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				36AF900A2E9FFEE3005E7F39 /* libBrazeFlutterPlugin.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0BED04912F3E6384005678C7 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		36AF8FE92E9FFEA0005E7F39 = {
+			isa = PBXGroup;
+			children = (
+				0B7815322F3FA85600543E77 /* BrazeFlutterClient.swift */,
+				36AF90072E9FFEE3005E7F39 /* BrazeFlutterPluginTests */,
+				0BED04912F3E6384005678C7 /* Frameworks */,
+				36AF8FF32E9FFEA0005E7F39 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		36AF8FF32E9FFEA0005E7F39 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				36AF8FF22E9FFEA0005E7F39 /* libBrazeFlutterPlugin.a */,
+				36AF90062E9FFEE3005E7F39 /* BrazeFlutterPluginTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		36AF8FF12E9FFEA0005E7F39 /* BrazeFlutterPlugin */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 36AF8FF92E9FFEA0005E7F39 /* Build configuration list for PBXNativeTarget "BrazeFlutterPlugin" */;
+			buildPhases = (
+				36AF8FEE2E9FFEA0005E7F39 /* Sources */,
+				36AF8FEF2E9FFEA0005E7F39 /* Frameworks */,
+				36AF8FF02E9FFEA0005E7F39 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = BrazeFlutterPlugin;
+			productName = BrazeFlutterPlugin;
+			productReference = 36AF8FF22E9FFEA0005E7F39 /* libBrazeFlutterPlugin.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		36AF90052E9FFEE3005E7F39 /* BrazeFlutterPluginTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 36AF900D2E9FFEE3005E7F39 /* Build configuration list for PBXNativeTarget "BrazeFlutterPluginTests" */;
+			buildPhases = (
+				36AF90022E9FFEE3005E7F39 /* Sources */,
+				36AF90032E9FFEE3005E7F39 /* Frameworks */,
+				36AF90042E9FFEE3005E7F39 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				36AF900C2E9FFEE3005E7F39 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				36AF90072E9FFEE3005E7F39 /* BrazeFlutterPluginTests */,
+			);
+			name = BrazeFlutterPluginTests;
+			productName = BrazeFlutterPluginTests;
+			productReference = 36AF90062E9FFEE3005E7F39 /* BrazeFlutterPluginTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		36AF8FEA2E9FFEA0005E7F39 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					36AF8FF12E9FFEA0005E7F39 = {
+						CreatedOnToolsVersion = 26.0.1;
+						LastSwiftMigration = 1600;
+					};
+					36AF90052E9FFEE3005E7F39 = {
+						CreatedOnToolsVersion = 26.0.1;
+					};
+				};
+			};
+			buildConfigurationList = 36AF8FED2E9FFEA0005E7F39 /* Build configuration list for PBXProject "BrazeFlutterPlugin" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 36AF8FE92E9FFEA0005E7F39;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				0B7815352F3FBC5300543E77 /* XCRemoteSwiftPackageReference "braze-swift-sdk" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 36AF8FF32E9FFEA0005E7F39 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				36AF8FF12E9FFEA0005E7F39 /* BrazeFlutterPlugin */,
+				36AF90052E9FFEE3005E7F39 /* BrazeFlutterPluginTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		36AF90042E9FFEE3005E7F39 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		36AF8FEE2E9FFEA0005E7F39 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0B7815332F3FA85C00543E77 /* BrazeFlutterClient.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		36AF90022E9FFEE3005E7F39 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0B7815342F3FA85C00543E77 /* BrazeFlutterClient.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		36AF900C2E9FFEE3005E7F39 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			platformFilter = ios;
+			target = 36AF8FF12E9FFEA0005E7F39 /* BrazeFlutterPlugin */;
+			targetProxy = 36AF900B2E9FFEE3005E7F39 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		36AF8FF72E9FFEA0005E7F39 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 5GLZKGNWQ3;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		36AF8FF82E9FFEA0005E7F39 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 5GLZKGNWQ3;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		36AF8FFA2E9FFEA0005E7F39 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 5GLZKGNWQ3;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		36AF8FFB2E9FFEA0005E7F39 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 5GLZKGNWQ3;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		36AF900E2E9FFEE3005E7F39 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				MACOSX_DEPLOYMENT_TARGET = 15.7;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.braze.BrazeFlutterPluginTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				XROS_DEPLOYMENT_TARGET = 2.0;
+			};
+			name = Debug;
+		};
+		36AF900F2E9FFEE3005E7F39 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				MACOSX_DEPLOYMENT_TARGET = 15.7;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.braze.BrazeFlutterPluginTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				XROS_DEPLOYMENT_TARGET = 2.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		36AF8FED2E9FFEA0005E7F39 /* Build configuration list for PBXProject "BrazeFlutterPlugin" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				36AF8FF72E9FFEA0005E7F39 /* Debug */,
+				36AF8FF82E9FFEA0005E7F39 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		36AF8FF92E9FFEA0005E7F39 /* Build configuration list for PBXNativeTarget "BrazeFlutterPlugin" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				36AF8FFA2E9FFEA0005E7F39 /* Debug */,
+				36AF8FFB2E9FFEA0005E7F39 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		36AF900D2E9FFEE3005E7F39 /* Build configuration list for PBXNativeTarget "BrazeFlutterPluginTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				36AF900E2E9FFEE3005E7F39 /* Debug */,
+				36AF900F2E9FFEE3005E7F39 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		0B7815352F3FBC5300543E77 /* XCRemoteSwiftPackageReference "braze-swift-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/braze-inc/braze-swift-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 14.0.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0B7815362F3FBC5300543E77 /* BrazeKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B7815352F3FBC5300543E77 /* XCRemoteSwiftPackageReference "braze-swift-sdk" */;
+			productName = BrazeKit;
+		};
+		0B7815382F3FBC5300543E77 /* BrazeUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B7815352F3FBC5300543E77 /* XCRemoteSwiftPackageReference "braze-swift-sdk" */;
+			productName = BrazeUI;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 36AF8FEA2E9FFEA0005E7F39 /* Project object */;
+}

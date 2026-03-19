@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "A398C40F-47B1-48F2-A9D1-9491DB3BAD2B",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:BrazeFlutterPlugin.xcodeproj",
+        "identifier" : "36AF90052E9FFEE3005E7F39",
+        "name" : "BrazeFlutterPluginTests"
+      }
+    }
+  ],
+  "version" : 1
+}

@@ -57,6 +57,11 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
   String _bannerPropertyType = "BOOLEAN";
   bool _showBrazeConsole = false;
 
+  // Default API keys and endpoint for testing purposes.
+  final String defaultIOSApiKey = "9292484d-3b10-4e67-971d-ff0c0d518e21";
+  final String defaultAndroidApiKey = "0fc32ae3-88b4-48b8-91f4-a0e2003b08ec";
+  final String defaultEndpoint = "sondheim.braze.com";
+
   // Subscriptions
   late StreamSubscription inAppMessageStreamSubscription;
   late StreamSubscription contentCardsStreamSubscription;
@@ -75,6 +80,8 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
   final bannerRefreshController =
       TextEditingController(text: "placement_1, placement_2");
   final bannerPropertyController = TextEditingController();
+  final initApiKeyController = TextEditingController();
+  final initEndpointController = TextEditingController();
 
   // ignore: unused_field
   double _bannerHeight = 0;
@@ -86,6 +93,25 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
 
   void initState() {
     _braze = new BrazePlugin(customConfigs: {replayCallbacksConfigKey: true});
+
+    if (Platform.isAndroid) {
+      initApiKeyController.text = defaultAndroidApiKey;
+    } else if (Platform.isIOS) {
+      initApiKeyController.text = defaultIOSApiKey;
+    }
+    initEndpointController.text = defaultEndpoint;
+
+    // Initialize the Braze SDK with the API key and endpoint. Call this method at the start of your app
+    // or later if you need to delay initialization.
+    // On iOS, this applies the configuration stored via BrazePlugin.configure() in AppDelegate.
+    // On Android, this reconfigures the SDK with the provided values.
+    if (Platform.isAndroid) {
+      // Android-specific API key
+      _braze.initialize(defaultAndroidApiKey, defaultEndpoint);
+    } else if (Platform.isIOS) {
+      // iOS-specific API key
+      _braze.initialize(defaultIOSApiKey, defaultEndpoint);
+    }
 
     _braze.setBrazeSdkAuthenticationErrorCallback(
         (BrazeSdkAuthenticationError error) async {
@@ -129,6 +155,8 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
     bannerController.dispose();
     bannerRefreshController.dispose();
     bannerPropertyController.dispose();
+    initApiKeyController.dispose();
+    initEndpointController.dispose();
 
     /// Stop listening to streams
     inAppMessageStreamSubscription.cancel();
@@ -918,6 +946,47 @@ class BrazeFunctionsState extends State<BrazeFunctions> {
                       ],
                     );
                   },
+                );
+              },
+            ),
+            TextField(
+              autocorrect: false,
+              enableSuggestions: false,
+              controller: initApiKeyController,
+              decoration: const InputDecoration(
+                labelText: 'API Key',
+                isDense: true,
+              ),
+            ),
+            TextField(
+              autocorrect: false,
+              enableSuggestions: false,
+              controller: initEndpointController,
+              decoration: const InputDecoration(
+                labelText: 'Endpoint',
+                isDense: true,
+              ),
+            ),
+            TextButton(
+              child: const Text('INITIALIZE BRAZE SDK'),
+              onPressed: () {
+                final apiKey = initApiKeyController.text.trim();
+                final endpoint = initEndpointController.text.trim();
+                if (apiKey.isEmpty || endpoint.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('API key and endpoint are required'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+                _braze.initialize(apiKey, endpoint);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Braze initialized with key: ${apiKey.substring(0, apiKey.length.clamp(0, 8))}...'),
+                    backgroundColor: Colors.green,
+                  ),
                 );
               },
             ),

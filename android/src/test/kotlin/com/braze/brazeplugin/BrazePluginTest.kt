@@ -83,6 +83,99 @@ class BrazePluginTest {
     }
 
     @Test
+    fun whenInitialize_withValidApiKeyAndEndpoint_callsSuccess() {
+        // Given
+        val apiKey = "test-api-key"
+        val endpoint = "test-endpoint"
+        val arguments = mapOf(
+            "apiKey" to apiKey,
+            "endpoint" to endpoint
+        )
+
+        // When
+        val call = MethodCall("initialize", arguments)
+        brazePlugin.onMethodCall(call, mockMethodChannelResult)
+
+        // Then
+        // Verify that success is called (the actual SDK calls are static and harder to mock)
+        verify(mockMethodChannelResult).success(null)
+    }
+
+    @Test
+    fun whenInitialize_withNullApiKey_returnsError() {
+        // Given
+        val arguments = mapOf<String, String?>(
+            "apiKey" to null,
+            "endpoint" to "test-endpoint"
+        )
+
+        // When
+        val call = MethodCall("initialize", arguments)
+        brazePlugin.onMethodCall(call, mockMethodChannelResult)
+
+        // Then
+        verify(mockMethodChannelResult).error(
+            eq("INVALID_ARGUMENTS"),
+            eq("apiKey and endpoint are required"),
+            eq(null)
+        )
+    }
+
+    @Test
+    fun whenInitialize_withNullEndpoint_returnsError() {
+        // Given
+        val arguments = mapOf<String, String?>(
+            "apiKey" to "test-api-key",
+            "endpoint" to null
+        )
+
+        // When
+        val call = MethodCall("initialize", arguments)
+        brazePlugin.onMethodCall(call, mockMethodChannelResult)
+
+        // Then
+        verify(mockMethodChannelResult).error(
+            eq("INVALID_ARGUMENTS"),
+            eq("apiKey and endpoint are required"),
+            eq(null)
+        )
+    }
+
+    @Test
+    fun whenInitialize_withMissingApiKey_returnsError() {
+        // Given
+        val arguments = mapOf("endpoint" to "test-endpoint")
+
+        // When
+        val call = MethodCall("initialize", arguments)
+        brazePlugin.onMethodCall(call, mockMethodChannelResult)
+
+        // Then
+        verify(mockMethodChannelResult).error(
+            eq("INVALID_ARGUMENTS"),
+            eq("apiKey and endpoint are required"),
+            eq(null)
+        )
+    }
+
+    @Test
+    fun whenInitialize_withMissingEndpoint_returnsError() {
+        // Given
+        val arguments = mapOf("apiKey" to "test-api-key")
+
+        // When
+        val call = MethodCall("initialize", arguments)
+        brazePlugin.onMethodCall(call, mockMethodChannelResult)
+
+        // Then
+        verify(mockMethodChannelResult).error(
+            eq("INVALID_ARGUMENTS"),
+            eq("apiKey and endpoint are required"),
+            eq(null)
+        )
+    }
+
+    @Test
     fun whenNotGivenSdkAuthToken_changeUser_callsStandardChangeUser() {
         // Given
         val userId = "test_user_id"

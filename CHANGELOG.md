@@ -1,3 +1,22 @@
+## 18.0.0
+
+#### Breaking
+- Streamlines the iOS integration process to not require writing native code to forward content cards, banners, feature flags, in-app messages, or push notification updates from the native SDK. 
+  - The SDK will now automatically set up these subscriptions when the Braze instance is created.
+  - This matches the existing behavior on Android.
+  - To migrate, remove any manual calls to `braze.contentCards.subscribeToUpdates()`, `braze.banners.subscribeToUpdates()`, `braze.notifications.subscribeToUpdates`, `braze.featureFlags.subscribeToUpdates` and `braze.inAppMessagePresenter` in the `AppDelegate`.
+  - By default, in-app messages will be presented. To override this, set a custom in-app message presenter using the `postInitialization` closure in `BrazePlugin.configure(_:postInitialization:)`.
+
+##### Added
+- Adds support for delayed SDK initialization. See full setup guide [here](https://www.braze.com/docs/developer_guide/sdk_integration/?sdktab=flutter).
+  - Adds `initialize(apiKey, endpoint)` method to create the Braze instance at runtime with the stored configuration. This method can be called multiple times to re-initialize the SDK with a different API key and endpoint mid-session.
+  - To enable delayed initialization on Android, add `com_braze_enable_delayed_initialization` set to `true` in your `braze.xml`.
+- For iOS integrations only, adds `BrazePlugin.configure(_:postInitialization:)` to store configurations in your `AppDelegate` for later use by the new Dart `initialize(apiKey, endpoint)` method.
+  - `BrazePlugin.initBraze()` is deprecated. Use the `configure` + Dart `initialize` pattern instead.
+
+##### Fixed
+- Updates the native iOS bridge [from Braze Swift SDK 14.0.1 to 14.0.4](https://github.com/braze-inc/braze-swift-sdk/compare/14.0.1...14.0.4#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+
 ## 17.1.0
 
 ##### Added

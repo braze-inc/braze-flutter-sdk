@@ -8,6 +8,10 @@ class BrazeBannerViewFactory: NSObject, FlutterPlatformViewFactory {
   private var uiHandler: BrazeUIHandler
   private var braze: Braze?
 
+  /// Weak references to all live banner views so they can be re-initialized
+  /// in-place when the Braze SDK becomes available.
+  private let liveViews = NSHashTable<BrazeBannerView>.weakObjects()
+
   init(messenger: FlutterBinaryMessenger, uiHandler: BrazeUIHandler) {
     self.messenger = messenger
     self.uiHandler = uiHandler
@@ -19,7 +23,7 @@ class BrazeBannerViewFactory: NSObject, FlutterPlatformViewFactory {
     viewIdentifier viewId: Int64,
     arguments args: Any?
   ) -> FlutterPlatformView {
-    return BrazeBannerView(
+    let view = BrazeBannerView(
       frame: frame,
       viewIdentifier: viewId,
       arguments: args,
@@ -27,6 +31,8 @@ class BrazeBannerViewFactory: NSObject, FlutterPlatformViewFactory {
       braze: self.braze,
       uiHandler: self.uiHandler
     )
+    liveViews.add(view)
+    return view
   }
 
   /// Required when the `arguments` in `createWithFrame` is not `nil`
@@ -34,11 +40,13 @@ class BrazeBannerViewFactory: NSObject, FlutterPlatformViewFactory {
     return FlutterStandardMessageCodec.sharedInstance()
   }
 
-  /// Stores the Braze instance after initialization.
-  ///
-  /// This must be called before creating any banner views.
+  /// Stores the Braze instance and re-initializes any live banner views
+  /// that were created before the SDK was available.
   public func setBraze(_ braze: Braze) {
     self.braze = braze
+    for case let view as BrazeBannerView in liveViews.allObjects {
+      view.initialize(with: braze)
+    }
   }
 }
 
@@ -52,6 +60,9 @@ class BrazeBannerView: NSObject, FlutterPlatformView {
 
   /// The identifier of the Dart container view around the banner
   private var _containerId: String
+
+  /// Stored for deferred initialization when the Braze SDK isn't yet available.
+  private var _placementId: String?
 
   init(
     frame: CGRect,
@@ -77,14 +88,27 @@ class BrazeBannerView: NSObject, FlutterPlatformView {
     _hostView = UIView()
     _uiHandler = uiHandler
     _containerId = containerId ?? ""
+    _placementId = placementId
 
     super.init()
 
+    guard let braze else {
+      print("Braze SDK is not initialized. Banner will render once initialize() is called.")
+      return
+    }
+
     // Use "" in place of a null placementId until the Swift SDK supports null.
     createNativeView(
-      braze: braze!,
+      braze: braze,
       placementId: placementId ?? ""
     )
+  }
+
+  /// Re-initializes the banner view in-place with a (newly available) Braze instance.
+  /// Called by `BrazeBannerViewFactory.setBraze(_:)` after delayed initialization.
+  func initialize(with braze: Braze) {
+    _hostView.subviews.forEach { $0.removeFromSuperview() }
+    createNativeView(braze: braze, placementId: _placementId ?? "")
   }
 
   func view() -> UIView {
