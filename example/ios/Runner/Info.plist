@@ -22,7 +22,7 @@
 	<key>Braze</key>
 	<dict>
 		<key>Endpoint</key>
-		<string>sondheim.braze.com</string>
+		<string>YOUR_BRAZE_ENDPOINT</string>
 		<key>LogLevel</key>
 		<string>0</string>
 	</dict>

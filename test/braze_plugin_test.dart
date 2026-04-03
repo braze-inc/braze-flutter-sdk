@@ -960,9 +960,11 @@ void main() {
     }
   });
 
-  test('should call registerPushToken', () {
+  test('should call registerPushToken with a hex string', () {
     BrazePlugin _braze = new BrazePlugin();
-    String _pushToken = 'someToken';
+    // iOS expects a hex string; native decodes it to Data.
+    String _pushToken =
+        '000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f';
     _braze.registerPushToken(_pushToken);
     expect(log, <Matcher>[
       isMethodCall(

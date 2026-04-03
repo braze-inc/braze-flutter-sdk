@@ -560,7 +560,7 @@ class BrazePlugin {
   /// * **Android:** FCM registration token string (from Firebase Messaging or equivalent).
   ///   Use the string as returned by `FirebaseMessaging.instance.getToken()`.
   ///
-  /// * **iOS:** A string whose UTF-8 bytes are the raw device token (not encoded 64-char hex string).
+  /// * **iOS:** A hexadecimal-encoded string representing the APNs device token.
   void registerPushToken(String pushToken) {
     _callStringMethod('registerPushToken', 'pushToken', pushToken);
   }

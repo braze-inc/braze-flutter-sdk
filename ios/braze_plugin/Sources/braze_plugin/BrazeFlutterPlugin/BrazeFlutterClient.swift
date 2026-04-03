@@ -75,6 +75,22 @@ class DefaultFlutterInAppMessagePresenter: BrazeInAppMessageUI {
 
 }
 
+// MARK: - Hex decoding (for APNs push token from Dart)
+
+func decodeHexToken(_ hex: String) -> Data? {
+  let s = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+  guard s.count % 2 == 0 else { return nil }
+  var data = Data(capacity: s.count / 2)
+  var index = s.startIndex
+  while index < s.endIndex {
+    let next = s.index(index, offsetBy: 2)
+    guard let byte = UInt8(s[index..<next], radix: 16) else { return nil }
+    data.append(byte)
+    index = next
+  }
+  return data
+}
+
 protocol BrazeProviding {
   var braze: Braze { get }
   
