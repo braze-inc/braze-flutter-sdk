@@ -1,3 +1,9 @@
+## 18.0.1
+
+##### Fixed
+- `Braze.registerPushToken()` now explicitly enforces that the device token is a hex-encoded string for the iOS implementation.
+  - This addresses previously reported issues of tokens being improperly converted.
+
 ## 18.0.0
 
 #### Breaking

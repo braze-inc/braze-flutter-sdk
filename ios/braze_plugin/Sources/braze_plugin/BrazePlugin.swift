@@ -644,10 +644,11 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         return
       }
 
-      if let tokenData = token.data(using: .utf8) {
+      // Expects pushToken as a hex string; decode to Data before registering.
+      if let tokenData = decodeHexToken(token) {
         brazeClient?.braze.notifications.register(deviceToken: tokenData)
       } else {
-        print("Invalid Push Token String: \(token)")
+        print("Invalid Push Token String (expected hex-encoded string): \(token). Skipping token registration.")
       }
 
     case "wipeData":

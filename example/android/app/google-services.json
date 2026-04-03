@@ -1,34 +1,34 @@
 {
   "project_info": {
-    "project_number": "901477453852",
-    "firebase_url": "https://androidgcmsender.firebaseio.com",
-    "project_id": "androidgcmsender",
-    "storage_bucket": "androidgcmsender.appspot.com"
+    "project_number": "YOUR_PROJECT_NUMBER",
+    "firebase_url": "https://your-firebase-project-id.firebaseio.com",
+    "project_id": "your-firebase-project-id",
+    "storage_bucket": "your-firebase-project-id.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:901477453852:android:05411feb1511b551",
+        "mobilesdk_app_id": "1:YOUR_PROJECT_NUMBER:android:YOUR_ANDROID_APP_HASH",
         "android_client_info": {
           "package_name": "braze.com.brazepluginexample"
         }
       },
       "oauth_client": [
         {
-          "client_id": "901477453852-4k1e9ehf8s8pqne5hcesfek4voim2d67.apps.googleusercontent.com",
+          "client_id": "YOUR_PROJECT_NUMBER-placeholder.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyDYvseENe5UlXILj32yYFPhiUawZbG8Y40"
+          "current_key": "AIzaSy00000000000000000000000000000000000"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "901477453852-4k1e9ehf8s8pqne5hcesfek4voim2d67.apps.googleusercontent.com",
+              "client_id": "YOUR_PROJECT_NUMBER-placeholder.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

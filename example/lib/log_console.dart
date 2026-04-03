@@ -106,42 +106,55 @@ class _LogConsoleState extends State<LogConsole> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
+      width: double.infinity,
       height: widget.height,
-      decoration: BoxDecoration(
+      child: Material(
         color: widget.backgroundColor,
-      ),
-      child: Stack(
-        children: [
-          Column(
-            children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: widget.backgroundColor.withValues(alpha: 0.8),
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(8)),
+        child: Stack(
+          clipBehavior: Clip.hardEdge,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: widget.backgroundColor.withValues(alpha: 0.8),
+                    borderRadius:
+                        const BorderRadius.vertical(bottom: Radius.circular(8)),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Braze Logger Console (${_logs.length})',
+                          style: const TextStyle(color: Colors.white70),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          color: Colors.white70,
+                          size: 18,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 40,
+                        ),
+                        onPressed: () {
+                          setState(() => _logs.clear());
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Braze Logger Console (${_logs.length})',
-                      style: const TextStyle(color: Colors.white70),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline,
-                          color: Colors.white70, size: 18),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () {
-                        setState(() => _logs.clear());
-                      },
-                    ),
-                  ],
-                ),
-              ),
               Expanded(
                 child: _logs.isEmpty
                     ? const Center(
@@ -199,6 +212,11 @@ class _LogConsoleState extends State<LogConsole> {
                                             ? log.content
                                             : _getFirstLine(log.content),
                                         style: widget.logTextStyle,
+                                        softWrap: true,
+                                        maxLines: log.isExpanded ? null : 1,
+                                        overflow: log.isExpanded
+                                            ? TextOverflow.visible
+                                            : TextOverflow.ellipsis,
                                       ),
                                     ),
                                   ],
@@ -226,6 +244,7 @@ class _LogConsoleState extends State<LogConsole> {
             ),
         ],
       ),
+    ),
     );
   }
 }
@@ -235,4 +254,43 @@ class LogEntry {
   bool isExpanded;
 
   LogEntry({required this.content, this.isExpanded = false});
+}
+
+/// Provides the shared [ValueNotifier] for log console visibility (wrap [MaterialApp]).
+class LogConsoleVisibility extends InheritedNotifier<ValueNotifier<bool>> {
+  const LogConsoleVisibility({
+    super.key,
+    required ValueNotifier<bool> notifier,
+    required super.child,
+  }) : super(notifier: notifier);
+
+  static ValueNotifier<bool> of(BuildContext context) {
+    final scope =
+        context.dependOnInheritedWidgetOfExactType<LogConsoleVisibility>();
+    assert(scope != null, 'LogConsoleVisibility must wrap MaterialApp');
+    return scope!.notifier!;
+  }
+}
+
+/// App bar action to show or hide the sample app's log console.
+class LogConsoleToggleButton extends StatelessWidget {
+  const LogConsoleToggleButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final visible = LogConsoleVisibility.of(context);
+    return ListenableBuilder(
+      listenable: visible,
+      builder: (context, _) {
+        return IconButton(
+          icon: Icon(
+            visible.value ? Icons.terminal : Icons.terminal_outlined,
+            color: Colors.white,
+          ),
+          tooltip: 'Toggle Log Console',
+          onPressed: () => visible.value = !visible.value,
+        );
+      },
+    );
+  }
 }

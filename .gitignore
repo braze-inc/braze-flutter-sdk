@@ -9,6 +9,10 @@ build/
 
 flutter_export_environment.sh
 
+# IntelliJ Metadata
+.idea/
+*.iml
+
 example/.flutter-plugins-dependencies
 example/ios/Flutter/Flutter.podspec
 example/lib/generated_plugin_registrant.dart
