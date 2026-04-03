@@ -3,7 +3,7 @@
   <img width="480" alt="Braze Logo" src=".github/assets/logo-dark.png#gh-dark-mode-only" />
 </p>
 
-# Braze Flutter SDK [![latest release](https://img.shields.io/github/v/tag/braze-inc/braze-flutter-sdk?label=latest%20release&color=300266)](https://github.com/braze-inc/braze-swift-sdk/releases)
+# [TEST] Braze Flutter SDK [![latest release](https://img.shields.io/github/v/tag/braze-inc/braze-flutter-sdk?label=latest%20release&color=300266)](https://github.com/braze-inc/braze-swift-sdk/releases)
 
 - [Braze User Guide](https://www.braze.com/docs/user_guide/introduction/ "Braze User Guide")
 - [Braze Developer Guide](https://www.braze.com/docs/developer_guide/sdk_integration/?sdktab=flutter "Braze Developer Guide")
