@@ -4,6 +4,8 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+apply from: "$rootDir/../../android/braze-android-sdk.gradle"
+
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file('local.properties')
 if (localPropertiesFile.exists()) {
@@ -68,13 +70,13 @@ flutter {
 }
 
 dependencies {
-    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test:rules:1.2.0'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
     implementation 'androidx.multidex:multidex:2.0.1'
 
-    implementation "com.braze:android-sdk-ui:41.1.1"
+    implementation "com.braze:android-sdk-ui:$brazeAndroidSdkVersion"
     implementation "com.google.firebase:firebase-messaging:23.2.0"
     implementation project(':braze_plugin')
     implementation project(':integration_test')

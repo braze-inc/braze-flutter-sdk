@@ -1,10 +1,14 @@
+import 'package:braze_plugin/braze_plugin.dart';
 import 'package:flutter/material.dart';
 
 import 'log_console.dart';
 import 'screens/home_screen.dart';
 import 'theme.dart';
 
-void main() => runApp(const BrazeApp());
+void main() {
+  BrazePlugin.logLevel = BrazeLogLevel.debug;
+  runApp(const BrazeApp());
+}
 
 /// Root widget for the Braze Flutter sample app.
 class BrazeApp extends StatefulWidget {

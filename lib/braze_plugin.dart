@@ -2,6 +2,7 @@ library braze_plugin;
 
 import 'dart:async';
 import 'dart:convert' as json;
+import 'dart:developer';
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
@@ -13,8 +14,50 @@ part './braze_utils.dart';
 /* Custom configuration keys */
 const String replayCallbacksConfigKey = 'ReplayCallbacksKey';
 
+void _brazeLog(String message, {BrazeLogLevel level = BrazeLogLevel.debug}) {
+  if (level < BrazePlugin.logLevel) return;
+  final customLogger = BrazePlugin.logger;
+  if (customLogger != null) {
+    customLogger(message, level);
+  } else {
+    log(message, level: level.value, time: DateTime.now(), name: 'BrazeFlutterSDK');
+  }
+}
+
 class BrazePlugin {
   static const MethodChannel _channel = const MethodChannel('braze_plugin');
+
+  static BrazeLogLevel _logLevel = BrazeLogLevel.info;
+
+  /// Log level for Braze SDK logs.
+  /// Defaults to [BrazeLogLevel.info], which suppresses debug logs.
+  /// This log level overrides the log level set in the native layer by default.
+  static BrazeLogLevel get logLevel => _logLevel;
+  static set logLevel(BrazeLogLevel level) {
+    _logLevel = level;
+    _syncLogLevel();
+    _brazeLog('Braze logLevel set to $level.', level: BrazeLogLevel.info);
+  }
+
+  /// Sends the current threshold and full enum mapping to the native layer.
+  /// Dart owns all numeric level values; native looks them up from this map.
+  static void _syncLogLevel() {
+    // Callers may set `logLevel` before `runApp()` (so logging is configured
+    // before any plugin work begins). `ensureInitialized` is idempotent and
+    // makes the method channel safe to invoke at that point.
+    WidgetsFlutterBinding.ensureInitialized();
+    _channel.invokeMethod('setLogLevel', {
+      'level': _logLevel.name,
+      'levelValues': {
+        for (final level in BrazeLogLevel.values) level.name: level.value,
+      },
+    });
+  }
+
+  /// Custom log handler. When set, replaces the default dart:developer log output.
+  /// Receives the log [message] and its [BrazeLogLevel].
+  static void Function(String message, BrazeLogLevel level)? logger;
+
   Map<String, bool>? _brazeCustomConfigs;
   Function(BrazeSdkAuthenticationError)? _brazeSdkAuthenticationErrorHandler;
 
@@ -83,6 +126,10 @@ class BrazePlugin {
 
     // Notify the native layer that the plugin is ready
     _setBrazePluginIsReady();
+
+    // Push the level→int enum mapping to native so it has the values before
+    // any Braze SDK log fires.
+    _syncLogLevel();
   }
 
   /// Subscribes to the stream of in-app messages and calls [onEvent] when it
@@ -90,8 +137,8 @@ class BrazePlugin {
   StreamSubscription subscribeToInAppMessages(
       void Function(BrazeInAppMessage) onEvent) {
     if (_replayCallbacksConfigEnabled() && _queuedInAppMessages.isNotEmpty) {
-      print(
-          "Replaying stream onEvent for previously queued Braze in-app messages.");
+      _brazeLog("Replaying stream onEvent for previously queued Braze in-app messages.",
+          level: BrazeLogLevel.debug);
       _queuedInAppMessages.forEach((message) => onEvent(message));
       _queuedInAppMessages.clear();
     }
@@ -106,8 +153,8 @@ class BrazePlugin {
   StreamSubscription subscribeToContentCards(
       void Function(List<BrazeContentCard>) onEvent) {
     if (_replayCallbacksConfigEnabled() && _queuedContentCards.isNotEmpty) {
-      print(
-          "Replaying stream onEvent for previously queued Braze content cards.");
+      _brazeLog("Replaying stream onEvent for previously queued Braze content cards.",
+          level: BrazeLogLevel.debug);
       onEvent(_queuedContentCards);
       _queuedContentCards.clear();
     }
@@ -122,7 +169,8 @@ class BrazePlugin {
   StreamSubscription subscribeToBanners(
       void Function(List<BrazeBanner>) onEvent) {
     if (_replayCallbacksConfigEnabled() && _queuedBanners.isNotEmpty) {
-      print("Replaying stream onEvent for previously queued BrazeBanners.");
+      _brazeLog("Replaying stream onEvent for previously queued BrazeBanners.",
+          level: BrazeLogLevel.debug);
       onEvent(_queuedBanners);
       _queuedBanners.clear();
     }
@@ -135,8 +183,8 @@ class BrazePlugin {
   StreamSubscription subscribeToPushNotificationEvents(
       void Function(BrazePushEvent) onEvent) {
     if (_replayCallbacksConfigEnabled() && _queuedPushEvents.isNotEmpty) {
-      print(
-          "Replaying stream onEvent for previously queued Braze push events.");
+      _brazeLog("Replaying stream onEvent for previously queued Braze push events.",
+          level: BrazeLogLevel.debug);
       _queuedPushEvents.forEach((pushEvent) => onEvent(pushEvent));
       _queuedPushEvents.clear();
     }
@@ -146,7 +194,7 @@ class BrazePlugin {
     return subscription;
   }
 
-  /// Sets a callback to receive in-app message data from Braze.
+  /// Sets a callback to receive SDK Authentication error data from Braze.
   void setBrazeSdkAuthenticationErrorCallback(
       Function(BrazeSdkAuthenticationError) callback) {
     _channel.invokeMethod('setSdkAuthenticationDelegate');
@@ -238,9 +286,9 @@ class BrazePlugin {
     try {
       final result =
           await _channel.invokeMethod('requestBannersRefresh', params);
-      print('Success: $result');
+      _brazeLog('Success: $result', level: BrazeLogLevel.debug);
     } catch (error) {
-      print('Failure: $error');
+      _brazeLog('Failure: $error', level: BrazeLogLevel.error);
     }
   }
 
@@ -374,7 +422,7 @@ class BrazePlugin {
     _channel.invokeMethod('removeFromCustomAttributeArray', params);
   }
 
-  /// Sets a string typed custom attribute.
+  /// Sets a nested custom attribute from a Map value.
   void setNestedCustomUserAttribute(String key, Map<String, dynamic> value,
       [bool merge = false]) {
     final Map<String, dynamic> params = <String, dynamic>{
@@ -393,7 +441,7 @@ class BrazePlugin {
     _channel.invokeMethod('setCustomUserAttributeArrayOfStrings', params);
   }
 
-  /// Sets a string typed custom attribute.
+  /// Sets a custom attribute from a list of Map objects.
   void setCustomUserAttributeArrayOfObjects(
       String key, List<Map<String, dynamic>> value) {
     final Map<String, dynamic> params = <String, dynamic>{
@@ -793,15 +841,16 @@ class BrazePlugin {
         final Map<dynamic, dynamic> argumentsMap = call.arguments;
         String? inAppMessageString = argumentsMap['inAppMessage'];
         if (inAppMessageString == null) {
-          print("Invalid input. Missing value for key 'inAppMessage'.");
+          _brazeLog("Invalid input. Missing value for key 'inAppMessage'.",
+              level: BrazeLogLevel.error);
           return Future<void>.value();
         }
         final inAppMessage = BrazeInAppMessage(inAppMessageString);
         if (inAppMessageStreamController.hasListener) {
           inAppMessageStreamController.add(inAppMessage);
         } else {
-          print(
-              "Braze in-app message subscription not present. Adding to queue.");
+          _brazeLog("Braze in-app message subscription not present. Adding to queue.",
+              level: BrazeLogLevel.debug);
           _queuedInAppMessages.add(inAppMessage);
         }
 
@@ -817,8 +866,8 @@ class BrazePlugin {
         if (contentCardsStreamController.hasListener) {
           contentCardsStreamController.add(brazeCards);
         } else {
-          print(
-              "Braze content card subscription not present. Removing any queued cards and adding only the recent refresh.");
+          _brazeLog("Braze content card subscription not present. Removing any queued cards and adding only the recent refresh.",
+              level: BrazeLogLevel.debug);
           _queuedContentCards.clear();
           _queuedContentCards.addAll(brazeCards);
         }
@@ -834,20 +883,21 @@ class BrazePlugin {
         if (bannersStreamController.hasListener) {
           bannersStreamController.add(brazeBanners);
         } else {
-          print(
-              "Braze banner subscription not present. Removing any queued banners and adding only the recent refresh.");
+          _brazeLog("Braze banner subscription not present. Removing any queued banners and adding only the recent refresh.",
+              level: BrazeLogLevel.debug);
           _queuedBanners.clear();
           _queuedBanners.addAll(brazeBanners);
         }
-        print(
-            "Received banner placementIds: ${brazeBanners.map((banner) => banner.placementId.toString()).join(', ')}.");
+        _brazeLog("Received banner placementIds: ${brazeBanners.map((banner) => banner.placementId.toString()).join(', ')}.",
+            level: BrazeLogLevel.debug);
         return Future<void>.value();
 
       case "handleBrazePushNotificationEvent":
         final Map<dynamic, dynamic> argumentsMap = call.arguments;
         String? pushEventString = argumentsMap['pushEvent'];
         if (pushEventString == null) {
-          print("Invalid input. Missing value for key 'pushEvent'.");
+          _brazeLog("Invalid input. Missing value for key 'pushEvent'.",
+              level: BrazeLogLevel.error);
           return Future<void>.value();
         }
         final pushEvent = BrazePushEvent(pushEventString);
@@ -855,8 +905,8 @@ class BrazePlugin {
         if (pushEventStreamController.hasListener) {
           pushEventStreamController.add(pushEvent);
         } else {
-          print(
-              "Braze push notification event subscription not present. Adding to queue.");
+          _brazeLog("Braze push notification event subscription not present. Adding to queue.",
+              level: BrazeLogLevel.debug);
           _queuedPushEvents.add(pushEvent);
         }
 
@@ -872,8 +922,8 @@ class BrazePlugin {
         if (featureFlagsStreamController.hasListener) {
           featureFlagsStreamController.add(brazeFeatureFlags);
         } else {
-          print(
-              "Braze feature flags subscription not present. Removing any queued flags and adding only the recent refresh.");
+          _brazeLog("Braze feature flags subscription not present. Removing any queued flags and adding only the recent refresh.",
+              level: BrazeLogLevel.debug);
           _queuedFeatureFlags.clear();
           _queuedFeatureFlags.addAll(brazeFeatureFlags);
         }
@@ -885,8 +935,8 @@ class BrazePlugin {
         String? sdkAuthenticationErrorString =
             argumentsMap['sdkAuthenticationError'];
         if (sdkAuthenticationErrorString == null) {
-          print(
-              "Invalid input. Missing value for key 'sdkAuthenticationError'.");
+          _brazeLog("Invalid input. Missing value for key 'sdkAuthenticationError'.",
+              level: BrazeLogLevel.error);
           return Future<void>.value();
         }
 
@@ -895,12 +945,21 @@ class BrazePlugin {
         if (_brazeSdkAuthenticationErrorHandler != null) {
           _brazeSdkAuthenticationErrorHandler!(sdkAuthenticationError);
         } else {
-          print("Braze SDK Authentication error callback not present.");
+          _brazeLog("Braze SDK Authentication error callback not present.",
+              level: BrazeLogLevel.debug);
         }
         return Future<void>.value();
 
+      case "handleBrazeLog":
+        final Map<dynamic, dynamic> argumentsMap = call.arguments;
+        final String message = argumentsMap['message'] ?? '';
+        final int level = argumentsMap['level'] ?? 500;
+        _brazeLog(message, level: BrazeLogLevel.fromValue(level));
+        return Future<void>.value();
+
       default:
-        print("Unknown method ${call.method} called. Doing nothing.");
+        _brazeLog("Unknown method ${call.method} called. Doing nothing.",
+            level: BrazeLogLevel.error);
         return Future<void>.value();
     }
   }
@@ -910,6 +969,33 @@ class BrazePlugin {
   bool _replayCallbacksConfigEnabled() {
     return _brazeCustomConfigs?[replayCallbacksConfigKey] == true;
   }
+}
+
+/// Log levels for the Braze Flutter SDK.
+/// [value] mirrors dart:developer integer levels and is the wire format
+/// sent to the native layer.
+enum BrazeLogLevel implements Comparable<BrazeLogLevel> {
+  debug(500),
+  info(800),
+  error(1000);
+
+  const BrazeLogLevel(this.value);
+
+  final int value;
+
+  static BrazeLogLevel fromValue(int value) {
+    if (value >= error.value) return error;
+    if (value >= info.value) return info;
+    return debug;
+  }
+
+  @override
+  int compareTo(BrazeLogLevel other) => value.compareTo(other.value);
+
+  bool operator <(BrazeLogLevel other) => value < other.value;
+  bool operator <=(BrazeLogLevel other) => value <= other.value;
+  bool operator >(BrazeLogLevel other) => value > other.value;
+  bool operator >=(BrazeLogLevel other) => value >= other.value;
 }
 
 enum SubscriptionType { subscribed, unsubscribed, opted_in }
@@ -1310,7 +1396,7 @@ class BrazePushEvent {
   /// Notification badge count
   int? badgeCount;
 
-  /// In-app message body click action
+  /// Unix timestamp of the notification event
   int timestamp = -1;
 
   /// Specifies whether the payload was received silently.
@@ -1624,7 +1710,8 @@ class _BrazeBannerViewState extends State<BrazeBannerView>
   /// Resizes the banner container's height and notifies any relevant
   /// `onHeightChanged` handler.
   void resizeHeight(double height) {
-    print("Resizing height of banner `${widget.placementId}` to $height");
+    _brazeLog("Resizing height of banner `${widget.placementId}` to $height",
+        level: BrazeLogLevel.debug);
     // Always update the calculated height, even if the widget
     // is not mounted, so that the widget's state is always accurate.
     calculatedHeight = height;

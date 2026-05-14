@@ -25,37 +25,11 @@ import braze_plugin
         configuration.triggerMinimumTimeInterval = 0
         configuration.location.automaticLocationCollection = true
         configuration.location.brazeLocationProvider = BrazeLocationProvider()
-        configuration.logger.level = .debug
-
-        // Flush Braze SDK logs to the Dart layer.
-        // This is strictly for testing purposes to display logs in the sample app.
-        configuration.logger.print = { [weak controller] logString, level in
-          if let controller {
-            let brazeLogChannel = FlutterMethodChannel(
-              name: "brazeLogChannel", binaryMessenger: controller.binaryMessenger)
-            var logLevel = "debug"
-            switch level {
-            case .debug:
-              logLevel = "debug"
-            case .info:
-              logLevel = "info"
-            case .error:
-              logLevel = "error"
-            case .disabled:
-              logLevel = "disabled"
-            @unknown default:
-              logLevel = "debug"
-            }
-            let arguments = ["logString": logString, "level": logLevel]
-            DispatchQueue.main.async {
-              brazeLogChannel.invokeMethod("printLog", arguments: arguments)
-            }
-          }
-          return true
-        }
 
         configuration.push.appGroup = "group.com.braze.flutterPluginExample.PushStories"
         configuration.push.automation = true
+
+        // configuration.logger.level is set in the Dart layer
       },
       postInitialization: { braze in
         // Use this closure to customize the Braze instance after creation.

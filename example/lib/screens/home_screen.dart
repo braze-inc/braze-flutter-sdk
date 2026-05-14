@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io' show Platform;
 
 import 'package:braze_plugin/braze_plugin.dart';
@@ -36,6 +37,19 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     braze = BrazePlugin(customConfigs: {replayCallbacksConfigKey: true});
+
+    BrazePlugin.logger = (message, level) {
+      final String levelString;
+      if (level >= BrazeLogLevel.error) {
+        levelString = 'error';
+      } else if (level >= BrazeLogLevel.info) {
+        levelString = 'info';
+      } else {
+        levelString = 'debug';
+      }
+      log(message, level: level.value, time: DateTime.now(), name: 'BrazeFlutterSDK');
+      LogConsole.addLog(message, levelString);
+    };
 
     if (Platform.isAndroid) {
       braze.initialize(

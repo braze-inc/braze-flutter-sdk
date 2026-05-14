@@ -4,6 +4,9 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import androidx.annotation.RestrictTo
 import com.braze.Braze
 import com.braze.BrazeUser
@@ -23,6 +26,7 @@ import com.braze.models.inappmessage.IInAppMessage
 import com.braze.models.inappmessage.IInAppMessageImmersive
 import com.braze.models.outgoing.AttributionData
 import com.braze.models.outgoing.BrazeProperties
+import com.braze.support.BrazeLogger
 import com.braze.support.BrazeLogger.Priority.I
 import com.braze.support.BrazeLogger.Priority.V
 import com.braze.support.BrazeLogger.Priority.W
@@ -65,6 +69,24 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
         this.channel = channel
         activePlugins.add(this)
 
+        // Both logLevel and onLoggedCallback are set here. Any BrazeLogger configuration
+        // the host app set before engine attachment (e.g. in Application.onCreate) will be
+        // overwritten. To adjust the log level after this point, call `setLogLevel` from Dart.
+        BrazeLogger.logLevel = Log.INFO
+        BrazeLogger.onLoggedCallback = { priority, message, _ ->
+            val levelName = when (priority) {
+                BrazeLogger.Priority.V, BrazeLogger.Priority.D -> "debug"
+                BrazeLogger.Priority.I, BrazeLogger.Priority.W -> "info"
+                BrazeLogger.Priority.E -> "error"
+            }
+            val dartLevel = dartLog.values[levelName]
+            if (dartLevel != null && dartLevel >= dartLog.minimum) {
+                Handler(Looper.getMainLooper()).post {
+                    channel.invokeMethod("handleBrazeLog", mapOf("message" to message, "level" to dartLevel))
+                }
+            }
+        }
+
         getBrazeInstance(context)
             .subscribeToSdkAuthenticationFailures { message: BrazeSdkAuthenticationErrorEvent ->
                 this.handleSdkAuthenticationError(message)
@@ -82,6 +104,9 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         activePlugins.remove(this)
         channel.setMethodCallHandler(null)
+        if (activePlugins.isEmpty()) {
+            BrazeLogger.onLoggedCallback = null
+        }
     }
 
     // --
@@ -205,6 +230,19 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 "setBrazePluginIsReady" -> {
                     isBrazePluginIsReady = true
                     reprocessPendingPushEvents()
+                }
+
+                "setLogLevel" -> {
+                    val levelName = call.argument<String>("level") ?: return
+
+                    @Suppress("UNCHECKED_CAST")
+                    val levelValues = call.argument<Map<String, Int>>("levelValues") ?: return
+                    dartLog = DartLogState.create(levelName, levelValues) ?: return
+                    BrazeLogger.logLevel = when (levelName) {
+                        "error" -> Log.ERROR
+                        "info" -> Log.INFO
+                        else -> Log.DEBUG
+                    }
                 }
 
                 "requestContentCardsRefresh" -> {
@@ -840,6 +878,30 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
     }
 
     companion object {
+        // Snapshot of the Dart-side log configuration mirrored on the native side.
+        // The Dart layer is the single source of truth; native receives updates via
+        // setLogLevel and uses them for both threshold filtering and forwarding.
+        //
+        // `minimum` is derived from `values[name]` at construction; the factory enforces
+        // that invariant so call sites can't desync the pair.
+        private class DartLogState private constructor(
+            val values: Map<String, Int>,
+            val minimum: Int,
+        ) {
+            companion object {
+                // Sentinel default: empty mapping, Int.MAX_VALUE minimum so logs are
+                // dropped until Dart syncs the real mapping via setLogLevel.
+                val initial = DartLogState(emptyMap(), Int.MAX_VALUE)
+
+                fun create(name: String, values: Map<String, Int>): DartLogState? {
+                    val minimum = values[name] ?: return null
+                    return DartLogState(values, minimum)
+                }
+            }
+        }
+
+        private var dartLog: DartLogState = DartLogState.initial
+
         /**
          * Contains all plugins that have been initialized and are attached to a Flutter engine.
          */
@@ -848,7 +910,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
         /**
          * Contains all push events that have been received before the plugin was initialized.
          */
-        var pendingPushEvents = mutableListOf<BrazePushEvent>()
+        var pendingPushEvents = mutableListOf<BrazePushEvent?>()
 
         /**
          * Indicates if the Dart layer has finished initializing
@@ -957,13 +1019,16 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
          * If there are no active Braze Plugins, it stores the event for later processing.
          */
         @JvmStatic
-        fun processPushNotificationEvent(event: BrazePushEvent) {
+        fun processPushNotificationEvent(event: BrazePushEvent?) {
+            if (event == null) {
+                brazelog(W) { "Received null push event, ignoring." }
+                return
+            }
             if (activePlugins.isEmpty() || !isBrazePluginIsReady) {
                 brazelog(W) {
                     "There are no active Braze Plugins. Not calling " +
                         "'handleBrazePushNotificationEvent'. Storing the event for later processing."
                 }
-                // Store the event for later processing.
                 pendingPushEvents.add(event)
                 return
             }
@@ -983,8 +1048,15 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 return
             }
 
-            pendingPushEvents.forEach { handlePushEvent(it) }
+            val eventsToProcess = pendingPushEvents.toList()
             pendingPushEvents.clear()
+            for (event in eventsToProcess) {
+                if (event != null) {
+                    handlePushEvent(event)
+                } else {
+                    brazelog(W) { "Skipping null pending push event during reprocessing." }
+                }
+            }
         }
 
         /**

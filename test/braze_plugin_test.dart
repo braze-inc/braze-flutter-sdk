@@ -38,6 +38,10 @@ void main() {
       if (!wasInitialized) {
         throw Exception('Plugin not initialized');
       }
+      // Plugin lifecycle calls — not part of the public API surface under test.
+      if (methodCall.method == 'setLogLevel') {
+        return null;
+      }
       log.add(methodCall);
       // If needed to mock return values:
       switch (methodCall.method) {

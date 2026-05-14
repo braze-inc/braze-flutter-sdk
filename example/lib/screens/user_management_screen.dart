@@ -24,6 +24,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   String _sdkStatus = '';
   String _pushStreamStatus = 'Disabled';
   String _iamStreamStatus = 'Disabled';
+  late BrazeLogLevel _currentLogLevel;
   StreamSubscription? _pushEventsSubscription;
   StreamSubscription? _inAppMessageSubscription;
 
@@ -37,9 +38,17 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   final _initApiKeyController = TextEditingController();
   final _initEndpointController = TextEditingController();
 
+  void _setLogLevel(BrazeLogLevel level) {
+    BrazePlugin.logLevel = level;
+    braze = BrazePlugin(customConfigs: {replayCallbacksConfigKey: true});
+    braze.initialize(_initApiKeyController.text, _initEndpointController.text);
+    setState(() => _currentLogLevel = level);
+  }
+
   @override
   void initState() {
     super.initState();
+    _currentLogLevel = BrazePlugin.logLevel;
     if (Platform.isAndroid) {
       _initApiKeyController.text = defaultAndroidApiKey;
     } else if (Platform.isIOS) {
@@ -569,6 +578,61 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                       );
                     },
                   ),
+              ],
+            ),
+            BrazeAppCard(
+              title: 'Logger',
+              children: [
+                StatusRow(
+                  label: 'Log Level',
+                  value: _currentLogLevel == BrazeLogLevel.debug
+                      ? 'Debug'
+                      : _currentLogLevel == BrazeLogLevel.info
+                          ? 'Info'
+                          : 'Error',
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: BrazeAppButton(
+                        title: 'Debug',
+                        variant: _currentLogLevel == BrazeLogLevel.debug
+                            ? BrazeButtonVariant.primary
+                            : BrazeButtonVariant.secondary,
+                        onPressed: () {
+                          _setLogLevel(BrazeLogLevel.debug);
+                          context.showBrazeAppSnackbar('Log level: Debug');
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: BrazeAppButton(
+                        title: 'Info',
+                        variant: _currentLogLevel == BrazeLogLevel.info
+                            ? BrazeButtonVariant.primary
+                            : BrazeButtonVariant.secondary,
+                        onPressed: () {
+                          _setLogLevel(BrazeLogLevel.info);
+                          context.showBrazeAppSnackbar('Log level: Info');
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: BrazeAppButton(
+                        title: 'Error',
+                        variant: _currentLogLevel == BrazeLogLevel.error
+                            ? BrazeButtonVariant.primary
+                            : BrazeButtonVariant.secondary,
+                        onPressed: () {
+                          _setLogLevel(BrazeLogLevel.error);
+                          context.showBrazeAppSnackbar('Log level: Error');
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
             BrazeAppCard(
