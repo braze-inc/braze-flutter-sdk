@@ -1,3 +1,36 @@
+## 19.0.0
+
+##### Breaking
+- The minimum supported Dart version is `2.17.0`.
+- SDK logging is now controlled on the Dart layer.
+- Updates the native Android bridge [from Braze Android SDK 41.1.1 to 42.2.0](https://github.com/braze-inc/braze-android-sdk/compare/v41.1.1...v42.2.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+
+##### Fixed
+- Fixes a crash on Android where `setBrazePluginIsReady` could throw a `NullPointerException` when replaying pending push events containing null entries.
+  - See [#129](https://github.com/braze-inc/braze-flutter-sdk/issues/129).
+
+##### Added
+- Flutter-specific and native platform logs now print to the DevTools logging view.
+  - Logs use `dart:developer`'s `log()` function under the name `BrazeFlutterSDK`, making them visible in the Flutter DevTools **Logging** tab.
+  - Adds `BrazeLogLevel` with three levels:
+    - `BrazeLogLevel.debug`
+    - `BrazeLogLevel.info`
+    - `BrazeLogLevel.error`
+  - Adds `BrazePlugin.logLevel` to filter out logs below a given level. 
+    - Accepts a `BrazeLogLevel` or a raw `dart:developer` integer. 
+    - Defaults to `BrazeLogLevel.info`, which suppresses debug logs.
+  - Adds `BrazePlugin.logger`, an optional callback.
+    - When set, it replaces the default `dart:developer` output so you can route logs to your own logging infrastructure.
+  - On Android:
+    - The plugin now configures the native `BrazeLogger` when the Flutter engine attaches.
+    - Any log level or log callback set in your `Application.onCreate` will be overwritten.
+    - Use `BrazePlugin.logLevel` from Dart to control the log level instead.
+  - On iOS:
+    - If your `AppDelegate` already sets a custom `configuration.logger.print` closure, the plugin will not forward native logs to Dart and `BrazePlugin.logLevel` will only filter Dart-side logs.
+    - Otherwise, any log level set in `configuration.logger.level` will be overriden.
+    - `BrazePlugin.logLevel` will only take effect after `BrazePlugin.initialize(apiKey, endpoint)` is called and a new Braze instance is created.
+- Updates the native iOS bridge [from Braze Swift SDK 14.0.4 to 14.1.0](https://github.com/braze-inc/braze-swift-sdk/compare/14.0.4...14.1.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+
 ## 18.0.1
 
 ##### Fixed
@@ -6,7 +39,7 @@
 
 ## 18.0.0
 
-#### Breaking
+##### Breaking
 - Streamlines the iOS integration process to not require writing native code to forward content cards, banners, feature flags, in-app messages, or push notification updates from the native SDK. 
   - The SDK will now automatically set up these subscriptions when the Braze instance is created.
   - This matches the existing behavior on Android.

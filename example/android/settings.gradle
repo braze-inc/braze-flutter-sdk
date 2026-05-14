@@ -20,6 +20,21 @@ plugins {
     id "dev.flutter.flutter-plugin-loader" version "1.0.0" // apply true
     id "com.android.application" version "8.7.1" apply false
     id "org.jetbrains.kotlin.android" version "2.1.20" apply false
+    id "com.github.burrunan.s3-build-cache" version "1.8.2"
+}
+
+buildCache {
+    local {
+        enabled = true
+    }
+    remote(com.github.burrunan.s3cache.AwsS3BuildCache) {
+        region = System.getenv("AWS_REGION") ?: "us-east-1"
+        bucket = System.getenv("S3_BUILD_CACHE_BUCKET") ?: "braze-buildkite-caches"
+        prefix = System.getenv("S3_BUILD_CACHE_PREFIX") ?: "flutter-sdk/gradle-build-cache/"
+        lookupDefaultAwsCredentials = true
+        enabled = System.getenv("BUILDKITE") != null || System.getenv("S3_BUILD_CACHE_ENABLED") == "true"
+        push = System.getenv("BUILDKITE") != null
+    }
 }
 
 include ":app"

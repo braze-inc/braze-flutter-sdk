@@ -78,12 +78,12 @@ See [the Braze Developer Guide](https://www.braze.com/docs/developer_guide/sdk_i
 
 | Tool                                                         | Minimum Supported Version |
 | :----------------------------------------------------------- | :------------------------ |
-| Dart                                                         | 2.15.0+                   |
+| Dart                                                         | 2.17.0+                   |
 | Flutter (integration via CocoaPods)                          | 1.10.0+                   |
 | Flutter (integration via CocoaPods or Swift Package Manager) | 3.24.0+                   |
 | iOS Deployment Target                                        | 12.0+                     |
 
-This SDK additionally inherits the requirements of its underlying Braze native SDKs. Be sure to also adhere to version support information defined in [braze-inc/braze-android-sdk](github.com/braze-inc/braze-android-sdk) and [braze-inc/braze-swift-sdk](github.com/braze-inc/braze-swift-sdk)
+This SDK additionally inherits the requirements of its underlying Braze native SDKs. Be sure to also adhere to version support information defined in [braze-inc/braze-android-sdk](https://github.com/braze-inc/braze-android-sdk) and [braze-inc/braze-swift-sdk](https://github.com/braze-inc/braze-swift-sdk)
 
 ## Sample App
 

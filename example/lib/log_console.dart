@@ -1,8 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 /// Widget to display Braze SDK logs in a console-like view.
 class LogConsole extends StatefulWidget {
+  static final _controller =
+      StreamController<Map<String, String>>.broadcast();
+
+  /// Feed a log entry to all mounted [LogConsole] instances.
+  static void addLog(String message, String level) {
+    _controller.add({'logString': message, 'level': level});
+  }
+
   final double height;
   final int maxLines;
   final TextStyle logTextStyle;
@@ -24,6 +33,7 @@ class _LogConsoleState extends State<LogConsole> {
   final List<LogEntry> _logs = [];
   final ScrollController _scrollController = ScrollController();
   bool _showScrollToBottomButton = false;
+  StreamSubscription<Map<String, String>>? _logSubscription;
 
   @override
   void initState() {
@@ -31,33 +41,24 @@ class _LogConsoleState extends State<LogConsole> {
 
     _scrollController.addListener(_scrollListener);
 
-    // Initialize the method channel handler.
-    MethodChannel('brazeLogChannel')
-        .setMethodCallHandler((MethodCall call) async {
+    _logSubscription = LogConsole._controller.stream.listen((data) {
+      final String? logString = data['logString'];
+      final String? logLevel = data['level'];
+      if (logString == null) return;
+
       setState(() {
-        final Map<dynamic, dynamic> argumentsMap = call.arguments;
-        String? logString = argumentsMap['logString'];
-        String? logLevel = argumentsMap['level'];
-        if (logString != null) {
-          _logs.add(LogEntry(content: logString));
-
-          if (logLevel == 'error') {
-            ScaffoldMessenger.of(context).showSnackBar(new SnackBar(
-              content: new Text(logString),
-            ));
-          }
+        _logs.add(LogEntry(content: logString));
+        if (logLevel == 'error') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(logString)),
+          );
         }
-
-        // Keep only the latest maxLines logs.
         if (_logs.length > widget.maxLines) {
           _logs.removeAt(0);
         }
       });
 
-      // Always scroll to bottom on new log.
       _scrollToBottom();
-
-      return null;
     });
   }
 
@@ -99,6 +100,7 @@ class _LogConsoleState extends State<LogConsole> {
 
   @override
   void dispose() {
+    _logSubscription?.cancel();
     _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
     super.dispose();

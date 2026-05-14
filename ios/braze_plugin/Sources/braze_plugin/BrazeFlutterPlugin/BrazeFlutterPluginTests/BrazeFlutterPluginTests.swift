@@ -2,7 +2,7 @@ import XCTest
 import BrazeKit
 
 final class BrazeFlutterPluginTests: XCTestCase {
-  
+
   override class func setUp() {
     super.setUp()
   }
@@ -118,5 +118,56 @@ final class BrazeFlutterPluginTests: XCTestCase {
     let braze = Braze(configuration: .init(apiKey: "test-key", endpoint: "test-endpoint"))
     postInitBlock(braze)
     XCTAssertTrue(receivedBraze === braze)
+  }
+
+  // MARK: - Logging Tests
+
+  // Native maps Braze.Configuration.Logger.Level to a Dart BrazeLogLevel case name
+  // (string). Numeric level values are owned by the Dart enum and looked up via
+  // the levelValues map provided to native via setLogLevel.
+  private func levelName(for level: Braze.Configuration.Logger.Level) -> String? {
+    switch level {
+    case .debug: return "debug"
+    case .info: return "info"
+    case .error: return "error"
+    case .disabled: return nil
+    @unknown default: return nil
+    }
+  }
+
+  func testLevelName_debugLevel_mapsToDebugCaseName() {
+    XCTAssertEqual(levelName(for: .debug), "debug")
+  }
+
+  func testLevelName_infoLevel_mapsToInfoCaseName() {
+    XCTAssertEqual(levelName(for: .info), "info")
+  }
+
+  func testLevelName_errorLevel_mapsToErrorCaseName() {
+    XCTAssertEqual(levelName(for: .error), "error")
+  }
+
+  func testLevelName_disabledLevel_isNil() {
+    XCTAssertNil(levelName(for: .disabled))
+  }
+
+  func testLoggerPrint_belowMinimumDartLevel_isFiltered() {
+    let dartLevelValues = ["debug": 500, "info": 800, "error": 1000]
+    let minimumDartLevel = dartLevelValues["info"]!  // threshold = INFO
+
+    let dartLevel = levelName(for: .debug).flatMap { dartLevelValues[$0] }
+    let shouldForward = (dartLevel ?? Int.min) >= minimumDartLevel
+
+    XCTAssertFalse(shouldForward, "Debug should be filtered when threshold is INFO")
+  }
+
+  func testLoggerPrint_atMinimumDartLevel_isForwarded() {
+    let dartLevelValues = ["debug": 500, "info": 800, "error": 1000]
+    let minimumDartLevel = dartLevelValues["info"]!  // threshold = INFO
+
+    let dartLevel = levelName(for: .info).flatMap { dartLevelValues[$0] }
+    let shouldForward = (dartLevel ?? Int.min) >= minimumDartLevel
+
+    XCTAssertTrue(shouldForward, "Info should be forwarded when threshold is INFO")
   }
 }

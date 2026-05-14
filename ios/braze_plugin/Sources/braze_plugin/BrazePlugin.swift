@@ -10,6 +10,32 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
   public static let shared: BrazePlugin = .init()
 
   private static var bannerViewFactory: BrazeBannerViewFactory? = nil
+
+  /// Snapshot of the Dart-side log configuration mirrored on the native side.
+  /// The Dart layer is the single source of truth; native receives updates via
+  /// `setLogLevel` and uses them for both threshold filtering and forwarding.
+  struct DartLogState {
+    let name: String
+    let values: [String: Int]
+    let minimum: Int
+
+    /// Sentinel default: empty mapping, `Int.max` minimum so logs are dropped
+    /// until Dart syncs the real mapping via `setLogLevel`.
+    static let initial = DartLogState(name: "info", values: [:], minimum: .max)
+
+    private init(name: String, values: [String: Int], minimum: Int) {
+      self.name = name
+      self.values = values
+      self.minimum = minimum
+    }
+
+    init?(name: String, values: [String: Int]) {
+      guard let minimum = values[name] else { return nil }
+      self.init(name: name, values: values, minimum: minimum)
+    }
+  }
+
+  static var dartLog: DartLogState = .initial
   
   /// Stores the configuration closure to be applied when the Dart `initialize` method is called.
   private static var configure: ((Braze.Configuration) -> Void)?
@@ -46,7 +72,11 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     let argsDescription = String(describing: call.arguments)
 
-    if brazeClient == nil && call.method != "initialize" {
+    // Methods that configure or signal plugin lifecycle and must run before
+    // `initialize` — `setLogLevel` in particular has to land before the Braze
+    // instance is created so its `configuration.logger.level` is correct.
+    let preInitMethods: Set<String> = ["initialize", "setLogLevel", "setBrazePluginIsReady"]
+    if brazeClient == nil && !preInitMethods.contains(call.method) {
       print("""
         [BrazePlugin] Braze SDK is not initialized. \
         Ignoring '\(call.method)'. \
@@ -113,6 +143,15 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
 
     case "setBrazePluginIsReady":
       break  // This is an Android only feature, do nothing.
+
+    case "setLogLevel":
+      if let args = call.arguments as? [String: Any],
+         let levelName = args["level"] as? String,
+         let levelValues = args["levelValues"] as? [String: Int],
+         let state = DartLogState(name: levelName, values: levelValues) {
+        BrazePlugin.dartLog = state
+      }
+      result(nil)
 
     case "getDeviceId":
       result(brazeClient?.braze.deviceId ?? "")
@@ -920,6 +959,40 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
     return pushEventJson
   }
 
+  /// Resolves the BrazeKit logger level from the current Dart threshold name.
+  private class func brazeKitLogLevel() -> Braze.Configuration.Logger.Level {
+    switch BrazePlugin.dartLog.name {
+    case "error": return .error
+    case "info": return .info
+    default: return .debug
+    }
+  }
+
+  /// Default `configuration.logger.print` closure: classifies each BrazeKit log
+  /// against the Dart threshold and forwards passing messages to Dart via
+  /// `handleBrazeLog`. Returns `false` so BrazeKit still emits to its own sink.
+  private class func defaultPrintClosure() -> (String, Braze.Configuration.Logger.Level) -> Bool {
+    return { message, level in
+      let levelName: String
+      switch level {
+      case .debug: levelName = "debug"
+      case .info: levelName = "info"
+      case .error: levelName = "error"
+      case .disabled: return false
+      @unknown default: return false
+      }
+      guard let dartLevel = BrazePlugin.dartLog.values[levelName],
+            dartLevel >= BrazePlugin.dartLog.minimum else { return false }
+      let arguments: [String: Any] = ["message": message, "level": dartLevel]
+      DispatchQueue.main.async {
+        for channel in channels {
+          channel.invokeMethod("handleBrazeLog", arguments: arguments)
+        }
+      }
+      return false
+    }
+  }
+
   // MARK: - Public methods
 
   /// Stores configurations to be applied when the Braze instance is initialized
@@ -966,6 +1039,19 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
     // Create a new Braze instance.
     configuration.api.addSDKMetadata([.flutter])
     configuration.api.sdkFlavor = .flutter
+    // If the AppDelegate provides a custom `configuration.logger.print` closure, the plugin
+    // defers to it entirely — no logs are forwarded to Dart and `BrazePlugin.dartLog.minimum`
+    // only filters Dart-side output.
+    //
+    // If no custom `print` closure is set, the plugin owns the logger: it overwrites any
+    // `configuration.logger.level` set by the app and installs a `print` closure that
+    // forwards logs to Dart via the `handleBrazeLog` method channel. This means a
+    // `configuration.logger.level` assignment in the host app's AppDelegate is silently
+    // ignored unless a custom `print` closure is also provided.
+    if configuration.logger.print == nil {
+      configuration.logger.level = brazeKitLogLevel()
+      configuration.logger.print = defaultPrintClosure()
+    }
     let braze = Braze(configuration: configuration)
     let brazeClient = BrazeFlutterClient(braze: braze)
     BrazePlugin.shared.brazeClient = brazeClient

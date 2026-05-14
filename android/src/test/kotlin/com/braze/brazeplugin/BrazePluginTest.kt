@@ -2,34 +2,48 @@ package com.braze.brazeplugin
 
 import android.app.Activity
 import android.content.Context
+import android.os.Bundle
+import android.os.Looper
+import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import com.braze.Braze
 import com.braze.BrazeUser
+import com.braze.enums.BrazePushEventType
+import com.braze.events.BrazePushEvent
 import com.braze.events.SimpleValueCallback
 import com.braze.models.FeatureFlag
 import com.braze.models.inappmessage.IInAppMessage
 import com.braze.models.inappmessage.IInAppMessageImmersive
 import com.braze.models.inappmessage.MessageButton
+import com.braze.support.BrazeLogger
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.common.StandardMethodCodec
 import io.flutter.plugin.platform.PlatformViewRegistry
 import org.json.JSONObject
 import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.clearInvocations
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verifyNoInteractions
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 
 @RunWith(RobolectricTestRunner::class)
 @Suppress("LargeClass")
@@ -1864,6 +1878,238 @@ class BrazePluginTest {
 
         // Then
         verify(mockMethodChannelResult).notImplemented()
+    }
+
+    @Test
+    fun whenProcessPushNotificationEvent_withNullEvent_doesNotCrashOrQueue() {
+        // Given: a null push event (possible via Java interop)
+        // When
+        BrazePlugin.processPushNotificationEvent(null)
+
+        // Then: no crash, and nothing was added to the pending queue
+        assert(BrazePlugin.pendingPushEvents.isEmpty())
+    }
+
+    @Test
+    fun whenReprocessPendingPushEvents_withNullEntries_doesNotCrash() {
+        // Given: null entries smuggled into the pending list via Java interop
+        @Suppress("UNCHECKED_CAST")
+        val listWithNulls = BrazePlugin.pendingPushEvents as MutableList<BrazePushEvent?>
+        listWithNulls.add(null)
+        listWithNulls.add(null)
+
+        // When: setBrazePluginIsReady triggers reprocessPendingPushEvents
+        val call = MethodCall("setBrazePluginIsReady", null)
+        brazePlugin.onMethodCall(call, mockMethodChannelResult)
+
+        // Then: no crash, and the pending list was cleared
+        assert(BrazePlugin.pendingPushEvents.isEmpty())
+    }
+
+    @Test
+    fun whenProcessPushNotificationEvent_withValidEvent_queuesWhenNotReady() {
+        // Given: plugin is not yet ready, and we have a valid push event
+        BrazePlugin.pendingPushEvents.clear()
+        val mockPushEvent: BrazePushEvent = mock()
+
+        // Temporarily clear active plugins to force queueing
+        BrazePlugin.activePlugins.clear()
+
+        // When
+        BrazePlugin.processPushNotificationEvent(mockPushEvent)
+
+        // Then: the event is queued
+        assert(BrazePlugin.pendingPushEvents.size == 1)
+        assert(BrazePlugin.pendingPushEvents[0] === mockPushEvent)
+    }
+
+    @Test
+    fun whenReprocessPendingPushEvents_withMixOfNullAndValidEvents_onlyProcessesValidEvents() {
+        // Given: a mix of null and valid events in the pending list
+        val mockPushEvent: BrazePushEvent = mock()
+        val mockPayload: com.braze.models.push.BrazeNotificationPayload = mock()
+        val mockExtras: Bundle = mock()
+
+        `when`(mockPushEvent.eventType).thenReturn(BrazePushEventType.NOTIFICATION_RECEIVED)
+        `when`(mockPushEvent.notificationPayload).thenReturn(mockPayload)
+        `when`(mockPayload.notificationExtras).thenReturn(mockExtras)
+        `when`(mockPayload.brazeExtras).thenReturn(mockExtras)
+
+        @Suppress("UNCHECKED_CAST")
+        val listWithNulls = BrazePlugin.pendingPushEvents as MutableList<BrazePushEvent?>
+        listWithNulls.add(null)
+        listWithNulls.add(mockPushEvent)
+        listWithNulls.add(null)
+
+        // When: setBrazePluginIsReady triggers reprocessPendingPushEvents
+        val call = MethodCall("setBrazePluginIsReady", null)
+        brazePlugin.onMethodCall(call, mockMethodChannelResult)
+
+        // Then: no crash, valid event was processed, and the list was cleared
+        assert(BrazePlugin.pendingPushEvents.isEmpty())
+        verify(mockPushEvent).eventType
+    }
+
+    // --
+    // Logging Tests
+    // --
+
+    private fun setLogLevelCall(levelName: String): MethodCall = MethodCall(
+        "setLogLevel",
+        mapOf(
+            "level" to levelName,
+            "levelValues" to mapOf("debug" to 500, "info" to 800, "error" to 1000),
+        ),
+    )
+
+    @Test
+    fun whenPluginInitialized_logCallbackIsSet() {
+        assertNotNull(BrazeLogger.onLoggedCallback)
+    }
+
+    @Test
+    fun whenSetLogLevel_withErrorLevel_setsBrazeLoggerToError() {
+        brazePlugin.onMethodCall(setLogLevelCall("error"), mockMethodChannelResult)
+        assertEquals(Log.ERROR, BrazeLogger.logLevel)
+    }
+
+    @Test
+    fun whenSetLogLevel_withInfoLevel_setsBrazeLoggerToInfo() {
+        brazePlugin.onMethodCall(setLogLevelCall("info"), mockMethodChannelResult)
+        assertEquals(Log.INFO, BrazeLogger.logLevel)
+    }
+
+    @Test
+    fun whenSetLogLevel_withDebugLevel_setsBrazeLoggerToDebug() {
+        brazePlugin.onMethodCall(setLogLevelCall("debug"), mockMethodChannelResult)
+        assertEquals(Log.DEBUG, BrazeLogger.logLevel)
+    }
+
+    @Test
+    fun whenOnLoggedCallback_withVerbosePriority_forwardsToDartAsDebug() {
+        brazePlugin.onMethodCall(setLogLevelCall("debug"), mockMethodChannelResult)
+        val callback = BrazeLogger.onLoggedCallback ?: error("Callback must be set after plugin init")
+        clearInvocations(mockBinaryMessenger)
+
+        callback(BrazeLogger.Priority.V, "verbose message", null)
+        shadowOf(Looper.getMainLooper()).idle()
+
+        val bufferCaptor = argumentCaptor<java.nio.ByteBuffer>()
+        verify(mockBinaryMessenger).send(eq("braze_plugin"), bufferCaptor.capture(), isNull())
+        bufferCaptor.firstValue.rewind()
+        val decoded = StandardMethodCodec.INSTANCE.decodeMethodCall(bufferCaptor.firstValue)
+        assertEquals("handleBrazeLog", decoded.method)
+        @Suppress("UNCHECKED_CAST")
+        val args = decoded.arguments as Map<String, Any>
+        assertEquals("verbose message", args["message"])
+        assertEquals(500, (args["level"] as Number).toInt())
+    }
+
+    @Test
+    fun whenOnLoggedCallback_withDebugPriority_forwardsToDartAsDebug() {
+        brazePlugin.onMethodCall(setLogLevelCall("debug"), mockMethodChannelResult)
+        val callback = BrazeLogger.onLoggedCallback ?: error("Callback must be set after plugin init")
+        clearInvocations(mockBinaryMessenger)
+
+        callback(BrazeLogger.Priority.D, "debug message", null)
+        shadowOf(Looper.getMainLooper()).idle()
+
+        val bufferCaptor = argumentCaptor<java.nio.ByteBuffer>()
+        verify(mockBinaryMessenger).send(eq("braze_plugin"), bufferCaptor.capture(), isNull())
+        bufferCaptor.firstValue.rewind()
+        val decoded = StandardMethodCodec.INSTANCE.decodeMethodCall(bufferCaptor.firstValue)
+
+        @Suppress("UNCHECKED_CAST")
+        val args = decoded.arguments as Map<String, Any>
+        assertEquals(500, (args["level"] as Number).toInt())
+    }
+
+    @Test
+    fun whenOnLoggedCallback_withInfoPriority_forwardsToDartAsInfo() {
+        brazePlugin.onMethodCall(setLogLevelCall("debug"), mockMethodChannelResult)
+        val callback = BrazeLogger.onLoggedCallback ?: error("Callback must be set after plugin init")
+        clearInvocations(mockBinaryMessenger)
+
+        callback(BrazeLogger.Priority.I, "info message", null)
+        shadowOf(Looper.getMainLooper()).idle()
+
+        val bufferCaptor = argumentCaptor<java.nio.ByteBuffer>()
+        verify(mockBinaryMessenger).send(eq("braze_plugin"), bufferCaptor.capture(), isNull())
+        bufferCaptor.firstValue.rewind()
+        val decoded = StandardMethodCodec.INSTANCE.decodeMethodCall(bufferCaptor.firstValue)
+
+        @Suppress("UNCHECKED_CAST")
+        val args = decoded.arguments as Map<String, Any>
+        assertEquals(800, (args["level"] as Number).toInt())
+    }
+
+    @Test
+    fun whenOnLoggedCallback_withWarningPriority_forwardsToDartAsInfo() {
+        brazePlugin.onMethodCall(setLogLevelCall("debug"), mockMethodChannelResult)
+        val callback = BrazeLogger.onLoggedCallback ?: error("Callback must be set after plugin init")
+        clearInvocations(mockBinaryMessenger)
+
+        callback(BrazeLogger.Priority.W, "warning message", null)
+        shadowOf(Looper.getMainLooper()).idle()
+
+        val bufferCaptor = argumentCaptor<java.nio.ByteBuffer>()
+        verify(mockBinaryMessenger).send(eq("braze_plugin"), bufferCaptor.capture(), isNull())
+        bufferCaptor.firstValue.rewind()
+        val decoded = StandardMethodCodec.INSTANCE.decodeMethodCall(bufferCaptor.firstValue)
+
+        @Suppress("UNCHECKED_CAST")
+        val args = decoded.arguments as Map<String, Any>
+        assertEquals(800, (args["level"] as Number).toInt())
+    }
+
+    @Test
+    fun whenOnLoggedCallback_withErrorPriority_forwardsToDartAsError() {
+        brazePlugin.onMethodCall(setLogLevelCall("debug"), mockMethodChannelResult)
+        val callback = BrazeLogger.onLoggedCallback ?: error("Callback must be set after plugin init")
+        clearInvocations(mockBinaryMessenger)
+
+        callback(BrazeLogger.Priority.E, "error message", null)
+        shadowOf(Looper.getMainLooper()).idle()
+
+        val bufferCaptor = argumentCaptor<java.nio.ByteBuffer>()
+        verify(mockBinaryMessenger).send(eq("braze_plugin"), bufferCaptor.capture(), isNull())
+        bufferCaptor.firstValue.rewind()
+        val decoded = StandardMethodCodec.INSTANCE.decodeMethodCall(bufferCaptor.firstValue)
+
+        @Suppress("UNCHECKED_CAST")
+        val args = decoded.arguments as Map<String, Any>
+        assertEquals(1000, (args["level"] as Number).toInt())
+    }
+
+    @Test
+    fun whenOnLoggedCallback_withLevelBelowMinimum_doesNotForwardToDart() {
+        // dartLog.minimum = 800 (INFO); V maps to 500, which is below the threshold
+        brazePlugin.onMethodCall(setLogLevelCall("info"), mockMethodChannelResult)
+        val callback = BrazeLogger.onLoggedCallback ?: error("Callback must be set after plugin init")
+        clearInvocations(mockBinaryMessenger)
+
+        callback(BrazeLogger.Priority.V, "verbose message", null)
+        shadowOf(Looper.getMainLooper()).idle()
+
+        verify(mockBinaryMessenger, never()).send(eq("braze_plugin"), any(), isNull())
+    }
+
+    @Test
+    fun whenOnDetachedFromEngine_withNoRemainingPlugins_clearsLogCallback() {
+        brazePlugin.onDetachedFromEngine(mockFlutterPluginBinding)
+        assertNull(BrazeLogger.onLoggedCallback)
+    }
+
+    @Test
+    fun whenOnDetachedFromEngine_withRemainingActivePlugin_preservesLogCallback() {
+        val secondPlugin = BrazePlugin()
+        secondPlugin.onAttachedToEngine(mockFlutterPluginBinding)
+
+        brazePlugin.onDetachedFromEngine(mockFlutterPluginBinding)
+
+        assertNotNull(BrazeLogger.onLoggedCallback)
+
+        secondPlugin.onDetachedFromEngine(mockFlutterPluginBinding)
     }
 
     /**
