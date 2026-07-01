@@ -10,6 +10,8 @@
 
 ## Quickstart
 
+The following snippets show the minimum configuration required to add the Braze Flutter SDK to your app.
+
 ```shell
 flutter pub add braze_plugin
 ```
@@ -72,23 +74,25 @@ _braze = new BrazePlugin();
 _braze.changeUser("Jane Doe");
 ```
 
-See [the Braze Developer Guide](https://www.braze.com/docs/developer_guide/sdk_integration/?sdktab=flutter) for advanced integration options.
+For more information about advanced integration options, see the [Braze Developer Guide](https://www.braze.com/docs/developer_guide/sdk_integration/?sdktab=flutter).
 
-## Version Support
+## Version support
 
-| Tool                                                         | Minimum Supported Version |
+The following table lists the minimum supported versions for tools used by the Braze Flutter SDK.
+
+| Tool                                                         | Minimum supported version |
 | :----------------------------------------------------------- | :------------------------ |
 | Dart                                                         | 2.17.0+                   |
 | Flutter (integration via CocoaPods)                          | 1.10.0+                   |
 | Flutter (integration via CocoaPods or Swift Package Manager) | 3.24.0+                   |
 | iOS Deployment Target                                        | 12.0+                     |
 
-This SDK additionally inherits the requirements of its underlying Braze native SDKs. Be sure to also adhere to version support information defined in [braze-inc/braze-android-sdk](https://github.com/braze-inc/braze-android-sdk) and [braze-inc/braze-swift-sdk](https://github.com/braze-inc/braze-swift-sdk)
+This SDK also inherits requirements from the underlying Braze native SDKs. For more information, see [braze-inc/braze-android-sdk](https://github.com/braze-inc/braze-android-sdk) and [braze-inc/braze-swift-sdk](https://github.com/braze-inc/braze-swift-sdk).
 
 ## Sample App
 
-The [`/example`](https://github.com/braze-inc/braze-flutter-sdk/tree/master/example) folder contains a sample app illustrating how to integrate and use this package's APIs.
+The [`/example`](https://github.com/braze-inc/braze-flutter-sdk/tree/master/example) folder contains a sample app that illustrates how to integrate and use this package's APIs.
 
 ## Contact
 
-If you have questions, please contact [support@braze.com](mailto:support@braze.com).
+For questions, contact Braze Technical Support for assistance.

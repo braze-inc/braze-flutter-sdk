@@ -47,6 +47,25 @@ internal class BrazeBannerView(
                 bannerUIHandler.sendResizeEvent(height, containerId)
             }
         }
+
+        bannerView.onDismissCallback = { snapshot ->
+            val dismissedPlacementId = snapshot.placementId
+            val stableKey = snapshot.stableKey
+            val trackingId = snapshot.trackingId
+            // Only forward the dismissal once all identifying fields are present.
+            if (!dismissedPlacementId.isNullOrBlank() &&
+                !stableKey.isNullOrBlank() &&
+                !trackingId.isNullOrBlank()
+            ) {
+                activity.runOnUiThread {
+                    bannerUIHandler.sendDismissEvent(
+                        placementId = dismissedPlacementId,
+                        stableKey = stableKey,
+                        trackingId = trackingId
+                    )
+                }
+            }
+        }
     }
 
     override fun getView(): View = bannerView

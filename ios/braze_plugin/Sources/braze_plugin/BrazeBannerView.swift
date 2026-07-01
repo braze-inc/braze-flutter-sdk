@@ -138,6 +138,22 @@ class BrazeBannerView: NSObject, FlutterPlatformView {
       }
     }
 
+    DispatchQueue.main.async {
+      bannerView.onDismiss = { [weak self] event in
+        guard let self else { return }
+        // Only forward the dismissal once all identifying fields are present.
+        guard let placementId = event.placementId, !placementId.isEmpty,
+          let stableKey = event.stableKey, !stableKey.isEmpty,
+          let trackingId = event.trackingId, !trackingId.isEmpty
+        else { return }
+        self._uiHandler.sendDismissEvent(
+          placementId: placementId,
+          stableKey: stableKey,
+          trackingId: trackingId
+        )
+      }
+    }
+
     // Flutter doesn't automatically resize when changing placements.
     // This allows us to create new native views with a fresh height.
     resizeView(height: 0)

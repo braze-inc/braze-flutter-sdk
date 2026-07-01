@@ -5,27 +5,15 @@ import 'package:braze_plugin/braze_plugin.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'fixtures/test_data.dart';
+import 'fixtures/test_helpers.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  final List<MethodCall> log = <MethodCall>[];
-  final String mockDeviceId = '_test_device_id_';
-  final String mockUserId = '_test_user_id_';
-
-  const jsonObjectString =
-      "{\"jsonobject\":{\"string\":\"Braze1234\",\"number\":123.45,\"boolean\":true,\"datetime\":456000,\"image\":\"https://picsum.photos/200/300\",\"array\":[\"Hello\", \"World\"],\"null_value\":null,\"nested_json\":{\"string\":\"Braze1234\",\"number\":123.45,\"boolean\":true,\"datetime\":456000,\"image\":\"https://picsum.photos/200/300\",\"array\":[\"Hello\", \"World\"]}}}";
-
-  final String mockFeatureFlagJson =
-      "{\"id\":\"test\",\"enabled\":true,\"properties\":{\"stringkey\":{\"type\":\"string\",\"value\":\"stringValue\"},\"booleankey\":{\"type\":\"boolean\",\"value\": true },\"number1key\":{\"type\":\"number\",\"value\": 4 },\"number2key\":{\"type\":\"number\",\"value\": 5.1},\"timestamp1Key\":{\"type\":\"datetime\",\"value\": 12345},\"timestamp2Key\":{\"type\":\"datetime\",\"value\": 9223372036854775807},\"jsonKey\":{\"type\":\"jsonobject\",\"value\":$jsonObjectString},\"image1Key\":{\"type\":\"image\",\"value\": \"image_name_here\"},\"image2Key\":{\"type\":\"image\",\"value\": \"https://picsum.photos/200/300\"}}}";
-
-  final String mockContentCardJson =
-      "{\"ca\":1234567890,\"cl\":false,\"db\":true,\"dm\":\"\",\"ds\":\"Description of Card\",\"e\":{\"timestamp\":\"1234567890\"},\"ea\":1234567890,\"id\":\"someID=\",\"p\":false,\"r\":false,\"t\":false,\"tp\":\"short_news\",\"tt\":\"Title of Card\",\"uw\":true,\"v\":false}";
-
-  final String mockBannerJson =
-      "{\"id\":\"test\",\"placement_id\":\"test_placement_id\",\"is_test_send\": false,\"is_control\":false,\"html\":\"<p>Test</p>\",\"expires_at\":-1,\"properties\":{\"stringkey\":{\"type\":\"string\",\"value\":\"stringValue\"},\"booleankey\":{\"type\":\"boolean\",\"value\": true },\"number1key\":{\"type\":\"number\",\"value\": 4 },\"number2key\":{\"type\":\"number\",\"value\": 5.1},\"timestamp1Key\":{\"type\":\"datetime\",\"value\": 12345},\"timestamp2Key\":{\"type\":\"datetime\",\"value\": 9223372036854775807},\"jsonKey\":{\"type\":\"jsonobject\",\"value\":$jsonObjectString},\"image1Key\":{\"type\":\"image\",\"value\": \"image_name_here\"},\"image2Key\":{\"type\":\"image\",\"value\": \"https://picsum.photos/200/300\"}}}";
-
-  bool nullFeatureFlag = false;
+  late List<MethodCall> log;
   bool wasInitialized = false;
+  bool shouldReturnNullFeatureFlag = false;
 
   setUpAll(() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -38,1674 +26,1667 @@ void main() {
       if (!wasInitialized) {
         throw Exception('Plugin not initialized');
       }
-      // Plugin lifecycle calls — not part of the public API surface under test.
       if (methodCall.method == 'setLogLevel') {
         return null;
       }
       log.add(methodCall);
-      // If needed to mock return values:
       switch (methodCall.method) {
         case 'getDeviceId':
         case 'getInstallTrackingId':
-          return mockDeviceId;
+          return TestData.mockDeviceId;
         case 'getUserId':
-          return mockUserId;
+          return TestData.mockUserId;
         case 'getAllFeatureFlags':
-          return List<String>.generate(1, (index) => mockFeatureFlagJson);
+          return [TestData.featureFlagJson];
         case 'getFeatureFlagByID':
-          return nullFeatureFlag == true ? null : mockFeatureFlagJson;
+          return shouldReturnNullFeatureFlag ? null : TestData.featureFlagJson;
         case 'getCachedContentCards':
-          return List<String>.generate(1, (index) => mockContentCardJson);
+          return [TestData.contentCardJson];
         default:
           return null;
       }
     });
   });
-  tearDown(() async {
-    log.clear();
+
+  setUp(() {
+    log = [];
+    shouldReturnNullFeatureFlag = false;
   });
 
-  String testInAppMessageJson = '{\"message\":\"body body\",\"type\":\"MODAL\",'
-      '\"text_align_message\":\"CENTER\",\"click_action\":\"NONE\",\"message_close'
-      '\":\"SWIPE\",\"extras\":{\"test\":\"123\",\"foo\":\"bar\"},\"header\":\"hell'
-      'o\",\"text_align_header\":\"CENTER\",\"image_url\":\"https:\\/\\/cdn-staging'
-      '.braze.com\\/appboy\\/communication\\/marketing\\/slide_up\\/slide_up_messag'
-      'e_parameters\\/images\\/5ba53198bf5cea446b153b77\\/0af410cf267a4686ac6cac571'
-      'bd2be4da4c8e63c\\/original.jpg?1572663749\",\"image_style\":\"TOP\",\"btns\"'
-      ':[{\"id\":0,\"text\":\"button 1\",\"click_action\":\"URI\",\"uri\":\"https:'
-      '\\/\\/www.google.com\",\"use_webview\":true,\"bg_color\":4294967295,\"text_c'
-      'olor\":4279990479,\"border_color\":4279990479},{\"id\":1,\"text\":\"button 2'
-      '\",\"click_action\":\"NONE\",\"bg_color\":4279990479,\"text_color\":42949672'
-      '95,\"border_color\":4279990479}],\"close_btn_color\":4291085508,\"bg_color\"'
-      ':4294243575,\"frame_color\":3207803699,\"text_color\":4280624421,\"header_te'
-      'xt_color\":4280624421,\"trigger_id\":\"NWJhNTMxOThiZjVjZWE0NDZiMTUzYjZiXyRfb'
-      'XY9NWJhNTMxOThiZjVjZWE0NDZiMTUzYjc1JnBpPWNtcA==\", \"is_test_send\":false}';
+  group('Braze Plugin Initialization', () {
+    test('should call initialize', () {
+      final braze = BrazePlugin();
+      const apiKey = 'test-api-key';
+      const endpoint = 'test-endpoint';
+      braze.initialize(apiKey, endpoint);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'initialize',
+          arguments: <String, dynamic>{
+            'apiKey': apiKey,
+            'endpoint': endpoint
+          },
+        ),
+      ]);
+    });
+  });
 
-  test('should call initialize', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _apiKey = 'test-api-key';
-    String _endpoint = 'test-endpoint';
-    _braze.initialize(_apiKey, _endpoint);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'initialize',
-        arguments: <String, dynamic>{
-          'apiKey': _apiKey,
-          'endpoint': _endpoint
+  group('User Management', () {
+    late BrazePlugin braze;
+
+    setUp(() {
+      braze = BrazePlugin();
+    });
+
+    test('should call changeUser', () {
+      const testUser = 'thistestuser';
+      const sdkAuthSignature = 'sdkauthsignature';
+      braze.changeUser(testUser);
+      braze.changeUser(testUser, sdkAuthSignature: sdkAuthSignature);
+      expect(log, <Matcher>[
+        isMethodCall('changeUser',
+            arguments: <String, dynamic>{'userId': testUser}),
+        isMethodCall('changeUser', arguments: <String, dynamic>{
+          'userId': testUser,
+          'sdkAuthSignature': sdkAuthSignature,
+        }),
+      ]);
+    });
+
+    test('should call getUserId with current user', () async {
+      final result = await braze.getUserId();
+      expect(log, <Matcher>[
+        isMethodCall('getUserId', arguments: null)
+      ]);
+      expect(result, TestData.mockUserId);
+    });
+
+    test('should call setSdkAuthenticationSignature', () {
+      const sdkAuthSignature = 'sdkauthsignature';
+      braze.setSdkAuthenticationSignature(sdkAuthSignature);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'setSdkAuthenticationSignature',
+          arguments: <String, dynamic>{'sdkAuthSignature': sdkAuthSignature},
+        ),
+      ]);
+    });
+
+    test('should call setBrazeSdkAuthenticationErrorCallback', () {
+      braze.setBrazeSdkAuthenticationErrorCallback((error) {});
+      expect(log, <Matcher>[
+        isMethodCall(
+          'setSdkAuthenticationDelegate',
+          arguments: null,
+        ),
+      ]);
+    });
+  });
+
+  group('Event Logging', () {
+    late BrazePlugin braze;
+
+    setUp(() {
+      braze = BrazePlugin();
+    });
+
+    test('should call logCustomEvent with no properties', () {
+      const eventName = 'someEvent';
+      braze.logCustomEvent(eventName);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'logCustomEvent',
+          arguments: <String, dynamic>{
+            'eventName': eventName,
+          },
+        ),
+      ]);
+    });
+
+    test('should call logCustomEvent with optional properties', () {
+      const eventName = 'someEvent';
+      final properties = {'someKey': 'someValue'};
+      braze.logCustomEvent(eventName, properties: properties);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'logCustomEvent',
+          arguments: <String, dynamic>{
+            'eventName': eventName,
+            'properties': properties,
+          },
+        ),
+      ]);
+    });
+
+    test('should call logCustomEvent with nested properties', () {
+      const eventName = 'someEvent';
+      final properties = <String, dynamic>{
+        'map_key': {'foo': 'bar'},
+        'array_key': ['string', 123, false],
+        'nested_map': {
+          'inner_array': ['hello', 'world', 123.45, true],
+          'inner_map': {'double': 101.1}
         },
-      ),
-    ]);
-  });
-
-  test('should call changeUser', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _testUser = 'thistestuser';
-    _braze.changeUser(_testUser);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'changeUser',
-        arguments: <String, dynamic>{'userId': _testUser},
-      ),
-    ]);
-  });
-
-  test('should call changeUser with sdkAuthSignature', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _testUser = 'thistestuser';
-    String _sdkAuthSignature = 'sdkauthsignature';
-    _braze.changeUser(_testUser, sdkAuthSignature: _sdkAuthSignature);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'changeUser',
-        arguments: <String, dynamic>{
-          'userId': _testUser,
-          'sdkAuthSignature': _sdkAuthSignature
-        },
-      ),
-    ]);
-  });
-
-  test('should call getUserId with current user', () async {
-    BrazePlugin _braze = new BrazePlugin();
-    final result = await _braze.getUserId();
-    expect(log, <Matcher>[
-      isMethodCall(
-        'getUserId',
-        arguments: null,
-      )
-    ]);
-    expect(result, mockUserId);
-  });
-
-  test('should call setSdkAuthenticationSignature', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _sdkAuthSignature = 'sdkauthsignature';
-    _braze.setSdkAuthenticationSignature(_sdkAuthSignature);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setSdkAuthenticationSignature',
-        arguments: <String, dynamic>{'sdkAuthSignature': _sdkAuthSignature},
-      ),
-    ]);
-  });
-
-  test('should call logContentCardClicked', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _data = '{"someJson":"data"}';
-    BrazeContentCard _contentCard = new BrazeContentCard(_data);
-    _braze.logContentCardClicked(_contentCard);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'logContentCardClicked',
-        arguments: <String, dynamic>{
-          'contentCardString': _contentCard.contentCardJsonString
-        },
-      ),
-    ]);
-  });
-
-  test('should include isControl field', () {
-    String _data = '{"tp":"control"}';
-    BrazeContentCard _contentCard = new BrazeContentCard(_data);
-    expect(_contentCard.isControl, equals(true));
-  });
-
-  test('should call logContentCardImpression', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _data = '{"someJson":"data"}';
-    BrazeContentCard _contentCard = new BrazeContentCard(_data);
-    _braze.logContentCardImpression(_contentCard);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'logContentCardImpression',
-        arguments: <String, dynamic>{
-          'contentCardString': _contentCard.contentCardJsonString
-        },
-      ),
-    ]);
-  });
-
-  test('should call logContentCardDismissed', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _data = '{"someJson":"data"}';
-    BrazeContentCard _contentCard = new BrazeContentCard(_data);
-    _braze.logContentCardDismissed(_contentCard);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'logContentCardDismissed',
-        arguments: <String, dynamic>{
-          'contentCardString': _contentCard.contentCardJsonString
-        },
-      ),
-    ]);
-  });
-
-  test('should call getCachedContentCards', () async {
-    BrazePlugin _braze = new BrazePlugin();
-    final result = await _braze.getCachedContentCards();
-    expect(log, <Matcher>[
-      isMethodCall(
-        'getCachedContentCards',
-        arguments: null,
-      )
-    ]);
-    expect(result.length, 1);
-    expect(result[0].contentCardJsonString, mockContentCardJson);
-  });
-
-  test('should call logInAppMessageClicked', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _data = '{"someJson":"data"}';
-    BrazeInAppMessage _inAppMessage = new BrazeInAppMessage(_data);
-    _braze.logInAppMessageClicked(_inAppMessage);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'logInAppMessageClicked',
-        arguments: <String, dynamic>{
-          'inAppMessageString': _inAppMessage.inAppMessageJsonString
-        },
-      ),
-    ]);
-  });
-
-  test('should call logInAppMessageImpression', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _data = '{"someJson":"data"}';
-    BrazeInAppMessage _inAppMessage = new BrazeInAppMessage(_data);
-    _braze.logInAppMessageImpression(_inAppMessage);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'logInAppMessageImpression',
-        arguments: <String, dynamic>{
-          'inAppMessageString': _inAppMessage.inAppMessageJsonString
-        },
-      ),
-    ]);
-  });
-
-  test('should call logInAppMessageButtonClicked', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _data = '{"someJson":"data"}';
-    int _buttonId = 42;
-    BrazeInAppMessage _inAppMessage = new BrazeInAppMessage(_data);
-    _braze.logInAppMessageButtonClicked(_inAppMessage, _buttonId);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'logInAppMessageButtonClicked',
-        arguments: <String, dynamic>{
-          'inAppMessageString': _inAppMessage.inAppMessageJsonString,
-          'buttonId': _buttonId
-        },
-      ),
-    ]);
-  });
-  
-  test('should call logBannerImpression', () {
-    BrazePlugin _braze = new BrazePlugin();
-    final placementId = 'placement1';
-    _braze.logBannerImpression(placementId);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'logBannerImpression',
-        arguments: <String, dynamic>{
-          'placementId': placementId
-        },
-      ),
-    ]);
-  });
-
-  test('should call logBannerClicked', () {
-    BrazePlugin _braze = new BrazePlugin();
-    final placementId = 'placement1';
-    final buttonId = 'button1';
-    _braze.logBannerClicked(placementId, buttonId);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'logBannerClicked',
-        arguments: <String, dynamic>{
-          'placementId': placementId,
-          'buttonId': buttonId
-        },
-      ),
-    ]);
-  });
-
-  test('should call logBannerClicked with no buttonId', () {
-    BrazePlugin _braze = new BrazePlugin();
-    final placementId = 'placement1';
-    _braze.logBannerClicked(placementId, null);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'logBannerClicked',
-        arguments: <String, dynamic>{
-          'placementId': placementId,
-          'buttonId': null
-        },
-      ),
-    ]);
-  });
-
-  test('should call getDeviceId', () async {
-    BrazePlugin _braze = new BrazePlugin();
-    final result = await _braze.getDeviceId();
-    expect(log, <Matcher>[
-      isMethodCall(
-        'getDeviceId',
-        arguments: null,
-      )
-    ]);
-    expect(result, mockDeviceId);
-  });
-
-  test('should call getInstallTrackingId', () async {
-    BrazePlugin _braze = new BrazePlugin();
-    // ignore: deprecated_member_use_from_same_package
-    final result = await _braze.getInstallTrackingId();
-    expect(log, <Matcher>[
-      isMethodCall(
-        'getDeviceId',
-        arguments: null,
-      )
-    ]);
-    expect(result, mockDeviceId);
-  });
-
-  test('should call addAlias', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _aliasName = 'someAlias';
-    String _aliasLabel = 'someLabel';
-    _braze.addAlias(_aliasName, _aliasLabel);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'addAlias',
-        arguments: <String, dynamic>{
-          'aliasName': _aliasName,
-          'aliasLabel': _aliasLabel
-        },
-      ),
-    ]);
-  });
-
-  test('should call logCustomEvent with no properties', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _eventName = 'someEvent';
-    _braze.logCustomEvent(_eventName);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'logCustomEvent',
-        arguments: <String, dynamic>{
-          'eventName': _eventName,
-        },
-      ),
-    ]);
-  });
-
-  test('should call logCustomEvent with optional properties', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _eventName = 'someEvent';
-    Map<String, dynamic> _properties = {'someKey': 'someValue'};
-    _braze.logCustomEvent(_eventName, properties: _properties);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'logCustomEvent',
-        arguments: <String, dynamic>{
-          'eventName': _eventName,
-          'properties': _properties,
-        },
-      ),
-    ]);
-  });
-
-  test('should call logCustomEvent with nested properties', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _eventName = 'someEvent';
-    Map<String, dynamic> _properties = {
-      'map_key': {'foo': 'bar'},
-      'array_key': ['string', 123, false],
-      'nested_map': {
-        'inner_array': ['hello', 'world', 123.45, true],
-        'inner_map': {'double': 101.1}
-      },
-      'nested_array': [
-        [
-          'obj',
-          {'key': 'value'},
-          ['element', 'element2', 50],
-          12
+        'nested_array': [
+          ['obj', {'key': 'value'}, ['element', 'element2', 50], 12]
         ]
-      ]
-    };
-    _braze.logCustomEvent(_eventName, properties: _properties);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'logCustomEvent',
-        arguments: <String, dynamic>{
-          'eventName': _eventName,
-          'properties': _properties,
-        },
-      ),
-    ]);
-  });
+      };
+      braze.logCustomEvent(eventName, properties: properties);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'logCustomEvent',
+          arguments: <String, dynamic>{
+            'eventName': eventName,
+            'properties': properties,
+          },
+        ),
+      ]);
+    });
 
-  test('should call logCustomEventWithProperties', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _eventName = 'someEvent';
-    Map<String, dynamic> _properties = {'someKey': 'someValue'};
-    // ignore: deprecated_member_use_from_same_package
-    _braze.logCustomEventWithProperties(_eventName, _properties);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'logCustomEvent',
-        arguments: <String, dynamic>{
-          'eventName': _eventName,
-          'properties': _properties
-        },
-      ),
-    ]);
-  });
+    test('should call logCustomEventWithProperties', () {
+      const eventName = 'someEvent';
+      final properties = {'someKey': 'someValue'};
+      // ignore: deprecated_member_use_from_same_package
+      braze.logCustomEventWithProperties(eventName, properties);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'logCustomEvent',
+          arguments: <String, dynamic>{
+            'eventName': eventName,
+            'properties': properties
+          },
+        ),
+      ]);
+    });
 
-  test('should call logPurchase with no properties', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _productId = 'someProduct';
-    String _currencyCode = 'someCurrencyCode';
-    double _price = 4.2;
-    int _quantity = 42;
-    _braze.logPurchase(_productId, _currencyCode, _price, _quantity);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'logPurchase',
-        arguments: <String, dynamic>{
-          'productId': _productId,
-          'currencyCode': _currencyCode,
-          'price': _price,
-          'quantity': _quantity,
-        },
-      ),
-    ]);
-  });
+    test('should call logPurchase with no properties', () {
+      const productId = 'someProduct';
+      const currencyCode = 'someCurrencyCode';
+      const price = 4.2;
+      const quantity = 42;
+      braze.logPurchase(productId, currencyCode, price, quantity);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'logPurchase',
+          arguments: <String, dynamic>{
+            'productId': productId,
+            'currencyCode': currencyCode,
+            'price': price,
+            'quantity': quantity,
+          },
+        ),
+      ]);
+    });
 
-  test('should call logPurchase with optional properties', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _productId = 'someProduct';
-    String _currencyCode = 'someCurrencyCode';
-    double _price = 4.2;
-    int _quantity = 42;
-    Map<String, dynamic> _properties = {'someKey': 'someValue'};
-    _braze.logPurchase(_productId, _currencyCode, _price, _quantity,
-        properties: _properties);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'logPurchase',
-        arguments: <String, dynamic>{
-          'productId': _productId,
-          'currencyCode': _currencyCode,
-          'price': _price,
-          'quantity': _quantity,
-          'properties': _properties
-        },
-      ),
-    ]);
-  });
+    test('should call logPurchase with optional properties', () {
+      const productId = 'someProduct';
+      const currencyCode = 'someCurrencyCode';
+      const price = 4.2;
+      const quantity = 42;
+      final properties = {'someKey': 'someValue'};
+      braze.logPurchase(productId, currencyCode, price, quantity,
+          properties: properties);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'logPurchase',
+          arguments: <String, dynamic>{
+            'productId': productId,
+            'currencyCode': currencyCode,
+            'price': price,
+            'quantity': quantity,
+            'properties': properties
+          },
+        ),
+      ]);
+    });
 
-  test('should call logPurchase with nested properties', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _productId = 'someProduct';
-    String _currencyCode = 'someCurrencyCode';
-    double _price = 4.2;
-    int _quantity = 42;
-    Map<String, dynamic> _properties = {
-      'map_key': {'foo': 'bar'},
-      'array_key': ['string', 123, false],
-      'nested_map': {
-        'inner_array': ['hello', 'world', 123.45, true],
-        'inner_map': {'double': 101.1}
-      },
-      'nested_array': [
-        [
-          'obj',
-          {'key': 'value'},
-          ['element', 'element2', 50],
-          12
+    test('should call logPurchase with nested properties', () {
+      const productId = 'someProduct';
+      const currencyCode = 'someCurrencyCode';
+      const price = 4.2;
+      const quantity = 42;
+      final properties = <String, dynamic>{
+        'map_key': {'foo': 'bar'},
+        'array_key': ['string', 123, false],
+        'nested_map': {
+          'inner_array': ['hello', 'world', 123.45, true],
+          'inner_map': {'double': 101.1}
+        },
+        'nested_array': [
+          ['obj', {'key': 'value'}, ['element', 'element2', 50], 12]
         ]
-      ]
-    };
-    _braze.logPurchase(_productId, _currencyCode, _price, _quantity,
-        properties: _properties);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'logPurchase',
-        arguments: <String, dynamic>{
-          'productId': _productId,
-          'currencyCode': _currencyCode,
-          'price': _price,
-          'quantity': _quantity,
-          'properties': _properties,
-        },
-      ),
-    ]);
+      };
+      braze.logPurchase(productId, currencyCode, price, quantity,
+          properties: properties);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'logPurchase',
+          arguments: <String, dynamic>{
+            'productId': productId,
+            'currencyCode': currencyCode,
+            'price': price,
+            'quantity': quantity,
+            'properties': properties,
+          },
+        ),
+      ]);
+    });
+
+    test('should call logPurchaseWithProperties', () {
+      const productId = 'someProduct';
+      const currencyCode = 'someCurrencyCode';
+      const price = 4.2;
+      const quantity = 42;
+      final properties = {'someKey': 'someValue'};
+      // ignore: deprecated_member_use_from_same_package
+      braze.logPurchaseWithProperties(
+          productId, currencyCode, price, quantity, properties);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'logPurchase',
+          arguments: <String, dynamic>{
+            'productId': productId,
+            'currencyCode': currencyCode,
+            'price': price,
+            'quantity': quantity,
+            'properties': properties
+          },
+        ),
+      ]);
+    });
+
+    test('should call logFeatureFlagImpression', () {
+      const id = 'test_flag_id';
+      braze.logFeatureFlagImpression(id);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'logFeatureFlagImpression',
+          arguments: <String, dynamic>{'id': id},
+        ),
+      ]);
+    });
   });
 
-  test('should call logPurchaseWithProperties', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _productId = 'someProduct';
-    String _currencyCode = 'someCurrencyCode';
-    double _price = 4.2;
-    int _quantity = 42;
-    Map<String, dynamic> _properties = {'someKey': 'someValue'};
-    // ignore: deprecated_member_use_from_same_package
-    _braze.logPurchaseWithProperties(
-        _productId, _currencyCode, _price, _quantity, _properties);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'logPurchase',
-        arguments: <String, dynamic>{
-          'productId': _productId,
-          'currencyCode': _currencyCode,
-          'price': _price,
-          'quantity': _quantity,
-          'properties': _properties
-        },
-      ),
-    ]);
+  group('Content Cards', () {
+    late BrazePlugin braze;
+
+    setUp(() {
+      braze = BrazePlugin();
+    });
+
+    test('should call logContentCardClicked', () {
+      const data = '{"someJson":"data"}';
+      final contentCard = BrazeContentCard(data);
+      braze.logContentCardClicked(contentCard);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'logContentCardClicked',
+          arguments: <String, dynamic>{
+            'contentCardString': contentCard.contentCardJsonString
+          },
+        ),
+      ]);
+    });
+
+    test('should call logContentCardImpression', () {
+      const data = '{"someJson":"data"}';
+      final contentCard = BrazeContentCard(data);
+      braze.logContentCardImpression(contentCard);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'logContentCardImpression',
+          arguments: <String, dynamic>{
+            'contentCardString': contentCard.contentCardJsonString
+          },
+        ),
+      ]);
+    });
+
+    test('should call logContentCardDismissed', () {
+      const data = '{"someJson":"data"}';
+      final contentCard = BrazeContentCard(data);
+      braze.logContentCardDismissed(contentCard);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'logContentCardDismissed',
+          arguments: <String, dynamic>{
+            'contentCardString': contentCard.contentCardJsonString
+          },
+        ),
+      ]);
+    });
+
+    test('should call getCachedContentCards', () async {
+      final result = await braze.getCachedContentCards();
+      expect(log, <Matcher>[
+        isMethodCall('getCachedContentCards', arguments: null)
+      ]);
+      expect(result.length, equals(1));
+      expect(result[0].contentCardJsonString, equals(TestData.contentCardJson));
+    });
+
+    test('should include isControl field', () {
+      const data = '{"tp":"control"}';
+      final contentCard = BrazeContentCard(data);
+      expect(contentCard.isControl, isTrue);
+    });
+
+    group('ContentCard parsing', () {
+      test('with all fields parsed correctly', () {
+        final data = TestData.makeContentCard(
+          id: 'card_id',
+          clicked: true,
+          created: 111,
+          description: 'desc',
+          dismissable: false,
+          expiresAt: 222,
+          extras: {'key': 'val'},
+          image: 'img',
+          imageAspectRatio: 2.5,
+          linkText: 'link',
+          pinned: true,
+          removed: true,
+          title: 'title',
+          type: 'type',
+          url: 'url',
+          useWebView: false,
+          viewed: true,
+        );
+        final card = TestHelpers.contentCardFromMap(data);
+        expect(card.id, equals('card_id'));
+        expect(card.clicked, isTrue);
+        expect(card.created, equals(111));
+        expect(card.description, equals('desc'));
+        expect(card.dismissable, isFalse);
+        expect(card.expiresAt, equals(222));
+        expect(card.image, equals('img'));
+        expect(card.imageAspectRatio, equals(2.5));
+        expect(card.linkText, equals('link'));
+        expect(card.pinned, isTrue);
+        expect(card.removed, isTrue);
+        expect(card.title, equals('title'));
+        expect(card.type, equals('type'));
+        expect(card.url, equals('url'));
+        expect(card.useWebView, isFalse);
+        expect(card.viewed, isTrue);
+      });
+
+      test('toString works', () {
+        final data = TestData.makeContentCard(title: 'test title');
+        final card = TestHelpers.contentCardFromMap(data);
+        final result = card.toString();
+        expect(result, allOf(
+          contains('BrazeContentCard'),
+          contains('test title'),
+        ));
+      });
+    });
   });
 
-  test('should call addToCustomAttributeArray', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _key = 'someKey';
-    String _value = 'someValue';
-    _braze.addToCustomAttributeArray(_key, _value);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'addToCustomAttributeArray',
-        arguments: <String, dynamic>{'key': _key, 'value': _value},
-      ),
-    ]);
+  group('In-App Messages', () {
+    late BrazePlugin braze;
+
+    setUp(() {
+      braze = BrazePlugin();
+    });
+
+    test('should call logInAppMessageClicked', () {
+      final inAppMessage = BrazeInAppMessage(TestData.inAppMessageJson);
+      braze.logInAppMessageClicked(inAppMessage);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'logInAppMessageClicked',
+          arguments: <String, dynamic>{
+            'inAppMessageString': TestData.inAppMessageJson
+          },
+        ),
+      ]);
+    });
+
+    test('should call logInAppMessageImpression', () {
+      final inAppMessage = BrazeInAppMessage(TestData.inAppMessageJson);
+      braze.logInAppMessageImpression(inAppMessage);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'logInAppMessageImpression',
+          arguments: <String, dynamic>{
+            'inAppMessageString': TestData.inAppMessageJson
+          },
+        ),
+      ]);
+    });
+
+    test('should call logInAppMessageButtonClicked', () {
+      final inAppMessage = BrazeInAppMessage(TestData.inAppMessageJson);
+      const buttonId = 42;
+      braze.logInAppMessageButtonClicked(inAppMessage, buttonId);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'logInAppMessageButtonClicked',
+          arguments: <String, dynamic>{
+            'inAppMessageString': TestData.inAppMessageJson,
+            'buttonId': buttonId
+          },
+        ),
+      ]);
+    });
+
+    test('should call hideCurrentInAppMessage', () {
+      braze.hideCurrentInAppMessage();
+      expect(log, <Matcher>[
+        isMethodCall('hideCurrentInAppMessage', arguments: null),
+      ]);
+    });
+
+    group('InAppMessage parsing', () {
+      test('instantiate with full data', () {
+        final message = BrazeInAppMessage(TestData.inAppMessageJson);
+        expect(message.message, isNotEmpty);
+        expect(message.messageType.name, equals('modal'));
+        expect(message.buttons, isNotEmpty);
+      });
+
+      test('instantiate with expected defaults', () {
+        final message = BrazeInAppMessage('{}');
+        expect(message.message, isEmpty);
+        expect(message.messageType.name, equals('slideup'));
+        expect(message.uri, isEmpty);
+        expect(message.useWebView, isFalse);
+        expect(message.duration, equals(5));
+        expect(message.buttons, isEmpty);
+      });
+
+      test('return original JSON when calling toString', () {
+        final message = BrazeInAppMessage(TestData.inAppMessageJson);
+        expect(message.toString(), equals(TestData.inAppMessageJson));
+      });
+
+      test('with isTestSend field', () {
+        final jsonStr = json.jsonEncode({'message': 'test', 'is_test_send': true});
+        final message = BrazeInAppMessage(jsonStr);
+        expect(message.isTestSend, isTrue);
+      });
+
+      group('message type parsing', () {
+        final testCases = {
+          'MODAL': 'modal',
+          'SLIDEUP': 'slideup',
+          'FULL': 'full',
+          'HTML': 'html',
+          'HTML_FULL': 'html_full',
+        };
+
+        testCases.forEach((type, name) {
+          test('parses $type as $name', () {
+            final jsonStr = json.jsonEncode({'type': type});
+            final message = BrazeInAppMessage(jsonStr);
+            expect(message.messageType.name, equals(name));
+          });
+        });
+      });
+
+      group('click action parsing', () {
+        final testCases = <String, ClickAction>{
+          'URI': ClickAction.uri,
+          'NEWS_FEED': ClickAction.news_feed,
+          'NONE': ClickAction.none,
+        };
+
+        testCases.forEach((action, expected) {
+          test('parses $action correctly', () {
+            final jsonStr = json.jsonEncode({'click_action': action});
+            final message = BrazeInAppMessage(jsonStr);
+            expect(message.clickAction, equals(expected));
+          });
+        });
+      });
+
+      group('dismiss type parsing', () {
+        final testCases = <String, DismissType>{
+          'SWIPE': DismissType.swipe,
+          'AUTO_DISMISS': DismissType.auto_dismiss,
+        };
+
+        testCases.forEach((type, expected) {
+          test('parses $type correctly', () {
+            final jsonStr = json.jsonEncode({'message_close': type});
+            final message = BrazeInAppMessage(jsonStr);
+            expect(message.dismissType, equals(expected));
+          });
+        });
+      });
+    });
+
+    group('BrazeButton', () {
+      test('instantiate from JSON with all fields', () {
+        final buttonData = TestData.makeButton(
+          id: 53,
+          text: 'some text',
+          clickAction: 'URI',
+          uri: 'https://test.com',
+          useWebview: true,
+        );
+        final button = BrazeButton(buttonData);
+        expect(button.id, equals(53));
+        expect(button.text, equals('some text'));
+        expect(button.clickAction.name, equals('uri'));
+        expect(button.uri, equals('https://test.com'));
+        expect(button.useWebView, isTrue);
+      });
+
+      test('instantiate with expected defaults', () {
+        final button = BrazeButton({});
+        expect(button.id, equals(0));
+        expect(button.text, isEmpty);
+        expect(button.clickAction.name, equals('none'));
+        expect(button.uri, isEmpty);
+        expect(button.useWebView, isFalse);
+      });
+
+      test('toString works', () {
+        final button = BrazeButton({
+          'id': 1,
+          'text': 'Click me',
+          'uri': 'https://example.com',
+          'click_action': 'URI',
+          'use_webview': false
+        });
+        final result = button.toString();
+        expect(result, allOf(
+          contains('BrazeButton'),
+          contains('Click me'),
+          contains('https://example.com'),
+        ));
+      });
+
+      test('click action NONE', () {
+        final button = BrazeButton({'click_action': 'NONE'});
+        expect(button.clickAction, equals(ClickAction.none));
+      });
+    });
   });
 
-  test('should call removeFromCustomAttributeArray', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _key = 'someKey';
-    String _value = 'someValue';
-    _braze.removeFromCustomAttributeArray(_key, _value);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'removeFromCustomAttributeArray',
-        arguments: <String, dynamic>{'key': _key, 'value': _value},
-      ),
-    ]);
+  group('Banners', () {
+    late BrazePlugin braze;
+
+    setUp(() {
+      braze = BrazePlugin();
+    });
+
+    test('should call logBannerImpression', () {
+      const placementId = 'placement1';
+      braze.logBannerImpression(placementId);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'logBannerImpression',
+          arguments: <String, dynamic>{'placementId': placementId},
+        ),
+      ]);
+    });
+
+    test('should call logBannerClicked', () {
+      const placementId = 'placement1';
+      const buttonId = 'button1';
+      braze.logBannerClicked(placementId, buttonId);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'logBannerClicked',
+          arguments: <String, dynamic>{
+            'placementId': placementId,
+            'buttonId': buttonId
+          },
+        ),
+      ]);
+    });
+
+    test('should call logBannerClicked with no buttonId', () {
+      const placementId = 'placement1';
+      braze.logBannerClicked(placementId, null);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'logBannerClicked',
+          arguments: <String, dynamic>{
+            'placementId': placementId,
+            'buttonId': null
+          },
+        ),
+      ]);
+    });
+
+    test('should call requestBannersRefresh with all params', () async {
+      final placementIds = [
+        'placement1',
+        'placement2',
+        'abcdefghijkl',
+        'MNOPQRSTUVWXYZ',
+        '1234567890',
+        '!@#%^&*()?<>-_=+'
+      ];
+      braze.requestBannersRefresh(placementIds);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'requestBannersRefresh',
+          arguments: <String, dynamic>{'placementIds': placementIds},
+        ),
+      ]);
+    });
+
+    test('should call getBanner with all params', () {
+      const placementId = 'placement1';
+      braze.getBanner(placementId);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'getBanner',
+          arguments: <String, dynamic>{'placementId': placementId},
+        ),
+      ]);
+    });
+
+    test('getBanner returns null when native layer returns null', () async {
+      final result = await braze.getBanner('non_existent_placement');
+      expect(result, isNull);
+    });
+
+    test('should call dismissBanner with placementId', () {
+      const placementId = 'placement1';
+      braze.dismissBanner(placementId);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'dismissBanner',
+          arguments: <String, dynamic>{'placementId': placementId},
+        ),
+      ]);
+    });
+
+    group('BrazeBanner parsing', () {
+      test('convenience functions work', () async {
+        final banner = TestHelpers.bannerFromMap(
+          TestData.makeBanner(
+            properties: {
+              'stringkey': {'type': 'string', 'value': 'stringValue'},
+              'booleankey': {'type': 'boolean', 'value': true},
+              'number1key': {'type': 'number', 'value': 4},
+              'number2key': {'type': 'number', 'value': 5.1},
+              'timestamp1Key': {'type': 'datetime', 'value': 12345},
+              'timestamp2Key': {'type': 'datetime', 'value': 9223372036854775807},
+              'jsonKey': {'type': 'jsonobject', 'value': TestData.jsonObject},
+              'image1Key': {'type': 'image', 'value': 'image_name_here'},
+              'image2Key': {'type': 'image', 'value': 'https://picsum.photos/200/300'},
+            },
+          ),
+        );
+        expect(banner.trackingId, equals('test'));
+        expect(banner.properties.length, equals(9));
+        expect(banner.getStringProperty('stringkey'), equals('stringValue'));
+        expect(banner.getBooleanProperty('booleankey'), isTrue);
+        expect(banner.getNumberProperty('number1key'), equals(4));
+        expect(banner.getNumberProperty('number2key'), equals(5.1));
+        expect(banner.getTimestampProperty('timestamp1Key'), equals(12345));
+        expect(banner.getImageProperty('image1Key'), equals('image_name_here'));
+        expect(banner.getImageProperty('image2Key'), equals('https://picsum.photos/200/300'));
+      });
+
+      test('convenience functions return null for non-existent keys', () async {
+        final banner = TestHelpers.bannerFromMap(TestData.makeBanner());
+        expect(banner.getStringProperty('keyThatDoesntExist'), isNull);
+        expect(banner.getBooleanProperty('keyThatDoesntExist'), isNull);
+        expect(banner.getNumberProperty('keyThatDoesntExist'), isNull);
+        expect(banner.getTimestampProperty('keyThatDoesntExist'), isNull);
+        expect(banner.getJSONProperty('keyThatDoesntExist'), isNull);
+        expect(banner.getImageProperty('keyThatDoesntExist'), isNull);
+      });
+
+      test('with all fields parsed correctly', () {
+        final banner = TestHelpers.bannerFromMap(
+          TestData.makeBanner(
+            id: 'banner_id',
+            placementId: 'placement1',
+            stableKey: 'stable_key_1',
+            isTestSend: true,
+            isControl: true,
+            html: '<html>',
+            expiresAt: 999,
+          ),
+        );
+        expect(banner.trackingId, equals('banner_id'));
+        expect(banner.placementId, equals('placement1'));
+        expect(banner.stableKey, equals('stable_key_1'));
+        expect(banner.isTestSend, isTrue);
+        expect(banner.isControl, isTrue);
+        expect(banner.html, equals('<html>'));
+        expect(banner.expiresAt, equals(999));
+      });
+
+      test('stableKey defaults to empty string when absent', () {
+        final data = TestData.makeBanner()..remove('stable_key');
+        final banner = TestHelpers.bannerFromMap(data);
+        expect(banner.stableKey, equals(''));
+      });
+
+      test('toString works', () {
+        final banner = TestHelpers.bannerFromMap(TestData.makeBanner());
+        final result = banner.toString();
+        expect(result, allOf(
+          contains('BrazeBanner'),
+          contains('test'),
+          contains('test_placement'),
+          contains('test_stable_key'),
+        ));
+      });
+
+      test('getJSONProperty with valid data', () {
+        TestHelpers.testBannerPropertyGetter(
+          propertyKey: 'jsonkey',
+          propertyValue: {'nested': 'value'},
+          propertyType: 'jsonobject',
+          getter: (banner) => banner.getJSONProperty('jsonkey'),
+          expectedValue: {'nested': 'value'},
+        );
+      });
+
+    });
   });
 
-  test('should call setStringCustomUserAttribute', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _key = 'someKey';
-    String _value = 'someValue';
-    _braze.setStringCustomUserAttribute(_key, _value);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setStringCustomUserAttribute',
-        arguments: <String, dynamic>{'key': _key, 'value': _value},
-      ),
-    ]);
+  group('Feature Flags', () {
+    late BrazePlugin braze;
+
+    setUp(() {
+      braze = BrazePlugin();
+    });
+
+    test('should call refreshFeatureFlags', () {
+      braze.refreshFeatureFlags();
+      expect(log, <Matcher>[
+        isMethodCall('refreshFeatureFlags', arguments: null),
+      ]);
+    });
+
+    test('should call getAllFeatureFlags', () async {
+      final result = await braze.getAllFeatureFlags();
+      expect(log, <Matcher>[
+        isMethodCall('getAllFeatureFlags', arguments: null)
+      ]);
+      expect(result.length, equals(1));
+      expect(result[0].id, equals('test'));
+    });
+
+    test('should call getFeatureFlagByID', () async {
+      shouldReturnNullFeatureFlag = false;
+      final result = await braze.getFeatureFlagByID('test');
+      expect(log, <Matcher>[
+        isMethodCall(
+          'getFeatureFlagByID',
+          arguments: <String, dynamic>{'id': 'test'},
+        ),
+      ]);
+      expect(result?.id, equals('test'));
+      expect(result?.enabled, isTrue);
+    });
+
+    test('getFeatureFlagByID returns null for non-existent Feature Flag',
+        () async {
+      shouldReturnNullFeatureFlag = true;
+      final result = await braze.getFeatureFlagByID('idThatDoesntExist');
+      expect(log, <Matcher>[
+        isMethodCall(
+          'getFeatureFlagByID',
+          arguments: <String, dynamic>{'id': 'idThatDoesntExist'},
+        ),
+      ]);
+      expect(result, isNull);
+    });
+
+    group('BrazeFeatureFlag parsing', () {
+      test('convenience functions work', () async {
+        final flag = TestHelpers.featureFlagFromMap(
+          TestData.makeFeatureFlag(
+            properties: {
+              'stringkey': {'type': 'string', 'value': 'stringValue'},
+              'booleankey': {'type': 'boolean', 'value': true},
+              'number1key': {'type': 'number', 'value': 4},
+              'number2key': {'type': 'number', 'value': 5.1},
+              'timestamp1Key': {'type': 'datetime', 'value': 12345},
+              'timestamp2Key': {'type': 'datetime', 'value': 9223372036854775807},
+              'jsonKey': {'type': 'jsonobject', 'value': TestData.jsonObject},
+              'image1Key': {'type': 'image', 'value': 'image_name_here'},
+              'image2Key': {'type': 'image', 'value': 'https://picsum.photos/200/300'},
+            },
+          ),
+        );
+        expect(flag.id, equals('test'));
+        expect(flag.enabled, isTrue);
+        expect(flag.properties.length, equals(9));
+        expect(flag.getStringProperty('stringkey'), equals('stringValue'));
+        expect(flag.getBooleanProperty('booleankey'), isTrue);
+        expect(flag.getNumberProperty('number1key'), equals(4));
+        expect(flag.getNumberProperty('number2key'), equals(5.1));
+        expect(flag.getTimestampProperty('timestamp1Key'), equals(12345));
+        expect(flag.getImageProperty('image1Key'), equals('image_name_here'));
+      });
+
+      test('convenience functions return null for non-existent keys', () async {
+        final flag = TestHelpers.featureFlagFromMap(
+          TestData.makeFeatureFlag(),
+        );
+        expect(flag.getStringProperty('keyThatDoesntExist'), isNull);
+        expect(flag.getBooleanProperty('keyThatDoesntExist'), isNull);
+        expect(flag.getNumberProperty('keyThatDoesntExist'), isNull);
+        expect(flag.getTimestampProperty('keyThatDoesntExist'), isNull);
+        expect(flag.getJSONProperty('keyThatDoesntExist'), isNull);
+        expect(flag.getImageProperty('keyThatDoesntExist'), isNull);
+      });
+
+      group('property getters', () {
+        test('getStringProperty with wrong type returns null', () {
+          TestHelpers.testPropertyGetterWrongType<String>(
+            propertyKey: 'numberkey',
+            propertyValue: 42,
+            propertyType: 'number',
+            getter: (flag) => flag.getStringProperty('numberkey'),
+          );
+        });
+
+        test('getBooleanProperty with wrong type returns null', () {
+          TestHelpers.testPropertyGetterWrongType<bool>(
+            propertyKey: 'stringkey',
+            propertyValue: 'text',
+            propertyType: 'string',
+            getter: (flag) => flag.getBooleanProperty('stringkey'),
+          );
+        });
+
+        test('getNumberProperty with wrong type returns null', () {
+          TestHelpers.testPropertyGetterWrongType<num>(
+            propertyKey: 'stringkey',
+            propertyValue: 'text',
+            propertyType: 'string',
+            getter: (flag) => flag.getNumberProperty('stringkey'),
+          );
+        });
+
+        test('getTimestampProperty with wrong type returns null', () {
+          TestHelpers.testPropertyGetterWrongType<int>(
+            propertyKey: 'stringkey',
+            propertyValue: 'text',
+            propertyType: 'string',
+            getter: (flag) => flag.getTimestampProperty('stringkey'),
+          );
+        });
+
+        test('getJSONProperty with valid map returns value', () {
+          final expectedMap = {'nested': 'value', 'count': 123};
+          TestHelpers.testPropertyGetter(
+            propertyKey: 'jsonkey',
+            propertyValue: expectedMap,
+            propertyType: 'jsonobject',
+            getter: (flag) => flag.getJSONProperty('jsonkey'),
+            expectedValue: expectedMap,
+          );
+        });
+
+        test('getJSONProperty with wrong type returns null', () {
+          TestHelpers.testPropertyGetterWrongType<Map>(
+            propertyKey: 'stringkey',
+            propertyValue: 'text',
+            propertyType: 'string',
+            getter: (flag) => flag.getJSONProperty('stringkey'),
+          );
+        });
+
+        test('getImageProperty with wrong type returns null', () {
+          TestHelpers.testPropertyGetterWrongType<String>(
+            propertyKey: 'stringkey',
+            propertyValue: 'text',
+            propertyType: 'string',
+            getter: (flag) => flag.getImageProperty('stringkey'),
+          );
+        });
+      });
+    });
   });
 
-  test('should call setNestedCustomUserAttribute', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _key = 'someKey';
-    Map<String, dynamic> _value = {'k': 'v'};
-    _braze.setNestedCustomUserAttribute(_key, _value);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setNestedCustomUserAttribute',
-        arguments: <String, dynamic>{
-          'key': _key,
-          'value': _value,
-          'merge': false
-        },
-      ),
-    ]);
+  group('Custom Attributes', () {
+    late BrazePlugin braze;
+
+    setUp(() {
+      braze = BrazePlugin();
+    });
+
+    test('should call addToCustomAttributeArray', () {
+      const key = 'someKey';
+      const value = 'someValue';
+      braze.addToCustomAttributeArray(key, value);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'addToCustomAttributeArray',
+          arguments: <String, dynamic>{'key': key, 'value': value},
+        ),
+      ]);
+    });
+
+    test('should call removeFromCustomAttributeArray', () {
+      const key = 'someKey';
+      const value = 'someValue';
+      braze.removeFromCustomAttributeArray(key, value);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'removeFromCustomAttributeArray',
+          arguments: <String, dynamic>{'key': key, 'value': value},
+        ),
+      ]);
+    });
+
+    test('should call setStringCustomUserAttribute', () {
+      const key = 'someKey';
+      const value = 'someValue';
+      braze.setStringCustomUserAttribute(key, value);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'setStringCustomUserAttribute',
+          arguments: <String, dynamic>{'key': key, 'value': value},
+        ),
+      ]);
+    });
+
+    test('should call setNestedCustomUserAttribute', () {
+      const key = 'someKey';
+      final value = <String, dynamic>{'k': 'v'};
+      braze.setNestedCustomUserAttribute(key, value);
+      braze.setNestedCustomUserAttribute(key, value, true);
+      expect(log, <Matcher>[
+        isMethodCall('setNestedCustomUserAttribute',
+            arguments: <String, dynamic>{'key': key, 'value': value, 'merge': false}),
+        isMethodCall('setNestedCustomUserAttribute',
+            arguments: <String, dynamic>{'key': key, 'value': value, 'merge': true}),
+      ]);
+    });
+
+    test('should call setCustomUserAttributeArrayOfStrings', () {
+      const key = 'someKey';
+      final value = <String>['a', 'b'];
+      braze.setCustomUserAttributeArrayOfStrings(key, value);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'setCustomUserAttributeArrayOfStrings',
+          arguments: <String, dynamic>{'key': key, 'value': value},
+        ),
+      ]);
+    });
+
+    test('should call setCustomUserAttributeArrayOfObjects', () {
+      const key = 'someKey';
+      final value = <Map<String, dynamic>>[
+        {'a': 'b'},
+        {'c': 'd'}
+      ];
+      braze.setCustomUserAttributeArrayOfObjects(key, value);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'setCustomUserAttributeArrayOfObjects',
+          arguments: <String, dynamic>{'key': key, 'value': value},
+        ),
+      ]);
+    });
+
+    test('should call setDoubleCustomUserAttribute', () {
+      const key = 'someKey';
+      const value = 4.2;
+      braze.setDoubleCustomUserAttribute(key, value);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'setDoubleCustomUserAttribute',
+          arguments: <String, dynamic>{'key': key, 'value': value},
+        ),
+      ]);
+    });
+
+    test('should call setBoolCustomUserAttribute', () {
+      const key = 'someKey';
+      const value = false;
+      braze.setBoolCustomUserAttribute(key, value);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'setBoolCustomUserAttribute',
+          arguments: <String, dynamic>{'key': key, 'value': value},
+        ),
+      ]);
+    });
+
+    test('should call setIntCustomUserAttribute', () {
+      const key = 'someKey';
+      const value = 42;
+      braze.setIntCustomUserAttribute(key, value);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'setIntCustomUserAttribute',
+          arguments: <String, dynamic>{'key': key, 'value': value},
+        ),
+      ]);
+    });
+
+    test('should call incrementCustomUserAttribute', () {
+      const key = 'someKey';
+      const value = 42;
+      braze.incrementCustomUserAttribute(key, value);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'incrementCustomUserAttribute',
+          arguments: <String, dynamic>{'key': key, 'value': value},
+        ),
+      ]);
+    });
+
+    test('should call setLocationCustomAttribute', () {
+      const key = 'someKey';
+      const lat = 12.34;
+      const long = 56.78;
+      braze.setLocationCustomAttribute(key, lat, long);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'setLocationCustomAttribute',
+          arguments: <String, dynamic>{'key': key, 'lat': lat, 'long': long},
+        ),
+      ]);
+    });
+
+    test('should call setDateCustomUserAttribute', () {
+      const key = 'someKey';
+      final value = DateTime.now();
+      braze.setDateCustomUserAttribute(key, value);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'setDateCustomUserAttribute',
+          arguments: <String, dynamic>{
+            'key': key,
+            'value': value.millisecondsSinceEpoch ~/ 1000
+          },
+        ),
+      ]);
+    });
+
+    test('should call unsetCustomUserAttribute', () {
+      const key = 'someKey';
+      braze.unsetCustomUserAttribute(key);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'unsetCustomUserAttribute',
+          arguments: <String, dynamic>{'key': key},
+        ),
+      ]);
+    });
   });
 
-  test('should call setNestedCustomUserAttribute with `merge: true`', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _key = 'someKey';
-    Map<String, dynamic> _value = {'k': 'v'};
-    _braze.setNestedCustomUserAttribute(_key, _value, true);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setNestedCustomUserAttribute',
-        arguments: <String, dynamic>{
-          'key': _key,
-          'value': _value,
-          'merge': true
-        },
-      ),
-    ]);
+  group('Profile Properties', () {
+    late BrazePlugin braze;
+
+    setUp(() {
+      braze = BrazePlugin();
+    });
+
+    test('should call setFirstName', () {
+      braze.setFirstName('someFirstName');
+      braze.setFirstName(null);
+      expect(log, <Matcher>[
+        isMethodCall('setFirstName',
+            arguments: <String, dynamic>{'firstName': 'someFirstName'}),
+        isMethodCall('setFirstName',
+            arguments: <String, dynamic>{'firstName': null}),
+      ]);
+    });
+
+    test('should call setLastName', () {
+      braze.setLastName('someLastName');
+      braze.setLastName(null);
+      expect(log, <Matcher>[
+        isMethodCall('setLastName',
+            arguments: <String, dynamic>{'lastName': 'someLastName'}),
+        isMethodCall('setLastName',
+            arguments: <String, dynamic>{'lastName': null}),
+      ]);
+    });
+
+    test('should call setEmail', () {
+      braze.setEmail('someEmail');
+      braze.setEmail(null);
+      expect(log, <Matcher>[
+        isMethodCall('setEmail',
+            arguments: <String, dynamic>{'email': 'someEmail'}),
+        isMethodCall('setEmail',
+            arguments: <String, dynamic>{'email': null}),
+      ]);
+    });
+
+    test('should call setDateOfBirth', () {
+      const year = 2000;
+      const month = 1;
+      const day = 22;
+      braze.setDateOfBirth(year, month, day);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'setDateOfBirth',
+          arguments: <String, dynamic>{
+            'year': year,
+            'month': month,
+            'day': day
+          },
+        ),
+      ]);
+    });
+
+    test('should call setGender', () {
+      braze.setGender('f');
+      braze.setGender(null);
+      expect(log, <Matcher>[
+        isMethodCall('setGender',
+            arguments: <String, dynamic>{'gender': 'f'}),
+        isMethodCall('setGender',
+            arguments: <String, dynamic>{'gender': null}),
+      ]);
+    });
+
+    test('should call setLanguage', () {
+      braze.setLanguage('es');
+      braze.setLanguage(null);
+      expect(log, <Matcher>[
+        isMethodCall('setLanguage',
+            arguments: <String, dynamic>{'language': 'es'}),
+        isMethodCall('setLanguage',
+            arguments: <String, dynamic>{'language': null}),
+      ]);
+    });
+
+    test('should call setCountry', () {
+      braze.setCountry('JP');
+      braze.setCountry(null);
+      expect(log, <Matcher>[
+        isMethodCall('setCountry',
+            arguments: <String, dynamic>{'country': 'JP'}),
+        isMethodCall('setCountry',
+            arguments: <String, dynamic>{'country': null}),
+      ]);
+    });
+
+    test('should call setHomeCity', () {
+      braze.setHomeCity('someHomeCity');
+      braze.setHomeCity(null);
+      expect(log, <Matcher>[
+        isMethodCall('setHomeCity',
+            arguments: <String, dynamic>{'homeCity': 'someHomeCity'}),
+        isMethodCall('setHomeCity',
+            arguments: <String, dynamic>{'homeCity': null}),
+      ]);
+    });
+
+    test('should call setPhoneNumber', () {
+      braze.setPhoneNumber('8675309');
+      braze.setPhoneNumber(null);
+      expect(log, <Matcher>[
+        isMethodCall('setPhoneNumber',
+            arguments: <String, dynamic>{'phoneNumber': '8675309'}),
+        isMethodCall('setPhoneNumber',
+            arguments: <String, dynamic>{'phoneNumber': null}),
+      ]);
+    });
+
+    test('should call setAttributionData', () {
+      const network = 'someNetwork';
+      const campaign = 'someCampaign';
+      const adGroup = 'someAdGroup';
+      const creative = 'someCreative';
+      braze.setAttributionData(network, campaign, adGroup, creative);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'setAttributionData',
+          arguments: <String, dynamic>{
+            'network': network,
+            'campaign': campaign,
+            'adGroup': adGroup,
+            'creative': creative
+          },
+        ),
+      ]);
+    });
   });
 
-  test('should call setCustomUserAttributeArrayOfStrings', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _key = 'someKey';
-    List<String> _value = ['a', 'b'];
-    _braze.setCustomUserAttributeArrayOfStrings(_key, _value);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setCustomUserAttributeArrayOfStrings',
-        arguments: <String, dynamic>{'key': _key, 'value': _value},
-      ),
-    ]);
-  });
+  group('Device & Tracking', () {
+    late BrazePlugin braze;
 
-  test('should call setCustomUserAttributeArrayOfObjects', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _key = 'someKey';
-    List<Map<String, dynamic>> _value = [
-      {'a': 'b'},
-      {'c': 'd'}
-    ];
-    _braze.setCustomUserAttributeArrayOfObjects(_key, _value);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setCustomUserAttributeArrayOfObjects',
-        arguments: <String, dynamic>{'key': _key, 'value': _value},
-      ),
-    ]);
-  });
+    setUp(() {
+      braze = BrazePlugin();
+    });
 
-  test('should call setDoubleCustomUserAttribute', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _key = 'someKey';
-    double _value = 4.2;
-    _braze.setDoubleCustomUserAttribute(_key, _value);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setDoubleCustomUserAttribute',
-        arguments: <String, dynamic>{'key': _key, 'value': _value},
-      ),
-    ]);
-  });
+    test('should call getDeviceId', () async {
+      final result = await braze.getDeviceId();
+      expect(log, <Matcher>[
+        isMethodCall('getDeviceId', arguments: null)
+      ]);
+      expect(result, TestData.mockDeviceId);
+    });
 
-  test('should call setBoolCustomUserAttribute', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _key = 'someKey';
-    bool _value = false;
-    _braze.setBoolCustomUserAttribute(_key, _value);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setBoolCustomUserAttribute',
-        arguments: <String, dynamic>{'key': _key, 'value': _value},
-      ),
-    ]);
-  });
+    test('should call getInstallTrackingId', () async {
+      // ignore: deprecated_member_use_from_same_package
+      final result = await braze.getInstallTrackingId();
+      expect(log, <Matcher>[
+        isMethodCall('getDeviceId', arguments: null)
+      ]);
+      expect(result, TestData.mockDeviceId);
+    });
 
-  test('should call setIntCustomUserAttribute', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _key = 'someKey';
-    int _value = 42;
-    _braze.setIntCustomUserAttribute(_key, _value);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setIntCustomUserAttribute',
-        arguments: <String, dynamic>{'key': _key, 'value': _value},
-      ),
-    ]);
-  });
+    test('should call registerAndroidPushToken', () {
+      const pushToken = 'someToken';
+      // ignore: deprecated_member_use_from_same_package
+      braze.registerAndroidPushToken(pushToken);
+      if (Platform.isAndroid) {
+        expect(log, <Matcher>[
+          isMethodCall(
+            'registerPushToken',
+            arguments: <String, dynamic>{'pushToken': pushToken},
+          ),
+        ]);
+      } else {
+        expect(log, isEmpty);
+      }
+    });
 
-  test('should call incrementCustomUserAttribute', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _key = 'someKey';
-    int _value = 42;
-    _braze.incrementCustomUserAttribute(_key, _value);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'incrementCustomUserAttribute',
-        arguments: <String, dynamic>{'key': _key, 'value': _value},
-      ),
-    ]);
-  });
-
-  test('should call setLocationCustomAttribute', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _key = 'someKey';
-    double _lat = 12.34;
-    double _long = 56.78;
-    _braze.setLocationCustomAttribute(_key, _lat, _long);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setLocationCustomAttribute',
-        arguments: <String, dynamic>{'key': _key, 'lat': _lat, 'long': _long},
-      ),
-    ]);
-  });
-
-  test('should call setDateCustomUserAttribute', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _key = 'someKey';
-    DateTime _value = new DateTime.now();
-    _braze.setDateCustomUserAttribute(_key, _value);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setDateCustomUserAttribute',
-        arguments: <String, dynamic>{
-          'key': _key,
-          'value': _value.millisecondsSinceEpoch ~/ 1000
-        },
-      ),
-    ]);
-  });
-
-  test('should call unsetCustomUserAttribute', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _key = 'someKey';
-    _braze.unsetCustomUserAttribute(_key);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'unsetCustomUserAttribute',
-        arguments: <String, dynamic>{'key': _key},
-      ),
-    ]);
-  });
-
-  test('should call setFirstName', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _firstName = 'someFirstName';
-    _braze.setFirstName(_firstName);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setFirstName',
-        arguments: <String, dynamic>{'firstName': _firstName},
-      ),
-    ]);
-  });
-
-  test('should call setFirstName with null', () {
-    BrazePlugin _braze = new BrazePlugin();
-    _braze.setFirstName(null);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setFirstName',
-        arguments: <String, dynamic>{'firstName': null},
-      ),
-    ]);
-  });
-
-  test('should call setLastName', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _lastName = 'someLastName';
-    _braze.setLastName(_lastName);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setLastName',
-        arguments: <String, dynamic>{'lastName': _lastName},
-      ),
-    ]);
-  });
-
-  test('should call setLastName with null', () {
-    BrazePlugin _braze = new BrazePlugin();
-    _braze.setLastName(null);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setLastName',
-        arguments: <String, dynamic>{'lastName': null},
-      ),
-    ]);
-  });
-
-  test('should call setEmail', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _email = 'someEmail';
-    _braze.setEmail(_email);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setEmail',
-        arguments: <String, dynamic>{'email': _email},
-      ),
-    ]);
-  });
-
-  test('should call setEmail with null', () {
-    BrazePlugin _braze = new BrazePlugin();
-    _braze.setEmail(null);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setEmail',
-        arguments: <String, dynamic>{'email': null},
-      ),
-    ]);
-  });
-
-  test('should call setDateOfBirth', () {
-    BrazePlugin _braze = new BrazePlugin();
-    int _year = 2000;
-    int _month = 1;
-    int _day = 22;
-    _braze.setDateOfBirth(_year, _month, _day);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setDateOfBirth',
-        arguments: <String, dynamic>{
-          'year': _year,
-          'month': _month,
-          'day': _day
-        },
-      ),
-    ]);
-  });
-
-  test('should call setGender', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _gender = 'f';
-    _braze.setGender(_gender);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setGender',
-        arguments: <String, dynamic>{'gender': _gender},
-      ),
-    ]);
-  });
-
-  test('should call setGender with null', () {
-    BrazePlugin _braze = new BrazePlugin();
-    _braze.setGender(null);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setGender',
-        arguments: <String, dynamic>{'gender': null},
-      ),
-    ]);
-  });
-
-  test('should call setLanguage', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _language = 'es';
-    _braze.setLanguage(_language);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setLanguage',
-        arguments: <String, dynamic>{'language': _language},
-      ),
-    ]);
-  });
-
-  test('should call setLanguage with null', () {
-    BrazePlugin _braze = new BrazePlugin();
-    _braze.setLanguage(null);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setLanguage',
-        arguments: <String, dynamic>{'language': null},
-      ),
-    ]);
-  });
-
-  test('should call setCountry', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _country = 'JP';
-    _braze.setCountry(_country);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setCountry',
-        arguments: <String, dynamic>{'country': _country},
-      ),
-    ]);
-  });
-
-  test('should call setCountry with null', () {
-    BrazePlugin _braze = new BrazePlugin();
-    _braze.setCountry(null);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setCountry',
-        arguments: <String, dynamic>{'country': null},
-      ),
-    ]);
-  });
-
-  test('should call setHomeCity', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _homeCity = 'someHomeCity';
-    _braze.setHomeCity(_homeCity);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setHomeCity',
-        arguments: <String, dynamic>{'homeCity': _homeCity},
-      ),
-    ]);
-  });
-
-  test('should call setHomeCity with null', () {
-    BrazePlugin _braze = new BrazePlugin();
-    _braze.setHomeCity(null);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setHomeCity',
-        arguments: <String, dynamic>{'homeCity': null},
-      ),
-    ]);
-  });
-
-  test('should call setPhoneNumber', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _phoneNumber = '8675309';
-    _braze.setPhoneNumber(_phoneNumber);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setPhoneNumber',
-        arguments: <String, dynamic>{'phoneNumber': _phoneNumber},
-      ),
-    ]);
-  });
-
-  test('should call setPhoneNumber with null', () {
-    BrazePlugin _braze = new BrazePlugin();
-    _braze.setPhoneNumber(null);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setPhoneNumber',
-        arguments: <String, dynamic>{'phoneNumber': null},
-      ),
-    ]);
-  });
-
-  test('should call setAttributionData', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _network = 'someNetwork';
-    String _campaign = 'someCampaign';
-    String _adGroup = 'someAdGroup';
-    String _creative = 'someCreative';
-    _braze.setAttributionData(_network, _campaign, _adGroup, _creative);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setAttributionData',
-        arguments: <String, dynamic>{
-          'network': _network,
-          'campaign': _campaign,
-          'adGroup': _adGroup,
-          'creative': _creative
-        },
-      ),
-    ]);
-  });
-
-  test('should call registerAndroidPushToken', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _pushToken = 'someToken';
-    // ignore: deprecated_member_use_from_same_package
-    _braze.registerAndroidPushToken(_pushToken);
-    if (Platform.isAndroid) {
+    test('should call registerPushToken with a hex string', () {
+      const pushToken =
+          '000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f';
+      braze.registerPushToken(pushToken);
       expect(log, <Matcher>[
         isMethodCall(
           'registerPushToken',
-          arguments: <String, dynamic>{'pushToken': _pushToken},
+          arguments: <String, dynamic>{'pushToken': pushToken},
         ),
       ]);
-    } else {
-      expect(log, []);
-    }
-  });
+    });
 
-  test('should call registerPushToken with a hex string', () {
-    BrazePlugin _braze = new BrazePlugin();
-    // iOS expects a hex string; native decodes it to Data.
-    String _pushToken =
-        '000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f';
-    _braze.registerPushToken(_pushToken);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'registerPushToken',
-        arguments: <String, dynamic>{'pushToken': _pushToken},
-      ),
-    ]);
-  });
+    test('should call requestImmediateDataFlush', () {
+      braze.requestImmediateDataFlush();
+      expect(log, <Matcher>[
+        isMethodCall('requestImmediateDataFlush', arguments: null),
+      ]);
+    });
 
-  test('should call requestImmediateDataFlush', () {
-    BrazePlugin _braze = new BrazePlugin();
-    _braze.requestImmediateDataFlush();
-    expect(log, <Matcher>[
-      isMethodCall(
-        'requestImmediateDataFlush',
-        arguments: null,
-      ),
-    ]);
-  });
-
-  test('should call setGoogleAdvertisingId', () {
-    BrazePlugin _braze = new BrazePlugin();
-    // ignore: deprecated_member_use_from_same_package
-    _braze.setGoogleAdvertisingId('some_id', false);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setGoogleAdvertisingId',
-        arguments: <String, dynamic>{
-          'id': 'some_id',
-          'adTrackingEnabled': false
-        },
-      ),
-    ]);
-  });
-
-  test('should call setAdTrackingEnabled', () {
-    BrazePlugin _braze = new BrazePlugin();
-    _braze.setAdTrackingEnabled(true, 'some_id');
-    expect(log, <Matcher>[
-      isMethodCall('setAdTrackingEnabled', arguments: <String, dynamic>{
-        'adTrackingEnabled': true,
-        'id': 'some_id'
-      })
-    ]);
-  });
-
-  test('should call updateTrackingAllowList', () {
-    BrazePlugin _braze = new BrazePlugin();
-    BrazeTrackingPropertyList list = BrazeTrackingPropertyList();
-    list.removing = {TrackingProperty.country};
-    list.addingCustomAttributes = {'attr-1'};
-    list.addingCustomEvents = {'event-1'};
-    list.removingCustomEvents = {'event-2', 'event-3'};
-    _braze.updateTrackingPropertyAllowList(list);
-    expect(log, <Matcher>[
-      isMethodCall('updateTrackingPropertyAllowList',
+    test('should call setGoogleAdvertisingId', () {
+      // ignore: deprecated_member_use_from_same_package
+      braze.setGoogleAdvertisingId('some_id', false);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'setGoogleAdvertisingId',
           arguments: <String, dynamic>{
-            'removing': ['TrackingProperty.country'],
-            'addingCustomAttributes': ['attr-1'],
-            'addingCustomEvents': ['event-1'],
-            'removingCustomEvents': ['event-2', 'event-3']
-          })
-    ]);
-  });
+            'id': 'some_id',
+            'adTrackingEnabled': false
+          },
+        ),
+      ]);
+    });
 
-  test('should call wipeData', () {
-    BrazePlugin _braze = new BrazePlugin();
-    _braze.wipeData();
-    expect(log, <Matcher>[
-      isMethodCall(
-        'wipeData',
-        arguments: null,
-      ),
-    ]);
-  });
+    test('should call setAdTrackingEnabled', () {
+      braze.setAdTrackingEnabled(true, 'some_id');
+      braze.setAdTrackingEnabled(false, null);
+      expect(log, <Matcher>[
+        isMethodCall('setAdTrackingEnabled',
+            arguments: <String, dynamic>{'adTrackingEnabled': true, 'id': 'some_id'}),
+        isMethodCall('setAdTrackingEnabled',
+            arguments: <String, dynamic>{'adTrackingEnabled': false}),
+      ]);
+    });
 
-  test('should call requestContentCardsRefresh', () {
-    BrazePlugin _braze = new BrazePlugin();
-    _braze.requestContentCardsRefresh();
-    expect(log, <Matcher>[
-      isMethodCall(
-        'requestContentCardsRefresh',
-        arguments: null,
-      ),
-    ]);
-  });
-
-  test('should call launchContentCards', () {
-    BrazePlugin _braze = new BrazePlugin();
-    _braze.launchContentCards();
-    expect(log, <Matcher>[
-      isMethodCall(
-        'launchContentCards',
-        arguments: null,
-      ),
-    ]);
-  });
-
-  test('should call requestLocationInitialization', () {
-    BrazePlugin _braze = new BrazePlugin();
-    _braze.requestLocationInitialization();
-    expect(log, <Matcher>[
-      isMethodCall(
-        'requestLocationInitialization',
-        arguments: null,
-      ),
-    ]);
-  });
-
-  test('should call requestBannersRefresh with all params', () async {
-    BrazePlugin _braze = new BrazePlugin();
-    final placementIds = [
-      'placement1',
-      'placement2' 'abcdefghijkl',
-      'MNOPQRSTUVWXYZ',
-      '1234567890',
-      '!@#%^&*()?<>-_=+'
-    ];
-    _braze.requestBannersRefresh(placementIds);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'requestBannersRefresh',
-        arguments: <String, dynamic>{
-          'placementIds': placementIds,
-        },
-      ),
-    ]);
-  });
-
-  test('should call getBanner with all params', () {
-    BrazePlugin _braze = new BrazePlugin();
-    final placementId = 'placement1';
-    _braze.getBanner(placementId);
-
-    expect(log, <Matcher>[
-      isMethodCall(
-        'getBanner',
-        arguments: <String, dynamic>{
-          'placementId': placementId,
-        },
-      ),
-    ]);
-  });
-
-  test('banner convenience functions work', () async {
-    BrazeBanner result = new BrazeBanner(mockBannerJson);
-    expect(result.trackingId, "test");
-    expect(result.properties.length, 9);
-    expect(result.getStringProperty("stringkey"), "stringValue");
-    expect(result.getBooleanProperty("booleankey"), true);
-    expect(result.getNumberProperty("number1key"), 4);
-    expect(result.getNumberProperty("number2key"), 5.1);
-    expect(result.getTimestampProperty("timestamp1Key"), 12345);
-    expect(result.getTimestampProperty("timestamp2Key"), 9223372036854775807);
-    expect(
-      result.getJSONProperty("jsonKey"),
-      json.jsonDecode(jsonObjectString),
-    );
-
-    // Includes the entry `"null_value": null`
-    expect(result.getJSONProperty("jsonKey")?["jsonobject"].length, 8);
-
-    expect(result.getImageProperty("image1Key"), "image_name_here");
-    expect(
-      result.getImageProperty("image2Key"),
-      "https://picsum.photos/200/300",
-    );
-  });
-
-  test(
-    'banner convenience functions return null for non-existent keys',
-    () async {
-      BrazePlugin _braze = new BrazePlugin();
-      final result = await _braze.getBanner("test_placement_id");
-      expect(result?.getStringProperty("keyThatDoesntExist"), null);
-      expect(result?.getBooleanProperty("keyThatDoesntExist"), null);
-      expect(result?.getNumberProperty("keyThatDoesntExist"), null);
-      expect(result?.getTimestampProperty("keyThatDoesntExist"), null);
-      expect(result?.getJSONProperty("keyThatDoesntExist"), null);
-      expect(result?.getImageProperty("keyThatDoesntExist"), null);
-    },
-  );
-
-  test('should call setLastKnownLocation with all params', () {
-    BrazePlugin _braze = new BrazePlugin();
-    _braze.setLastKnownLocation(
+    test('should call setLastKnownLocation with all params', () {
+      braze.setLastKnownLocation(
         latitude: 12,
         longitude: 34.5,
         altitude: 6,
         accuracy: 78,
-        verticalAccuracy: 90.12);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setLastKnownLocation',
-        arguments: <String, dynamic>{
-          'latitude': 12,
-          'longitude': 34.5,
-          'altitude': 6,
-          'accuracy': 78,
-          'verticalAccuracy': 90.12,
-        },
-      ),
-    ]);
+        verticalAccuracy: 90.12,
+      );
+      expect(log, <Matcher>[
+        isMethodCall(
+          'setLastKnownLocation',
+          arguments: <String, dynamic>{
+            'latitude': 12,
+            'longitude': 34.5,
+            'altitude': 6,
+            'accuracy': 78,
+            'verticalAccuracy': 90.12,
+          },
+        ),
+      ]);
+    });
+
+    test('should call setLastKnownLocation without optional params', () {
+      braze.setLastKnownLocation(latitude: 12, longitude: 34.5);
+      braze.setLastKnownLocation(latitude: 12, longitude: 34.5, accuracy: 6);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'setLastKnownLocation',
+          arguments: <String, dynamic>{
+            'latitude': 12,
+            'longitude': 34.5,
+            'accuracy': 0,
+          },
+        ),
+        isMethodCall(
+          'setLastKnownLocation',
+          arguments: <String, dynamic>{
+            'latitude': 12,
+            'longitude': 34.5,
+            'accuracy': 6,
+          },
+        ),
+      ]);
+    });
+
+    test('should call requestLocationInitialization', () {
+      braze.requestLocationInitialization();
+      expect(log, <Matcher>[
+        isMethodCall('requestLocationInitialization', arguments: null),
+      ]);
+    });
   });
 
-  test('should call setLastKnownLocation with without optional params', () {
-    BrazePlugin _braze = new BrazePlugin();
-    _braze.setLastKnownLocation(latitude: 12, longitude: 34.5);
-    _braze.setLastKnownLocation(latitude: 12, longitude: 34.5, accuracy: 6);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setLastKnownLocation',
-        arguments: <String, dynamic>{
-          'latitude': 12,
-          'longitude': 34.5,
-          'accuracy': 0,
-        },
-      ),
-      isMethodCall(
-        'setLastKnownLocation',
-        arguments: <String, dynamic>{
-          'latitude': 12,
-          'longitude': 34.5,
-          'accuracy': 6,
-        },
-      ),
-    ]);
+  group('SDK Control', () {
+    late BrazePlugin braze;
+
+    setUp(() {
+      braze = BrazePlugin();
+    });
+
+    test('should call enableSDK', () {
+      braze.enableSDK();
+      expect(log, <Matcher>[
+        isMethodCall('enableSDK', arguments: null),
+      ]);
+    });
+
+    test('should call disableSDK', () {
+      braze.disableSDK();
+      expect(log, <Matcher>[
+        isMethodCall('disableSDK', arguments: null),
+      ]);
+    });
+
+    test('should call wipeData', () {
+      braze.wipeData();
+      expect(log, <Matcher>[
+        isMethodCall('wipeData', arguments: null),
+      ]);
+    });
   });
 
-  test('should call enableSDK', () {
-    BrazePlugin _braze = new BrazePlugin();
-    _braze.enableSDK();
-    expect(log, <Matcher>[
-      isMethodCall(
-        'enableSDK',
-        arguments: null,
-      ),
-    ]);
+  group('Content Cards UI', () {
+    late BrazePlugin braze;
+
+    setUp(() {
+      braze = BrazePlugin();
+    });
+
+    test('should call requestContentCardsRefresh', () {
+      braze.requestContentCardsRefresh();
+      expect(log, <Matcher>[
+        isMethodCall('requestContentCardsRefresh', arguments: null),
+      ]);
+    });
+
+    test('should call launchContentCards', () {
+      braze.launchContentCards();
+      expect(log, <Matcher>[
+        isMethodCall('launchContentCards', arguments: null),
+      ]);
+    });
   });
 
-  test('should call disableSDK', () {
-    BrazePlugin _braze = new BrazePlugin();
-    _braze.disableSDK();
-    expect(log, <Matcher>[
-      isMethodCall(
-        'disableSDK',
-        arguments: null,
-      ),
-    ]);
+  group('Subscription Management', () {
+    late BrazePlugin braze;
+
+    setUp(() {
+      braze = BrazePlugin();
+    });
+
+    test('should call setPushNotificationSubscriptionType', () {
+      const type = SubscriptionType.opted_in;
+      braze.setPushNotificationSubscriptionType(type);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'setPushNotificationSubscriptionType',
+          arguments: <String, dynamic>{'type': type.toString()},
+        ),
+      ]);
+    });
+
+    test('should call setEmailNotificationSubscriptionType', () {
+      const type = SubscriptionType.opted_in;
+      braze.setEmailNotificationSubscriptionType(type);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'setEmailNotificationSubscriptionType',
+          arguments: <String, dynamic>{'type': type.toString()},
+        ),
+      ]);
+    });
+
+    test('should call addToSubscriptionGroup', () {
+      const groupId = 'someGroupId';
+      braze.addToSubscriptionGroup(groupId);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'addToSubscriptionGroup',
+          arguments: <String, dynamic>{'groupId': groupId},
+        ),
+      ]);
+    });
+
+    test('should call removeFromSubscriptionGroup', () {
+      const groupId = 'someGroupId';
+      braze.removeFromSubscriptionGroup(groupId);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'removeFromSubscriptionGroup',
+          arguments: <String, dynamic>{'groupId': groupId},
+        ),
+      ]);
+    });
   });
 
-  test('should call setPushNotificationSubscriptionType', () {
-    BrazePlugin _braze = new BrazePlugin();
-    SubscriptionType _type = SubscriptionType.opted_in;
-    _braze.setPushNotificationSubscriptionType(_type);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setPushNotificationSubscriptionType',
-        arguments: <String, dynamic>{'type': _type.toString()},
-      ),
-    ]);
+  group('Tracking Property Allow List', () {
+    test('should call updateTrackingAllowList', () {
+      final braze = BrazePlugin();
+      final list = BrazeTrackingPropertyList();
+      list.removing = {TrackingProperty.country};
+      list.addingCustomAttributes = {'attr-1'};
+      list.addingCustomEvents = {'event-1'};
+      list.removingCustomEvents = {'event-2', 'event-3'};
+      braze.updateTrackingPropertyAllowList(list);
+      expect(log, <Matcher>[
+        isMethodCall('updateTrackingPropertyAllowList',
+            arguments: <String, dynamic>{
+              'removing': ['TrackingProperty.country'],
+              'addingCustomAttributes': ['attr-1'],
+              'addingCustomEvents': ['event-1'],
+              'removingCustomEvents': ['event-2', 'event-3']
+            })
+      ]);
+    });
   });
 
-  test('should call setEmailNotificationSubscriptionType', () {
-    BrazePlugin _braze = new BrazePlugin();
-    SubscriptionType _type = SubscriptionType.opted_in;
-    _braze.setEmailNotificationSubscriptionType(_type);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'setEmailNotificationSubscriptionType',
-        arguments: <String, dynamic>{'type': _type.toString()},
-      ),
-    ]);
+  group('Alias Management', () {
+    test('should call addAlias', () {
+      final braze = BrazePlugin();
+      const aliasName = 'someAlias';
+      const aliasLabel = 'someLabel';
+      braze.addAlias(aliasName, aliasLabel);
+      expect(log, <Matcher>[
+        isMethodCall(
+          'addAlias',
+          arguments: <String, dynamic>{
+            'aliasName': aliasName,
+            'aliasLabel': aliasLabel
+          },
+        ),
+      ]);
+    });
   });
 
-  test('should call addToSubscriptionGroup', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _groupId = 'someGroupId';
-    _braze.addToSubscriptionGroup(_groupId);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'addToSubscriptionGroup',
-        arguments: <String, dynamic>{'groupId': _groupId},
-      ),
-    ]);
+  group('Data Model Enum Values', () {
+    test('BrazeLogLevel.fromValue returns debug for low values', () {
+      expect(BrazeLogLevel.fromValue(0), equals(BrazeLogLevel.debug));
+      expect(BrazeLogLevel.fromValue(499), equals(BrazeLogLevel.debug));
+    });
+
+    test('BrazeLogLevel.fromValue returns info for medium values', () {
+      expect(BrazeLogLevel.fromValue(800), equals(BrazeLogLevel.info));
+      expect(BrazeLogLevel.fromValue(999), equals(BrazeLogLevel.info));
+    });
+
+    test('BrazeLogLevel.fromValue returns error for high values', () {
+      expect(BrazeLogLevel.fromValue(1000), equals(BrazeLogLevel.error));
+      expect(BrazeLogLevel.fromValue(9999), equals(BrazeLogLevel.error));
+    });
+
+    test('BrazeLogLevel comparison operators are correctly ordered', () {
+      expect(BrazeLogLevel.debug < BrazeLogLevel.info, isTrue);
+      expect(BrazeLogLevel.info < BrazeLogLevel.error, isTrue);
+      expect(BrazeLogLevel.error < BrazeLogLevel.debug, isFalse);
+      expect(BrazeLogLevel.debug <= BrazeLogLevel.debug, isTrue);
+      expect(BrazeLogLevel.error <= BrazeLogLevel.debug, isFalse);
+      expect(BrazeLogLevel.error > BrazeLogLevel.debug, isTrue);
+      expect(BrazeLogLevel.debug > BrazeLogLevel.error, isFalse);
+      expect(BrazeLogLevel.error >= BrazeLogLevel.error, isTrue);
+      expect(BrazeLogLevel.debug >= BrazeLogLevel.error, isFalse);
+    });
+
   });
 
-  test('should call removeFromSubscriptionGroup', () {
-    BrazePlugin _braze = new BrazePlugin();
-    String _groupId = 'someGroupId';
-    _braze.removeFromSubscriptionGroup(_groupId);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'removeFromSubscriptionGroup',
-        arguments: <String, dynamic>{'groupId': _groupId},
-      ),
-    ]);
+  group('Stream Subscriptions', () {
+    test('BrazePlugin with inAppMessageHandler', () {
+      final braze = BrazePlugin(
+        inAppMessageHandler: (message) {},
+      );
+      expect(braze.inAppMessageStreamController, isNotNull);
+    });
+
+    test('BrazePlugin with contentCardsHandler', () {
+      final braze = BrazePlugin(
+        contentCardsHandler: (cards) {},
+      );
+      expect(braze.contentCardsStreamController, isNotNull);
+    });
+
+    test('BrazePlugin with bannersHandler', () {
+      final braze = BrazePlugin(
+        bannersHandler: (banners) {},
+      );
+      expect(braze.bannersStreamController, isNotNull);
+    });
+
+    test('BrazePlugin with featureFlagsHandler', () {
+      final braze = BrazePlugin(
+        featureFlagsHandler: (flags) {},
+      );
+      expect(braze.featureFlagsStreamController, isNotNull);
+    });
+
+    test('BrazePlugin with pushEventHandler', () {
+      final braze = BrazePlugin(
+        pushEventHandler: (event) {},
+      );
+      expect(braze.pushEventStreamController, isNotNull);
+    });
+
+    test('subscribeToInAppMessages returns subscription', () {
+      final braze = BrazePlugin();
+      final subscription = braze.subscribeToInAppMessages((message) {});
+      expect(subscription, isNotNull);
+      subscription.cancel();
+    });
+
+    test('subscribeToContentCards returns subscription', () {
+      final braze = BrazePlugin();
+      final subscription = braze.subscribeToContentCards((cards) {});
+      expect(subscription, isNotNull);
+      subscription.cancel();
+    });
+
+    test('subscribeToBanners returns subscription', () {
+      final braze = BrazePlugin();
+      final subscription = braze.subscribeToBanners((banners) {});
+      expect(subscription, isNotNull);
+      subscription.cancel();
+    });
+
+    test('subscribeToPushNotificationEvents returns subscription', () {
+      final braze = BrazePlugin();
+      final subscription =
+          braze.subscribeToPushNotificationEvents((event) {});
+      expect(subscription, isNotNull);
+      subscription.cancel();
+    });
+
+    test('subscribeToFeatureFlags returns subscription', () async {
+      final braze = BrazePlugin();
+      final subscription = braze.subscribeToFeatureFlags((flags) {});
+      expect(subscription, isNotNull);
+      await Future.delayed(const Duration(milliseconds: 50));
+      subscription.cancel();
+    });
   });
 
-  test('should call refreshFeatureFlags', () {
-    BrazePlugin _braze = new BrazePlugin();
-    _braze.refreshFeatureFlags();
-    expect(log, <Matcher>[
-      isMethodCall(
-        'refreshFeatureFlags',
-        arguments: null,
-      ),
-    ]);
+  group('BrazePushEvent', () {
+    test('parsing with all fields', () {
+      final data = TestData.makePushEvent(
+        payloadType: 'push_opened',
+        title: 'Title',
+        body: 'Body',
+        url: 'https://test.com',
+        useWebview: true,
+        summaryText: 'Summary',
+        badgeCount: 5,
+        timestamp: 333,
+        isSilent: true,
+        isBrazeInternal: false,
+        imageUrl: 'img_url',
+      );
+      final event = TestHelpers.pushEventFromMap(data);
+      expect(event.payloadType, equals('push_opened'));
+      expect(event.url, equals('https://test.com'));
+      expect(event.useWebview, isTrue);
+      expect(event.title, equals('Title'));
+      expect(event.body, equals('Body'));
+      expect(event.summaryText, equals('Summary'));
+      expect(event.badgeCount, equals(5));
+      expect(event.timestamp, equals(333));
+      expect(event.isSilent, isTrue);
+      expect(event.isBrazeInternal, isFalse);
+      expect(event.imageUrl, equals('img_url'));
+    });
+
+    test('toString is non-empty', () {
+      final event = TestHelpers.pushEventFromMap(
+        TestData.makePushEvent(title: 'Test', body: 'Body'),
+      );
+      expect(event.toString(), isNotEmpty);
+    });
   });
 
-  test('should call getAllFeatureFlags', () async {
-    BrazePlugin _braze = new BrazePlugin();
-    final result = await _braze.getAllFeatureFlags();
-    expect(log, <Matcher>[
-      isMethodCall(
-        'getAllFeatureFlags',
-        arguments: null,
-      )
-    ]);
-    expect(result.length, 1);
-    expect(result[0].id, "test");
+  group('BrazeSdkAuthenticationError', () {
+    test('parses and toString works', () {
+      final errorJson =
+          '{"code":401,"reason":"Invalid signature","userId":"user123","signature":"sig"}';
+      final error = BrazeSdkAuthenticationError(errorJson);
+      expect(error.code, equals(401));
+      expect(error.reason, equals('Invalid signature'));
+      expect(error.userId, equals('user123'));
+      expect(error.signature, equals('sig'));
+      expect(error.toString(), equals(errorJson));
+    });
   });
 
-  test('featureFlag convenience functions work', () async {
-    BrazePlugin _braze = new BrazePlugin();
-    final result = await _braze.getFeatureFlagByID("test");
-    expect(result?.id, "test");
-    expect(result?.enabled, true);
-    expect(result?.properties.length, 9);
-    expect(result?.getStringProperty("stringkey"), "stringValue");
-    expect(result?.getBooleanProperty("booleankey"), true);
-    expect(result?.getNumberProperty("number1key"), 4);
-    expect(result?.getNumberProperty("number2key"), 5.1);
-    expect(result?.getTimestampProperty("timestamp1Key"), 12345);
-    expect(result?.getTimestampProperty("timestamp2Key"), 9223372036854775807);
-    expect(
-        result?.getJSONProperty("jsonKey"), json.jsonDecode(jsonObjectString));
-
-    // Includes the entry `"null_value": null`
-    expect(result?.getJSONProperty("jsonKey")?["jsonobject"].length, 8);
-
-    expect(result?.getImageProperty("image1Key"), "image_name_here");
-    expect(
-        result?.getImageProperty("image2Key"), "https://picsum.photos/200/300");
+  group('BrazeBannerResizeManager', () {
+    test('subscribeToResizeEvents returns subscription', () {
+      final subscription = BrazeBannerResizeManager.subscribeToResizeEvents((event) {});
+      expect(subscription, isNotNull);
+      subscription.cancel();
+    });
   });
 
-  test('featureFlag convenience functions return null for non-existent keys',
-      () async {
-    BrazePlugin _braze = new BrazePlugin();
-    final result = await _braze.getFeatureFlagByID("test");
-    expect(result?.getStringProperty("keyThatDoesntExist"), null);
-    expect(result?.getBooleanProperty("keyThatDoesntExist"), null);
-    expect(result?.getNumberProperty("keyThatDoesntExist"), null);
-    expect(result?.getTimestampProperty("keyThatDoesntExist"), null);
-    expect(result?.getJSONProperty("keyThatDoesntExist"), null);
-    expect(result?.getImageProperty("keyThatDoesntExist"), null);
-  });
-
-  test('should call getFeatureFlagByID', () async {
-    nullFeatureFlag = false;
-    BrazePlugin _braze = new BrazePlugin();
-    final result = await _braze.getFeatureFlagByID("test");
-    expect(log, <Matcher>[
-      isMethodCall(
-        'getFeatureFlagByID',
-        arguments: <String, dynamic>{'id': "test"},
-      ),
-    ]);
-    expect(result?.id, "test");
-    expect(result?.enabled, true);
-    expect(result?.properties.length, 9);
-    expect(result?.getStringProperty("stringkey"), "stringValue");
-    expect(result?.getStringProperty("stringkeyThatDoesntExist"), null);
-    expect(result?.getBooleanProperty("booleankey"), true);
-    expect(result?.getBooleanProperty("booleanKeyThatDoesntExist"), null);
-    expect(result?.getNumberProperty("number1key"), 4);
-    expect(result?.getNumberProperty("number2key"), 5.1);
-    expect(result?.getNumberProperty("numberKeyThatDoesntExist"), null);
-  });
-
-  test('getFeatureFlagByID returns null for non-existent Feature Flag',
-      () async {
-    nullFeatureFlag = true;
-    BrazePlugin _braze = new BrazePlugin();
-    final result = await _braze.getFeatureFlagByID("idThatDoesntExist");
-    expect(log, <Matcher>[
-      isMethodCall(
-        'getFeatureFlagByID',
-        arguments: <String, dynamic>{'id': "idThatDoesntExist"},
-      ),
-    ]);
-    expect(result, null);
-    expect(result?.id, null);
-    expect(result?.enabled, null);
-    expect(result?.properties.length, null);
-    expect(result?.getStringProperty("stringkey"), null);
-    expect(result?.getStringProperty("stringkeyThatDoesntExist"), null);
-    expect(result?.getBooleanProperty("booleankey"), null);
-    expect(result?.getBooleanProperty("booleanKeyThatDoesntExist"), null);
-    expect(result?.getNumberProperty("number1key"), null);
-    expect(result?.getNumberProperty("number2key"), null);
-    expect(result?.getNumberProperty("numberKeyThatDoesntExist"), null);
-  });
-
-  test('instantiate a BrazeInAppMessage object from JSON', () {
-    String testMessageBody = "some message body";
-    String testMessageType = 'MODAL';
-    String testUri = "https:\\/\\/www.sometesturi.com";
-    String testImageUrl = "https:\\/\\/www.sometestimageuri.com";
-    String testZippedAssetsUrl = "https:\\/\\/www.sometestzippedassets.com";
-    bool testUseWebView = true;
-    int testDuration = 42;
-    String testExtras = '{\"test\":\"123\",\"foo\":\"bar\"}';
-    String testClickAction = 'URI';
-    String testDismissType = 'SWIPE';
-    String testHeader = "some header";
-    String testButton0 = '{\"id\":0,\"text\":\"button 1\",\"click_action\":\"UR'
-        'I\",\"uri\":\"https:\\/\\/www.google.com\",\"use_webview\":true,\"bg_col'
-        'or\":4294967295,\"text_color\":4279990479,\"border_color\":4279990479}';
-    String testButton1 = '{\"id\":1,\"text\":\"button 2\",\"click_action\":\"NO'
-        'NE\",\"bg_color\":4279990479,\"text_color\":4294967295,\"border_color\":'
-        '4279990479}';
-    String testButtonString = '[$testButton0, $testButton1]';
-    List<BrazeButton> testButtons = [];
-    testButtons.add(BrazeButton(json.jsonDecode(testButton0)));
-    testButtons.add(BrazeButton(json.jsonDecode(testButton1)));
-    String testJson = '{\"message\":\"$testMessageBody\",\"type\":\"'
-        '$testMessageType\",\"text_align_message\":\"CENTER\",\"click_action\":\"'
-        '$testClickAction\",\"message_close\":\"SWIPE\",\"extras\":$testExtras,\"h'
-        'eader\":\"$testHeader\",\"text_align_header\":\"CENTER\",\"image_url\":\"'
-        '$testImageUrl\",\"image_style\":\"TOP\",\"btns\":$testButtonString,\"clos'
-        'e_btn_color\":4291085508,\"bg_color\":4294243575,\"frame_color\":32078036'
-        '99,\"text_color\":4280624421,\"header_text_color\":4280624421,\"trigger_i'
-        'd\":\"NWJhNTMxOThiZjVjZWE0NDZiMTUzYjZiXyRfbXY9NWJhNTMxOThiZjVjZWE0NDZiMTU'
-        'zYjc1JnBpPWNtcA==\",\"uri\":\"$testUri\",\"zipped_assets_url\":\"'
-        '$testZippedAssetsUrl\",\"duration\":$testDuration,\"message_close\":\"'
-        '$testDismissType\",\"use_webview\":$testUseWebView}';
-    BrazeInAppMessage inAppMessage = new BrazeInAppMessage(testJson);
-    expect(inAppMessage.message, equals(testMessageBody));
-    expect(
-        inAppMessage.messageType.name, equals(testMessageType.toLowerCase()));
-    expect(inAppMessage.uri, equals(json.jsonDecode('"$testUri"')));
-    expect(inAppMessage.useWebView, equals(testUseWebView));
-    expect(inAppMessage.zippedAssetsUrl,
-        equals(json.jsonDecode('"$testZippedAssetsUrl"')));
-    expect(inAppMessage.duration, equals(testDuration));
-    expect(inAppMessage.extras, equals(json.jsonDecode(testExtras)));
-    expect(
-        inAppMessage.clickAction.name, equals(testClickAction.toLowerCase()));
-    expect(
-        inAppMessage.dismissType.name, equals(testDismissType.toLowerCase()));
-    expect(inAppMessage.imageUrl, equals(json.jsonDecode('"$testImageUrl"')));
-    expect(inAppMessage.header, equals(testHeader));
-    expect(inAppMessage.inAppMessageJsonString, equals(testJson));
-    expect(
-        inAppMessage.buttons[0].toString(), equals(testButtons[0].toString()));
-    expect(inAppMessage.buttons[0].clickAction.name, equals("uri"));
-    expect(
-        inAppMessage.buttons[1].toString(), equals(testButtons[1].toString()));
-    expect(inAppMessage.buttons[1].clickAction.name, equals("none"));
-
-    String slideupJson = '{\"message\":\"$testMessageBody\",\"type\":\"'
-        'SLIDEUP\",\"text_align_message\":\"CENTER\",\"click_action\":\"'
-        '$testClickAction\",\"message_close\":\"SWIPE\",\"extras\":$testExtras,\"h'
-        'eader\":\"$testHeader\",\"text_align_header\":\"CENTER\",\"image_url\":\"'
-        '$testImageUrl\",\"image_style\":\"TOP\",\"btns\":$testButtonString,\"clos'
-        'e_btn_color\":4291085508,\"bg_color\":4294243575,\"frame_color\":32078036'
-        '99,\"text_color\":4280624421,\"header_text_color\":4280624421,\"trigger_i'
-        'd\":\"NWJhNTMxOThiZjVjZWE0NDZiMTUzYjZiXyRfbXY9NWJhNTMxOThiZjVjZWE0NDZiMTU'
-        'zYjc1JnBpPWNtcA==\",\"uri\":\"$testUri\",\"zipped_assets_url\":\"'
-        '$testZippedAssetsUrl\",\"duration\":$testDuration,\"message_close\":\"'
-        'SWIPE\",\"use_webview\":$testUseWebView}';
-    BrazeInAppMessage slideupMessage = new BrazeInAppMessage(slideupJson);
-    expect(slideupMessage.messageType.name, equals('slideup'));
-    expect(slideupMessage.dismissType.name, equals('swipe'));
-
-    String fullJson = '{\"message\":\"$testMessageBody\",\"type\":\"'
-        'FULL\",\"text_align_message\":\"CENTER\",\"click_action\":\"'
-        '$testClickAction\",\"message_close\":\"SWIPE\",\"extras\":$testExtras,\"h'
-        'eader\":\"$testHeader\",\"text_align_header\":\"CENTER\",\"image_url\":\"'
-        '$testImageUrl\",\"image_style\":\"TOP\",\"btns\":$testButtonString,\"clos'
-        'e_btn_color\":4291085508,\"bg_color\":4294243575,\"frame_color\":32078036'
-        '99,\"text_color\":4280624421,\"header_text_color\":4280624421,\"trigger_i'
-        'd\":\"NWJhNTMxOThiZjVjZWE0NDZiMTUzYjZiXyRfbXY9NWJhNTMxOThiZjVjZWE0NDZiMTU'
-        'zYjc1JnBpPWNtcA==\",\"uri\":\"$testUri\",\"zipped_assets_url\":\"'
-        '$testZippedAssetsUrl\",\"duration\":$testDuration,\"message_close\":\"'
-        'AUTO_DISMISS\",\"use_webview\":$testUseWebView}';
-    BrazeInAppMessage fullMessage = new BrazeInAppMessage(fullJson);
-    expect(fullMessage.messageType.name, equals('full'));
-    expect(fullMessage.dismissType.name, equals('auto_dismiss'));
-
-    String htmlJson = '{\"message\":\"$testMessageBody\",\"type\":\"'
-        'HTML\",\"text_align_message\":\"CENTER\",\"click_action\":\"'
-        '$testClickAction\",\"message_close\":\"SWIPE\",\"extras\":$testExtras,\"h'
-        'eader\":\"$testHeader\",\"text_align_header\":\"CENTER\",\"image_url\":\"'
-        '$testImageUrl\",\"image_style\":\"TOP\",\"btns\":$testButtonString,\"clos'
-        'e_btn_color\":4291085508,\"bg_color\":4294243575,\"frame_color\":32078036'
-        '99,\"text_color\":4280624421,\"header_text_color\":4280624421,\"trigger_i'
-        'd\":\"NWJhNTMxOThiZjVjZWE0NDZiMTUzYjZiXyRfbXY9NWJhNTMxOThiZjVjZWE0NDZiMTU'
-        'zYjc1JnBpPWNtcA==\",\"uri\":\"$testUri\",\"zipped_assets_url\":\"'
-        '$testZippedAssetsUrl\",\"duration\":$testDuration,\"message_close\":\"'
-        '$testDismissType\",\"use_webview\":$testUseWebView}';
-    BrazeInAppMessage htmlMessage = new BrazeInAppMessage(htmlJson);
-    expect(htmlMessage.messageType.name, equals('html'));
-
-    String htmlFullJson = '{\"message\":\"$testMessageBody\",\"type\":\"'
-        'HTML_FULL\",\"text_align_message\":\"CENTER\",\"click_action\":\"'
-        '$testClickAction\",\"message_close\":\"SWIPE\",\"extras\":$testExtras,\"h'
-        'eader\":\"$testHeader\",\"text_align_header\":\"CENTER\",\"image_url\":\"'
-        '$testImageUrl\",\"image_style\":\"TOP\",\"btns\":$testButtonString,\"clos'
-        'e_btn_color\":4291085508,\"bg_color\":4294243575,\"frame_color\":32078036'
-        '99,\"text_color\":4280624421,\"header_text_color\":4280624421,\"trigger_i'
-        'd\":\"NWJhNTMxOThiZjVjZWE0NDZiMTUzYjZiXyRfbXY9NWJhNTMxOThiZjVjZWE0NDZiMTU'
-        'zYjc1JnBpPWNtcA==\",\"uri\":\"$testUri\",\"zipped_assets_url\":\"'
-        '$testZippedAssetsUrl\",\"duration\":$testDuration,\"message_close\":\"'
-        '$testDismissType\",\"use_webview\":$testUseWebView}';
-    BrazeInAppMessage htmlFullMessage = new BrazeInAppMessage(htmlFullJson);
-    expect(htmlFullMessage.messageType.name, equals('html_full'));
-  });
-
-  test('instantiate a BrazeInAppMessage object with expected defaults', () {
-    String defaultMessageBody = '';
-    String defaultMessageType = 'SLIDEUP';
-    String defaultUri = '';
-    String defaultImageUrl = '';
-    String defaultZippedAssetsUrl = '';
-    bool defaultUseWebView = false;
-    bool defaultIsTestSend = false;
-    int defaultDuration = 5;
-    Map defaultExtras = Map();
-    String defaultClickAction = 'NONE';
-    String defaultDismissType = 'AUTO_DISMISS';
-    String defaultHeader = '';
-    List<BrazeButton> defaultButtons = [];
-    String testJson = '{}';
-    BrazeInAppMessage inAppMessage = new BrazeInAppMessage(testJson);
-    expect(inAppMessage.message, equals(defaultMessageBody));
-    expect(inAppMessage.messageType.name,
-        equals(defaultMessageType.toLowerCase()));
-    expect(inAppMessage.uri, equals(defaultUri));
-    expect(inAppMessage.useWebView, equals(defaultUseWebView));
-    expect(inAppMessage.zippedAssetsUrl, equals(defaultZippedAssetsUrl));
-    expect(inAppMessage.duration, equals(defaultDuration));
-    expect(inAppMessage.extras, equals(defaultExtras));
-    expect(inAppMessage.clickAction.name,
-        equals(defaultClickAction.toLowerCase()));
-    expect(inAppMessage.dismissType.name,
-        equals(defaultDismissType.toLowerCase()));
-    expect(inAppMessage.imageUrl, equals(defaultImageUrl));
-    expect(inAppMessage.header, equals(defaultHeader));
-    expect(json.jsonEncode(inAppMessage.inAppMessageJsonString),
-        json.jsonEncode(testJson));
-    expect(inAppMessage.buttons, equals(defaultButtons));
-    expect(inAppMessage.isTestSend, equals(defaultIsTestSend));
-  });
-
-  test('return the original JSON when calling BrazeInAppMessage.toString()',
-      () {
-    BrazeInAppMessage inAppMessage =
-        new BrazeInAppMessage(testInAppMessageJson);
-    expect(inAppMessage.toString(), equals(testInAppMessageJson));
-  });
-
-  test('should call AppboyReactBridge.logInAppMessageClicked', () {
-    BrazePlugin _braze = new BrazePlugin();
-    BrazeInAppMessage inAppMessage =
-        new BrazeInAppMessage(testInAppMessageJson);
-    _braze.logInAppMessageClicked(inAppMessage);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'logInAppMessageClicked',
-        arguments: <String, dynamic>{
-          'inAppMessageString': testInAppMessageJson
-        },
-      ),
-    ]);
-  });
-
-  test('should call AppboyReactBridge.logInAppMessageImpression', () {
-    BrazePlugin _braze = new BrazePlugin();
-    BrazeInAppMessage inAppMessage =
-        new BrazeInAppMessage(testInAppMessageJson);
-    _braze.logInAppMessageImpression(inAppMessage);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'logInAppMessageImpression',
-        arguments: <String, dynamic>{
-          'inAppMessageString': testInAppMessageJson
-        },
-      ),
-    ]);
-  });
-
-  test('should call AppboyReactBridge.logInAppMessageButtonClicked', () {
-    BrazePlugin _braze = new BrazePlugin();
-    BrazeInAppMessage inAppMessage =
-        new BrazeInAppMessage(testInAppMessageJson);
-    int testId = 23;
-    _braze.logInAppMessageButtonClicked(inAppMessage, testId);
-    expect(log, <Matcher>[
-      isMethodCall(
-        'logInAppMessageButtonClicked',
-        arguments: <String, dynamic>{
-          'inAppMessageString': testInAppMessageJson,
-          'buttonId': testId
-        },
-      ),
-    ]);
-  });
-
-  test('instantiate a BrazeButton object from JSON', () {
-    int testId = 53;
-    String testClickAction = 'URI';
-    String testText = 'some text';
-    String testUri = "https:\\/\\/www.sometesturi.com";
-    bool testUseWebView = true;
-    String testButtonJson = '{\"id\":$testId,\"text\":\"$testText\",\"click_ac'
-        'tion\":\"$testClickAction\",\"uri\":\"$testUri\",\"use_webview\":'
-        '$testUseWebView,\"bg_color\":4294967295,\"text_color\":4279990479,\"bor'
-        'der_color\":4279990479}';
-    BrazeButton button = new BrazeButton(json.jsonDecode(testButtonJson));
-    expect(button.id, equals(testId));
-    expect(button.clickAction.name, equals(testClickAction.toLowerCase()));
-    expect(button.text, equals(testText));
-    expect(button.uri, equals(json.jsonDecode('"$testUri"')));
-    expect(button.useWebView, equals(testUseWebView));
-    expect(
-        button.toString(),
-        equals("BrazeButton text:" +
-            button.text +
-            " uri:" +
-            button.uri +
-            " clickAction:" +
-            button.clickAction.toString() +
-            " useWebView:" +
-            button.useWebView.toString()));
-  });
-
-  test('instantiate a BrazeButton object with expected defaults', () {
-    int defaultId = 0;
-    String defaultClickAction = 'NONE';
-    String defaultText = '';
-    String defaultUri = '';
-    bool defaultUseWebView = false;
-    BrazeButton button = new BrazeButton({});
-    expect(button.id, equals(defaultId));
-    expect(button.clickAction.name, equals(defaultClickAction.toLowerCase()));
-    expect(button.text, equals(defaultText));
-    expect(button.uri, equals(defaultUri));
-    expect(button.useWebView, equals(defaultUseWebView));
-  });
-
-  test('instantiate a BrazeContentCard object from JSON', () {
-    bool testClicked = false;
-    int testCreated = 1;
-    String testDescription = "some description";
-    bool testDismissable = true;
-    int testExpiresAt = 1592545002;
-    String testExtras = '{\"test\":\"123\",\"foo\":\"bar\"}';
-    String testId = "some id";
-    String testImageUrl = "https:\\/\\/www.sometestimageuri.com";
-    double testImageAspectRatio = 1.2;
-    String testLinkText = "some link text";
-    bool testPinned = true;
-    bool testRemoved = false;
-    String testTitle = "some title";
-    String testType = "some type";
-    String testUri = "https:\\/\\/www.sometesturi.com";
-    bool testUseWebView = true;
-    bool testViewed = false;
-    String testContentCardJson = '{\"id\":\"$testId\",\"cl\":$testClicked,\"ca'
-        '\":$testCreated,\"ds\":\"$testDescription\",\"db\":$testDismissable,\"ea\"'
-        ':$testExpiresAt,\"e\":$testExtras,\"i\":\"$testImageUrl\",\"ar\":'
-        '$testImageAspectRatio,\"dm\":\"$testLinkText\",\"p\":$testPinned,\"r\":'
-        '$testRemoved,\"tt\":\"$testTitle\",\"tp\":\"$testType\",\"u\":\"$testUri\"'
-        ',\"uw\":$testUseWebView,\"v\":$testViewed}';
-    BrazeContentCard contentCard = new BrazeContentCard(testContentCardJson);
-    expect(contentCard.id, equals(testId));
-    expect(contentCard.clicked, equals(testClicked));
-    expect(contentCard.created, equals(testCreated));
-    expect(contentCard.description, equals(testDescription));
-    expect(contentCard.dismissable, equals(testDismissable));
-    expect(contentCard.expiresAt, equals(testExpiresAt));
-    expect(contentCard.extras, equals(json.jsonDecode(testExtras)));
-    expect(contentCard.image, equals(json.jsonDecode('"$testImageUrl"')));
-    expect(contentCard.imageAspectRatio, equals(testImageAspectRatio));
-    expect(contentCard.linkText, equals(testLinkText));
-    expect(contentCard.pinned, equals(testPinned));
-    expect(contentCard.removed, equals(testRemoved));
-    expect(contentCard.title, equals(testTitle));
-    expect(contentCard.type, equals(testType));
-    expect(contentCard.url, equals(json.jsonDecode('"$testUri"')));
-    expect(contentCard.useWebView, equals(testUseWebView));
-    expect(contentCard.viewed, equals(testViewed));
-    expect(contentCard.contentCardJsonString, equals(testContentCardJson));
-  });
-
-  test('instantiate a BrazePushEvent object from JSON', () {
-    String testTitle = "title of push";
-    String testBody = "some push notification body";
-    String testPayloadType = "push_opened";
-    String testUrl = "https:\\/\\/www.example.com";
-    String testImageUrl = "https:\\/\\/www.sometestimageuri.com";
-    String testSummaryText = "test summary text";
-    int testBadgeCount = 5;
-    bool testUseWebView = true;
-    bool testIsSilent = false;
-    bool testIsBrazeInternal = true;
-    int testTimestamp = 222;
-    String testBrazeProperties =
-        '{\"Key_ofKVP\":\"the_value_here\",\"secondKey\":\"secondValue\"}';
-    String testiOSField = '{\"iOS_payload\":\"123\",\"foo\":\"bar\"}';
-    String testAndroidField = '{\"Android_payload\":\"456\",\"key\":\"value\"}';
-    String testJson =
-        '{\"title\":\"$testTitle\",\"body\":\"$testBody\",\"payload_type\":\"'
-        '$testPayloadType\",\"url\":\"$testUrl\",\"timestamp\":$testTimestamp,'
-        '\"is_silent\":\"$testIsSilent\",\"use_webview\":$testUseWebView,'
-        '\"is_braze_internal\":$testIsBrazeInternal,\"image_url\":\"$testImageUrl\",'
-        '\"summary_text\":\"$testSummaryText\",\"badge_count\":$testBadgeCount,'
-        '\"ios\":$testiOSField,\"android\":$testAndroidField,\"braze_properties\":'
-        '$testBrazeProperties}';
-    BrazePushEvent pushEvent = new BrazePushEvent(testJson);
-    expect(pushEvent.title, equals(testTitle));
-    expect(pushEvent.body, equals(testBody));
-    expect(pushEvent.payloadType, equals(testPayloadType));
-    expect(pushEvent.url, equals(json.jsonDecode('"$testUrl"')));
-    expect(pushEvent.imageUrl, equals(json.jsonDecode('"$testImageUrl"')));
-    expect(pushEvent.summaryText, equals(testSummaryText));
-    expect(pushEvent.badgeCount, equals(testBadgeCount));
-    expect(pushEvent.useWebview, equals(testUseWebView));
-    expect(pushEvent.isSilent, equals(testIsSilent));
-    expect(pushEvent.isBrazeInternal, equals(testIsBrazeInternal));
-    expect(pushEvent.timestamp, equals(testTimestamp));
-    expect(pushEvent.brazeProperties,
-        equals(json.jsonDecode(testBrazeProperties)));
-    expect(pushEvent.ios, equals(json.jsonDecode(testiOSField)));
-    expect(pushEvent.android, equals(json.jsonDecode(testAndroidField)));
-    expect(pushEvent.pushEventJsonString, equals(testJson));
-  });
 }

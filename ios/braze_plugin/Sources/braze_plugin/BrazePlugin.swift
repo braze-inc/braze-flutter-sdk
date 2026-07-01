@@ -289,6 +289,24 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         }
       }
 
+    case "dismissBanner":
+      guard let args = call.arguments as? [String: Any],
+        let placementId = args["placementId"] as? String, !placementId.isEmpty,
+        let braze = brazeClient?.braze
+      else {
+        print(
+          "Invalid args: \(argsDescription), braze: \(String(describing: braze)), iOS method: \(call.method)"
+        )
+        return
+      }
+      braze.banners.getBanner(for: placementId) { banner in
+        if let banner = banner {
+          DispatchQueue.main.async {
+            banner.dismiss(using: braze)
+          }
+        }
+      }
+
     case "logInAppMessageClicked":
       guard let args = call.arguments as? [String: Any],
         let inAppMessageJSONString = args["inAppMessageString"] as? String,

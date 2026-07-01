@@ -339,6 +339,15 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     getBrazeInstance(context).logBannerImpression(placementId)
                 }
 
+                "dismissBanner" -> {
+                    val placementId = call.argument<String>("placementId")
+                    if (placementId.isNullOrEmpty()) {
+                        brazelog(W) { "Unexpected null or empty placementId in `dismissBanner`." }
+                        return
+                    }
+                    getBrazeInstance(context).dismissBanner(placementId)
+                }
+
                 "logInAppMessageClicked" -> {
                     getBrazeInstance(context)
                         .deserializeInAppMessageString(call.argument("inAppMessageString"))

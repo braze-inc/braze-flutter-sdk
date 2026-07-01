@@ -560,6 +560,46 @@ class BrazePluginTest {
     }
 
     @Test
+    fun whenDismissBanner_withValidPlacementId_dismissesBanner() {
+        // Given
+        val placementId = "test_placement_id"
+        val arguments = mapOf("placementId" to placementId)
+
+        // When
+        val call = MethodCall("dismissBanner", arguments)
+        brazePlugin.onMethodCall(call, mockMethodChannelResult)
+
+        // Then
+        verify(mockBraze).dismissBanner(placementId)
+    }
+
+    @Test
+    fun whenDismissBanner_withNullPlacementId_returnsEarly() {
+        // Given
+        val arguments = mapOf<String, String?>("placementId" to null)
+
+        // When
+        val call = MethodCall("dismissBanner", arguments)
+        brazePlugin.onMethodCall(call, mockMethodChannelResult)
+
+        // Then
+        verify(mockBraze, never()).dismissBanner(any())
+    }
+
+    @Test
+    fun whenDismissBanner_withEmptyPlacementId_returnsEarly() {
+        // Given
+        val arguments = mapOf("placementId" to "")
+
+        // When
+        val call = MethodCall("dismissBanner", arguments)
+        brazePlugin.onMethodCall(call, mockMethodChannelResult)
+
+        // Then
+        verify(mockBraze, never()).dismissBanner(any())
+    }
+
+    @Test
     fun whenLogInAppMessageClicked_withValidMessageString_logsMessageClick() {
         // Given
         val inAppMessageString = "test_in_app_message_string"
