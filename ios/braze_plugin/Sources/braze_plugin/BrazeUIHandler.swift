@@ -24,4 +24,14 @@ public class BrazeUIHandler : NSObject, FlutterStreamHandler {
     let resizeData: [String: Any] = ["height": height, "containerId": identifier]
     eventSink?(resizeData)
   }
+
+  func sendDismissEvent(placementId: String, stableKey: String, trackingId: String) {
+    let dismissData: [String: Any] = [
+      "action": "dismiss",
+      "placementId": placementId,
+      "stableKey": stableKey,
+      "trackingId": trackingId,
+    ]
+    eventSink?(dismissData)
+  }
 }

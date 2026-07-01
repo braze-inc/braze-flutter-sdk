@@ -25,4 +25,14 @@ class BrazeUIHandler(binaryMessenger: BinaryMessenger) : EventChannel.StreamHand
         val resizeData = mapOf("height" to height, "containerId" to identifier)
         eventSink?.success(resizeData)
     }
+
+    fun sendDismissEvent(placementId: String, stableKey: String, trackingId: String) {
+        val dismissData = mapOf(
+            "action" to "dismiss",
+            "placementId" to placementId,
+            "stableKey" to stableKey,
+            "trackingId" to trackingId
+        )
+        eventSink?.success(dismissData)
+    }
 }

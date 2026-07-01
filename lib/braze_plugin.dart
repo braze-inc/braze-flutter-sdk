@@ -309,6 +309,18 @@ class BrazePlugin {
     _channel.invokeMethod('logBannerImpression', params);
   }
 
+  /// Dismisses the banner with the provided placement ID.
+  ///
+  /// Dismissing a banner removes it from its placement and prevents it from
+  /// being shown again. Any registered [BrazeBannerView.onDismiss] handler for
+  /// that placement will be invoked.
+  void dismissBanner(String placementId) {
+    final Map<String, dynamic> params = <String, dynamic>{
+      "placementId": placementId
+    };
+    _channel.invokeMethod('dismissBanner', params);
+  }
+
   /// Logs a click for the provided in-app message data.
   void logInAppMessageClicked(BrazeInAppMessage inAppMessage) {
     final Map<String, dynamic> params = <String, dynamic>{
@@ -1513,6 +1525,10 @@ class BrazeBanner {
   /// The placement ID this banner is matched to.
   String placementId = "";
 
+  /// The stable key that identifies this banner instance, used to correlate
+  /// dismissals across refreshes.
+  String stableKey = "";
+
   /// Whether the banner is from a test send.
   bool isTestSend = false;
 
@@ -1548,6 +1564,11 @@ class BrazeBanner {
       placementId = placementIdJson;
     }
 
+    var stableKeyJson = bannerJson["stable_key"];
+    if (stableKeyJson is String) {
+      stableKey = stableKeyJson;
+    }
+
     var isTestSendJson = bannerJson["is_test_send"];
     if (isTestSendJson is bool) {
       isTestSend = isTestSendJson;
@@ -1578,6 +1599,8 @@ class BrazeBanner {
         trackingId +
         " placementId:" +
         placementId +
+        " stableKey:" +
+        stableKey +
         " isTestSend:" +
         isTestSend.toString() +
         " isControl:" +
@@ -1629,6 +1652,24 @@ class BrazeBanner {
   }
 }
 
+/// Event data for when a banner is dismissed.
+class BrazeBannerDismissEvent {
+  /// The placement ID of the banner that was dismissed.
+  String placementId;
+
+  /// The stable key of the banner that was dismissed.
+  String stableKey;
+
+  /// The tracking ID of the banner that was dismissed.
+  String trackingId;
+
+  BrazeBannerDismissEvent({
+    required this.placementId,
+    required this.stableKey,
+    required this.trackingId,
+  });
+}
+
 /// The default UI for a Braze Banner Card.
 class BrazeBannerView extends StatefulWidget {
   /// The placement ID of the Banner Card.
@@ -1651,12 +1692,16 @@ class BrazeBannerView extends StatefulWidget {
   /// and whenever a resize has been detected.
   final Function(double)? onHeightChanged;
 
+  /// Optional handler invoked when this banner is dismissed.
+  final void Function(BrazeBannerDismissEvent)? onDismiss;
+
   BrazeBannerView({
     Key? key,
     required this.placementId,
     this.width,
     this.height,
     this.onHeightChanged,
+    this.onDismiss,
   }) : super(key: key);
 
   @override
@@ -1680,10 +1725,14 @@ class _BrazeBannerViewState extends State<BrazeBannerView>
   /// The subscription for observing Banner resize events.
   StreamSubscription<Map<String, dynamic>>? _resizeSubscription;
 
+  /// The subscription for observing Banner dismiss events.
+  StreamSubscription<Map<String, dynamic>>? _dismissSubscription;
+
   @override
   void initState() {
     super.initState();
     _subscribeToResizeEvents();
+    _subscribeToDismissEvents();
   }
 
   void _subscribeToResizeEvents() {
@@ -1701,9 +1750,28 @@ class _BrazeBannerViewState extends State<BrazeBannerView>
     });
   }
 
+  void _subscribeToDismissEvents() {
+    final placementId = widget.placementId;
+    final onDismiss = widget.onDismiss;
+    if (placementId == null || onDismiss == null) return;
+
+    _dismissSubscription = BrazeBannerResizeManager.subscribeToDismissEvents(
+      placementId,
+      (Map<String, dynamic> args) {
+        final event = BrazeBannerDismissEvent(
+          placementId: args['placementId'] as String? ?? '',
+          stableKey: args['stableKey'] as String? ?? '',
+          trackingId: args['trackingId'] as String? ?? '',
+        );
+        onDismiss.call(event);
+      },
+    );
+  }
+
   @override
   void dispose() {
     _resizeSubscription?.cancel();
+    _dismissSubscription?.cancel();
     super.dispose();
   }
 

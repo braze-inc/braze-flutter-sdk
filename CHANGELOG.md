@@ -1,3 +1,17 @@
+## 20.0.0
+
+##### Breaking
+- Updates the native iOS bridge [from Braze Swift SDK 14.1.0 to 16.0.0](https://github.com/braze-inc/braze-swift-sdk/compare/14.1.0...16.0.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+  - With this update, the underlying Content Cards list behind `getCachedContentCards` (including removed, viewed, and clicked states) is updated immediately when changes occur. This now matches the iOS behavior with Android.
+
+##### Added
+- Updates the native Android bridge [from Braze Android SDK 42.2.0 to 42.3.1](https://github.com/braze-inc/braze-android-sdk/compare/v42.2.0...v42.3.1#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+  - Fixed an issue where HTML In-App Messages displayed during an Activity transition could remain visible but not dismissable after carryover.
+- Adds support for banner dismissals.
+  - Adds `stableKey` field to the `BrazeBanner` model.
+  - Adds `onDismiss` callback to `BrazeBannerView`, invoked when the banner for that placement is dismissed.
+  - Adds `BrazePlugin.dismissBanner(placementId)` to programmatically dismiss the banner for a given placement.
+
 ## 19.0.0
 
 ##### Breaking
@@ -16,8 +30,8 @@
     - `BrazeLogLevel.debug`
     - `BrazeLogLevel.info`
     - `BrazeLogLevel.error`
-  - Adds `BrazePlugin.logLevel` to filter out logs below a given level. 
-    - Accepts a `BrazeLogLevel` or a raw `dart:developer` integer. 
+  - Adds `BrazePlugin.logLevel` to filter out logs below a given level.
+    - Accepts a `BrazeLogLevel` or a raw `dart:developer` integer.
     - Defaults to `BrazeLogLevel.info`, which suppresses debug logs.
   - Adds `BrazePlugin.logger`, an optional callback.
     - When set, it replaces the default `dart:developer` output so you can route logs to your own logging infrastructure.
@@ -40,7 +54,7 @@
 ## 18.0.0
 
 ##### Breaking
-- Streamlines the iOS integration process to not require writing native code to forward content cards, banners, feature flags, in-app messages, or push notification updates from the native SDK. 
+- Streamlines the iOS integration process to not require writing native code to forward content cards, banners, feature flags, in-app messages, or push notification updates from the native SDK.
   - The SDK will now automatically set up these subscriptions when the Braze instance is created.
   - This matches the existing behavior on Android.
   - To migrate, remove any manual calls to `braze.contentCards.subscribeToUpdates()`, `braze.banners.subscribeToUpdates()`, `braze.notifications.subscribeToUpdates`, `braze.featureFlags.subscribeToUpdates` and `braze.inAppMessagePresenter` in the `AppDelegate`.

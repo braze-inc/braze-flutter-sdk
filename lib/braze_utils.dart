@@ -18,6 +18,21 @@ class BrazeBannerResizeManager {
   static StreamSubscription<Map<String, dynamic>> subscribeToResizeEvents(Function(Map<String, dynamic>) onResize) {
     return bannerResizeStream.listen(onResize);
   }
+
+  /// Subscribes to dismiss events for the banner with the given [placementId].
+  ///
+  /// Calls [onDismiss] when the native layer signals that the banner was dismissed,
+  /// passing a map containing dismissal event data (placementId, stableKey, trackingId).
+  static StreamSubscription<Map<String, dynamic>> subscribeToDismissEvents(
+    String placementId,
+    void Function(Map<String, dynamic>) onDismiss,
+  ) {
+    return bannerResizeStream.listen((Map<String, dynamic> args) {
+      if (args["action"] == "dismiss" && args["placementId"] == placementId) {
+        onDismiss(args);
+      }
+    });
+  }
 }
 
 /// Helper class to manage key-value properties of a given channel campaign.
