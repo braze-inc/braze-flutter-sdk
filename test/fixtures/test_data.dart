@@ -3,6 +3,7 @@ import 'dart:convert';
 class TestData {
   static const String mockDeviceId = '_test_device_id_';
   static const String mockUserId = '_test_user_id_';
+  static const String mockPushToken = '_test_push_token_';
 
   static const Map<String, dynamic> jsonObject = {
     'jsonobject': {

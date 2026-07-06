@@ -1592,6 +1592,21 @@ class BrazePluginTest {
     }
 
     @Test
+    fun whenGetRegisteredPushToken_returnsRegisteredPushToken() {
+        // Given
+        val pushToken = "test_push_token"
+        `when`(mockBraze.registeredPushToken).thenReturn(pushToken)
+        val arguments = emptyMap<String, Any>()
+
+        // When
+        val call = MethodCall("getRegisteredPushToken", arguments)
+        brazePlugin.onMethodCall(call, mockMethodChannelResult)
+
+        // Then
+        verify(mockMethodChannelResult).success(pushToken)
+    }
+
+    @Test
     fun whenGetDeviceId_returnsDeviceId() {
         // Given
         val deviceId = "test_device_id"

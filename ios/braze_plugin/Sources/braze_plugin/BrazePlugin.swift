@@ -708,6 +708,15 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
         print("Invalid Push Token String (expected hex-encoded string): \(token). Skipping token registration.")
       }
 
+    case "getRegisteredPushToken":
+      // Return the APNs device token as a hex string (symmetric with
+      // `registerPushToken`, which expects hex), or nil if none is registered.
+      if let tokenData = brazeClient?.braze.notifications.deviceToken {
+        result(tokenData.map { String(format: "%02x", $0) }.joined())
+      } else {
+        result(nil)
+      }
+
     case "wipeData":
       brazeClient?.braze.wipeData()
 

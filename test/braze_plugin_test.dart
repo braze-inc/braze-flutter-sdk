@@ -36,6 +36,8 @@ void main() {
           return TestData.mockDeviceId;
         case 'getUserId':
           return TestData.mockUserId;
+        case 'getRegisteredPushToken':
+          return TestData.mockPushToken;
         case 'getAllFeatureFlags':
           return [TestData.featureFlagJson];
         case 'getFeatureFlagByID':
@@ -1298,6 +1300,14 @@ void main() {
           arguments: <String, dynamic>{'pushToken': pushToken},
         ),
       ]);
+    });
+
+    test('should call getRegisteredPushToken', () async {
+      final result = await braze.getRegisteredPushToken();
+      expect(log, <Matcher>[
+        isMethodCall('getRegisteredPushToken', arguments: null)
+      ]);
+      expect(result, TestData.mockPushToken);
     });
 
     test('should call requestImmediateDataFlush', () {

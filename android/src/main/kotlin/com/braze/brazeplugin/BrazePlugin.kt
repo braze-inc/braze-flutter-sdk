@@ -717,6 +717,10 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     getBrazeInstance(context).registeredPushToken = pushToken
                 }
 
+                "getRegisteredPushToken" -> {
+                    result.success(getBrazeInstance(context).registeredPushToken)
+                }
+
                 "getDeviceId" -> {
                     result.success(getBrazeInstance(context).deviceId)
                 }

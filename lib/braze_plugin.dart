@@ -625,6 +625,25 @@ class BrazePlugin {
     _callStringMethod('registerPushToken', 'pushToken', pushToken);
   }
 
+  /// Returns the push token currently registered for this device with Braze,
+  /// or `null` if none is registered.
+  ///
+  /// The returned format matches [registerPushToken]: the FCM registration
+  /// token string on Android, and a hexadecimal-encoded string of the APNs
+  /// device token on iOS.
+  ///
+  /// This is useful on logout to move this device's token to a different (e.g.
+  /// anonymous) profile without waiting for the next automatic token
+  /// collection: read the token, [changeUser] to the new profile, then
+  /// [registerPushToken] the same token — Braze removes it from any other user
+  /// previously logged in on this device. This is per-device: the user's other
+  /// devices keep their own tokens.
+  Future<String?> getRegisteredPushToken() {
+    return _channel
+        .invokeMethod('getRegisteredPushToken')
+        .then((value) => value as String?);
+  }
+
   /// Requests an immediate data flush.
   void requestImmediateDataFlush() {
     _channel.invokeMethod('requestImmediateDataFlush');

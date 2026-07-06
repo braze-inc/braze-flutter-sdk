@@ -1,3 +1,8 @@
+## Unreleased
+
+##### Added
+- Adds `BrazePlugin.getRegisteredPushToken()`, which returns the push token currently registered for the device with Braze (or `null` if none). Combined with `changeUser` and `registerPushToken`, this lets an app move a device's push token to another profile on logout (e.g. an anonymous user), so a logged-out user no longer receives push addressed to their profile — without affecting the user's other devices.
+
 ## 20.0.0
 
 ##### Breaking
