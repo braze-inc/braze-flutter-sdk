@@ -1,7 +1,7 @@
 echo "-> Running braze_plugin unit tests..."
 flutter test test/braze_plugin_test.dart -r expanded
 
-echo "\n-> Running Android integration tests..."
+echo "\n-> Running integration tests..."
 cd example
 flutter drive \
   --driver=test_driver/integration_test.dart \

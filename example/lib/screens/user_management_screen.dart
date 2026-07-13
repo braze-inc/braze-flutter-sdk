@@ -551,33 +551,6 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                     context.showBrazeAppSnackbar('Attribution data set');
                   },
                 ),
-                BrazeAppButton(
-                  title: 'Get Install Tracking ID (deprecated)',
-                  variant: BrazeButtonVariant.secondary,
-                  onPressed: () {
-                    if (!validateBrazeSdkEnabled(context)) return;
-                    // ignore: deprecated_member_use
-                    braze.getInstallTrackingId().then((result) {
-                      if (!mounted) return;
-                      context.showBrazeAppSnackbar(
-                        'Install Tracking ID: $result',
-                      );
-                    });
-                  },
-                ),
-                if (Platform.isAndroid)
-                  BrazeAppButton(
-                    title: 'Set Google Advertising ID (deprecated)',
-                    variant: BrazeButtonVariant.secondary,
-                    onPressed: () {
-                      if (!validateBrazeSdkEnabled(context)) return;
-                      // ignore: deprecated_member_use
-                      braze.setGoogleAdvertisingId('dummy-id', false);
-                      context.showBrazeAppSnackbar(
-                        'Set Google Advertising ID',
-                      );
-                    },
-                  ),
               ],
             ),
             BrazeAppCard(

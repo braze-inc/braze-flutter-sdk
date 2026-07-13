@@ -69,6 +69,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
     channels.append(channel)
   }
 
+  @MainActor
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     let argsDescription = String(describing: call.arguments)
 
@@ -101,29 +102,30 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
       }
       let configuration = Braze.Configuration(apiKey: apiKey, endpoint: endpoint)
       BrazePlugin.configure?(configuration)
-      DispatchQueue.main.async {
-        let braze = BrazePlugin.createBrazeInstance(configuration)
-        BrazePlugin.postInitialization?(braze)
-        result(nil)
-      }
+      let braze = BrazePlugin.createBrazeInstance(configuration)
+      BrazePlugin.postInitialization?(braze)
+      result(nil)
 
     case "changeUser":
       guard let args = call.arguments as? [String: Any],
         let userId = args["userId"] as? String
       else {
         print("Invalid args: \(argsDescription), iOS method: \(call.method)")
+        result(nil)
         return
       }
       if Array(args.keys).contains("sdkAuthSignature") {
         guard let sdkAuthSignature = args["sdkAuthSignature"] as? String
         else {
           print("Invalid args: \(argsDescription), iOS method: \(call.method)")
+          result(nil)
           return
         }
         brazeClient?.braze.changeUser(userId: userId, sdkAuthSignature: sdkAuthSignature)
       } else {
         brazeClient?.braze.changeUser(userId: userId)
       }
+      result(nil)
 
     case "getUserId":
       result(brazeClient?.braze.user.id)
@@ -744,8 +746,10 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
 
     case "enableSDK":
       brazeClient?.braze.enabled = true
+      result(nil)
     case "disableSDK":
       brazeClient?.braze.enabled = false
+      result(nil)
 
     case "getFeatureFlagByID":
       guard let args = call.arguments as? [String: Any],
@@ -1047,6 +1051,14 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
   @MainActor
   @discardableResult
   private class func createBrazeInstance(_ configuration: Braze.Configuration) -> Braze {
+    // BrazeKit requires that the `Braze` instance be created on the main thread.
+    // Certain features fail at runtime otherwise.
+    // The `@MainActor` chain guarantees this at compile time, but that isolation
+    // is not enforced at the `@objc` FlutterMethodChannel boundary.
+    if !Thread.isMainThread {
+      print("[BrazePlugin] createBrazeInstance called off the iOS main thread. Braze features may fail.")
+    }
+
     // Cancel previous subscriptions to prevent potential reference cycle.
     brazeSubscriptionManager?.cancelAllSubscriptions()
 
@@ -1094,7 +1106,8 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
 
   /// Translates the native [inAppMessage] into JSON and passes it from the iOS layer
   /// to the Dart layer.
-  /// Note: Swift closures are unable to be translated into JSON.
+  ///
+  /// - Note: Swift closures are unable to be translated into JSON.
   ///
   /// - Parameter inAppMessage: The Braze in-app message in native Swift.
   public class func processInAppMessage(_ inAppMessage: Braze.InAppMessage) {
@@ -1113,7 +1126,8 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
 
   /// Translates each of the the native content [cards] into JSON and passes it
   /// from the iOS layer to the Dart layer.
-  /// Note: Swift closures are unable to be translated into JSON.
+  ///
+  /// - Note: Swift closures are unable to be translated into JSON.
   ///
   /// - Parameter cards: The array of Braze content cards in native Swift.
   public class func processContentCards(_ cards: [Braze.ContentCard]) {
@@ -1136,7 +1150,8 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
 
   /// Translates each of the native banner [banners] into JSON and passes it
   /// from the iOS layer to the Dart layer.
-  /// Note: Swift closures are unable to be translated into JSON.
+  ///
+  /// - Note: Swift closures are unable to be translated into JSON.
   ///
   /// - Parameter banners: The dictionary of Braze banners in native Swift.
   public class func processBanners(_ banners: [String: Braze.Banner]) {
@@ -1200,7 +1215,8 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
 
   /// Translates each of the native [featureFlags] into JSON and passes it
   /// from the iOS layer to the Dart layer.
-  /// Note: Swift closures are unable to be translated into JSON.
+  ///
+  /// - Note: Swift closures are unable to be translated into JSON.
   ///
   /// - Parameter featureFlags: The array of Braze feature flags in native Swift.
   public class func processFeatureFlags(_ featureFlags: [Braze.FeatureFlag]) {
