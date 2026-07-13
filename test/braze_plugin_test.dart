@@ -1,5 +1,4 @@
 import 'dart:convert' as json;
-import 'dart:io' show Platform;
 
 import 'package:braze_plugin/braze_plugin.dart';
 import 'package:flutter/services.dart';
@@ -32,7 +31,6 @@ void main() {
       log.add(methodCall);
       switch (methodCall.method) {
         case 'getDeviceId':
-        case 'getInstallTrackingId':
           return TestData.mockDeviceId;
         case 'getUserId':
           return TestData.mockUserId;
@@ -183,22 +181,6 @@ void main() {
       ]);
     });
 
-    test('should call logCustomEventWithProperties', () {
-      const eventName = 'someEvent';
-      final properties = {'someKey': 'someValue'};
-      // ignore: deprecated_member_use_from_same_package
-      braze.logCustomEventWithProperties(eventName, properties);
-      expect(log, <Matcher>[
-        isMethodCall(
-          'logCustomEvent',
-          arguments: <String, dynamic>{
-            'eventName': eventName,
-            'properties': properties
-          },
-        ),
-      ]);
-    });
-
     test('should call logPurchase with no properties', () {
       const productId = 'someProduct';
       const currencyCode = 'someCurrencyCode';
@@ -267,29 +249,6 @@ void main() {
             'price': price,
             'quantity': quantity,
             'properties': properties,
-          },
-        ),
-      ]);
-    });
-
-    test('should call logPurchaseWithProperties', () {
-      const productId = 'someProduct';
-      const currencyCode = 'someCurrencyCode';
-      const price = 4.2;
-      const quantity = 42;
-      final properties = {'someKey': 'someValue'};
-      // ignore: deprecated_member_use_from_same_package
-      braze.logPurchaseWithProperties(
-          productId, currencyCode, price, quantity, properties);
-      expect(log, <Matcher>[
-        isMethodCall(
-          'logPurchase',
-          arguments: <String, dynamic>{
-            'productId': productId,
-            'currencyCode': currencyCode,
-            'price': price,
-            'quantity': quantity,
-            'properties': properties
           },
         ),
       ]);
@@ -1263,31 +1222,6 @@ void main() {
       expect(result, TestData.mockDeviceId);
     });
 
-    test('should call getInstallTrackingId', () async {
-      // ignore: deprecated_member_use_from_same_package
-      final result = await braze.getInstallTrackingId();
-      expect(log, <Matcher>[
-        isMethodCall('getDeviceId', arguments: null)
-      ]);
-      expect(result, TestData.mockDeviceId);
-    });
-
-    test('should call registerAndroidPushToken', () {
-      const pushToken = 'someToken';
-      // ignore: deprecated_member_use_from_same_package
-      braze.registerAndroidPushToken(pushToken);
-      if (Platform.isAndroid) {
-        expect(log, <Matcher>[
-          isMethodCall(
-            'registerPushToken',
-            arguments: <String, dynamic>{'pushToken': pushToken},
-          ),
-        ]);
-      } else {
-        expect(log, isEmpty);
-      }
-    });
-
     test('should call registerPushToken with a hex string', () {
       const pushToken =
           '000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f';
@@ -1304,20 +1238,6 @@ void main() {
       braze.requestImmediateDataFlush();
       expect(log, <Matcher>[
         isMethodCall('requestImmediateDataFlush', arguments: null),
-      ]);
-    });
-
-    test('should call setGoogleAdvertisingId', () {
-      // ignore: deprecated_member_use_from_same_package
-      braze.setGoogleAdvertisingId('some_id', false);
-      expect(log, <Matcher>[
-        isMethodCall(
-          'setGoogleAdvertisingId',
-          arguments: <String, dynamic>{
-            'id': 'some_id',
-            'adTrackingEnabled': false
-          },
-        ),
       ]);
     });
 

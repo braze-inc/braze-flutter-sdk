@@ -3,7 +3,6 @@ library braze_plugin;
 import 'dart:async';
 import 'dart:convert' as json;
 import 'dart:developer';
-import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -373,17 +372,6 @@ class BrazePlugin {
     _channel.invokeMethod('logCustomEvent', params);
   }
 
-  /// Logs a custom event to Braze.
-  @Deprecated('Use logCustomEvent(eventName, properties: properties) instead.')
-  void logCustomEventWithProperties(
-      String eventName, Map<String, dynamic> properties) {
-    final Map<String, dynamic> params = <String, dynamic>{
-      "eventName": eventName,
-      "properties": properties
-    };
-    _channel.invokeMethod('logCustomEvent', params);
-  }
-
   /// Logs a purchase event to Braze.
   void logPurchase(
       String productId, String currencyCode, double price, int quantity,
@@ -398,21 +386,6 @@ class BrazePlugin {
       // Omits entry when properties is null
       params["properties"] = properties;
     }
-    _channel.invokeMethod('logPurchase', params);
-  }
-
-  /// Logs a purchase event to Braze.
-  @Deprecated(
-      'Use logPurchase(productId, currencyCode, price, quantity, properties: properties) instead.')
-  void logPurchaseWithProperties(String productId, String currencyCode,
-      double price, int quantity, Map<String, dynamic> properties) {
-    final Map<String, dynamic> params = <String, dynamic>{
-      "productId": productId,
-      "currencyCode": currencyCode,
-      "price": price,
-      "quantity": quantity,
-      "properties": properties
-    };
     _channel.invokeMethod('logPurchase', params);
   }
 
@@ -600,16 +573,6 @@ class BrazePlugin {
     _channel.invokeMethod('setAttributionData', params);
   }
 
-  /// Registers a push token for the current Android device with Braze.
-  /// - No-op on iOS.
-  /// This method is deprecated in favor of `registerPushToken`, which supports iOS and Android.
-  @Deprecated('Use registerPushToken(pushToken) instead.')
-  void registerAndroidPushToken(String pushToken) {
-    if (Platform.isAndroid) {
-      registerPushToken(pushToken);
-    }
-  }
-
   /// Registers a push token for the current device with Braze.
   ///
   /// Only use this method if you are not already registering for push notifications in the
@@ -719,25 +682,6 @@ class BrazePlugin {
     return _channel
         .invokeMethod('getDeviceId')
         .then<String>((dynamic result) => result);
-  }
-
-  /// Gets the install tracking id.
-  @Deprecated('Use getDeviceId instead.')
-  Future<String> getInstallTrackingId() {
-    return _channel
-        .invokeMethod('getDeviceId')
-        .then<String>((dynamic result) => result);
-  }
-
-  /// Sets Google Advertising Id for the current user.
-  /// - No-op on iOS.
-  @Deprecated('Use setAdTrackingEnabled(adTrackingEnabled, id) instead.')
-  void setGoogleAdvertisingId(String id, bool adTrackingEnabled) {
-    final Map<String, dynamic> params = <String, dynamic>{
-      "id": id,
-      "adTrackingEnabled": adTrackingEnabled
-    };
-    _channel.invokeMethod('setGoogleAdvertisingId', params);
   }
 
   /// Sets ad tracking configuration for the current user.

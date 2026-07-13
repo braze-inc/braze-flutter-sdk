@@ -1,3 +1,19 @@
+## 21.0.0
+
+##### Breaking
+- Updates the native iOS bridge [from Braze Swift SDK 16.0.0 to 17.0.0](https://github.com/braze-inc/braze-swift-sdk/compare/16.0.0...17.0.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+  - With this update, the native `Braze.init` and `changeUser(userId:)` no longer block the calling thread. Refer to the full release notes for Swift SDK 17.0.0 for more details.
+- Removes the following deprecated methods:
+  - `logCustomEventWithProperties()`. Use `logCustomEvent()` instead.
+  - `logPurchaseWithProperties()`. Use `logPurchase()` instead.
+  - `registerAndroidPushToken()`. Use `registerPushToken()` instead.
+  - `getInstallTrackingId()`. Use `getDeviceId()` instead.
+  - `setGoogleAdvertisingId()`. Use `setAdTrackingEnabled()` instead.
+
+##### Fixed
+- Fixes an iOS race where a Braze method called immediately after `initialize()` was silently dropped because the native Braze instance had not been created yet. The instance is now created synchronously so calls made right after `initialize()` are applied to a valid instance.
+- The native `changeUser`, `enableSDK`, and `disableSDK` handlers now return a completion result on both iOS and Android, so awaiting these method channel calls no longer hangs.
+
 ## 20.0.0
 
 ##### Breaking

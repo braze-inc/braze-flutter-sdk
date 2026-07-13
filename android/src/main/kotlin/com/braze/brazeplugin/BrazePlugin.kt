@@ -208,6 +208,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     } else {
                         getBrazeInstance(context).changeUser(userId, sdkAuthSignature)
                     }
+                    result.success(null)
                 }
 
                 "getUserId" -> {
@@ -763,10 +764,12 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
 
                 "enableSDK" -> {
                     Braze.enableSdk(context)
+                    result.success(null)
                 }
 
                 "disableSDK" -> {
                     Braze.disableSdk(context)
+                    result.success(null)
                 }
 
                 /**
