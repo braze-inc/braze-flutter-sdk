@@ -30,6 +30,11 @@ class LogConsole extends StatefulWidget {
 }
 
 class _LogConsoleState extends State<LogConsole> {
+  /// Alpha channel values (0-255) for the console's translucent surfaces:
+  /// 204 is 80% opaque, 51 is 20%.
+  static const int _headerAlpha = 204;
+  static const int _expandedRowAlpha = 51;
+
   final List<LogEntry> _logs = [];
   final ScrollController _scrollController = ScrollController();
   bool _showScrollToBottomButton = false;
@@ -125,7 +130,7 @@ class _LogConsoleState extends State<LogConsole> {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: widget.backgroundColor.withValues(alpha: 0.8),
+                    color: widget.backgroundColor.withAlpha(_headerAlpha),
                     borderRadius:
                         const BorderRadius.vertical(bottom: Radius.circular(8)),
                   ),
@@ -189,7 +194,7 @@ class _LogConsoleState extends State<LogConsole> {
                                     vertical: 3, horizontal: 5),
                                 decoration: BoxDecoration(
                                   color: log.isExpanded
-                                      ? Colors.grey.withValues(alpha: 0.2)
+                                      ? Colors.grey.withAlpha(_expandedRowAlpha)
                                       : Colors.transparent,
                                   borderRadius: BorderRadius.circular(4),
                                 ),

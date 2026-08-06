@@ -17,7 +17,7 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/braze-inc/braze-swift-sdk",
-            from: "17.0.0"
+            from: "18.0.0"
         )
     ],
     targets: [
