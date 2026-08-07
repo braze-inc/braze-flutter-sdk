@@ -4,6 +4,8 @@ publish_to: 'none'
 version: 1.0.0
 
 environment:
+  # Floor set by the sample app's iOS project, which resolves its native
+  # dependencies with Swift Package Manager.
   sdk: ">=3.5.0 <4.0.0"
   flutter: ">=3.24.0"
 

@@ -1991,6 +1991,274 @@ class BrazePluginTest {
     }
 
     // --
+    // Native -> Flutter event bridges (process*)
+    // --
+
+    @Test
+    fun whenProcessInAppMessage_withActivePlugin_invokesHandleBrazeInAppMessage() {
+        val mockInAppMessage: IInAppMessage = mock()
+        val iamJson = JSONObject("""{"type":"slideup","message":"hello"}""")
+        `when`(mockInAppMessage.forJsonPut()).thenReturn(iamJson)
+        clearInvocations(mockBinaryMessenger)
+
+        BrazePlugin.processInAppMessage(mockInAppMessage)
+        shadowOf(Looper.getMainLooper()).idle()
+
+        val decoded = decodeBrazePluginMethodCall()
+        assertEquals("handleBrazeInAppMessage", decoded.method)
+
+        @Suppress("UNCHECKED_CAST")
+        val args = decoded.arguments as Map<String, String>
+        assertEquals(iamJson.toString(), args["inAppMessage"])
+    }
+
+    @Test
+    fun whenProcessInAppMessage_withNoActivePlugins_doesNotInvokeChannel() {
+        // Clear log forwarding so the early-return warning does not produce a channel send
+        BrazeLogger.onLoggedCallback = null
+        BrazePlugin.activePlugins.clear()
+        val mockInAppMessage: IInAppMessage = mock()
+        `when`(mockInAppMessage.forJsonPut()).thenReturn(JSONObject("""{"type":"slideup"}"""))
+        clearInvocations(mockBinaryMessenger)
+
+        BrazePlugin.processInAppMessage(mockInAppMessage)
+        shadowOf(Looper.getMainLooper()).idle()
+
+        verify(mockBinaryMessenger, never()).send(eq("braze_plugin"), any(), isNull())
+    }
+
+    @Test
+    fun whenProcessContentCards_withActivePlugin_invokesHandleBrazeContentCards() {
+        val mockCard: com.braze.models.cards.Card = mock()
+        val cardJson = JSONObject("""{"id":"card_1"}""")
+        `when`(mockCard.forJsonPut()).thenReturn(cardJson)
+        clearInvocations(mockBinaryMessenger)
+
+        BrazePlugin.processContentCards(listOf(mockCard))
+        shadowOf(Looper.getMainLooper()).idle()
+
+        val decoded = decodeBrazePluginMethodCall()
+        assertEquals("handleBrazeContentCards", decoded.method)
+
+        @Suppress("UNCHECKED_CAST")
+        val args = decoded.arguments as Map<String, ArrayList<String>>
+        assertEquals(listOf(cardJson.toString()), args["contentCards"])
+    }
+
+    @Test
+    fun whenProcessContentCards_withNoActivePlugins_doesNotInvokeChannel() {
+        BrazeLogger.onLoggedCallback = null
+        BrazePlugin.activePlugins.clear()
+        val mockCard: com.braze.models.cards.Card = mock()
+        `when`(mockCard.forJsonPut()).thenReturn(JSONObject("""{"id":"card_1"}"""))
+        clearInvocations(mockBinaryMessenger)
+
+        BrazePlugin.processContentCards(listOf(mockCard))
+        shadowOf(Looper.getMainLooper()).idle()
+
+        verify(mockBinaryMessenger, never()).send(eq("braze_plugin"), any(), isNull())
+    }
+
+    @Test
+    fun whenProcessBanners_withActivePlugin_unwrapsBannerLayerBeforeInvoke() {
+        val mockBanner: com.braze.models.Banner = mock()
+        val innerBanner = JSONObject("""{"id":"banner_1","placement_id":"home"}""")
+        val wrapped = JSONObject().put("banner", innerBanner)
+        `when`(mockBanner.forJsonPut()).thenReturn(wrapped)
+        clearInvocations(mockBinaryMessenger)
+
+        BrazePlugin.processBanners(listOf(mockBanner))
+        shadowOf(Looper.getMainLooper()).idle()
+
+        val decoded = decodeBrazePluginMethodCall()
+        assertEquals("handleBrazeBanners", decoded.method)
+
+        @Suppress("UNCHECKED_CAST")
+        val args = decoded.arguments as Map<String, ArrayList<String>>
+        // Must send the inner banner JSON, not the {"banner":...} wrapper
+        assertEquals(listOf(innerBanner.toString()), args["banners"])
+    }
+
+    @Test
+    fun whenProcessBanners_withNoActivePlugins_doesNotInvokeChannel() {
+        BrazeLogger.onLoggedCallback = null
+        BrazePlugin.activePlugins.clear()
+        val mockBanner: com.braze.models.Banner = mock()
+        `when`(mockBanner.forJsonPut()).thenReturn(
+            JSONObject("""{"banner":{"id":"banner_1"}}""")
+        )
+        clearInvocations(mockBinaryMessenger)
+
+        BrazePlugin.processBanners(listOf(mockBanner))
+        shadowOf(Looper.getMainLooper()).idle()
+
+        verify(mockBinaryMessenger, never()).send(eq("braze_plugin"), any(), isNull())
+    }
+
+    @Test
+    fun whenProcessFeatureFlags_withActivePlugin_invokesHandleBrazeFeatureFlags() {
+        val mockFlag: FeatureFlag = mock()
+        val flagJson = JSONObject("""{"id":"ff_1","enabled":true}""")
+        `when`(mockFlag.forJsonPut()).thenReturn(flagJson)
+        clearInvocations(mockBinaryMessenger)
+
+        BrazePlugin.processFeatureFlags(listOf(mockFlag))
+        shadowOf(Looper.getMainLooper()).idle()
+
+        val decoded = decodeBrazePluginMethodCall()
+        assertEquals("handleBrazeFeatureFlags", decoded.method)
+
+        @Suppress("UNCHECKED_CAST")
+        val args = decoded.arguments as Map<String, List<String>>
+        assertEquals(listOf(flagJson.toString()), args["featureFlags"])
+    }
+
+    @Test
+    fun whenProcessFeatureFlags_withNoActivePlugins_doesNotInvokeChannel() {
+        BrazeLogger.onLoggedCallback = null
+        BrazePlugin.activePlugins.clear()
+        val mockFlag: FeatureFlag = mock()
+        `when`(mockFlag.forJsonPut()).thenReturn(JSONObject("""{"id":"ff_1"}"""))
+        clearInvocations(mockBinaryMessenger)
+
+        BrazePlugin.processFeatureFlags(listOf(mockFlag))
+        shadowOf(Looper.getMainLooper()).idle()
+
+        verify(mockBinaryMessenger, never()).send(eq("braze_plugin"), any(), isNull())
+    }
+
+    @Test
+    fun whenProcessPushNotificationEvent_withReadyPlugin_serializesPushReceivedPayload() {
+        brazePlugin.onMethodCall(MethodCall("setBrazePluginIsReady", null), mockMethodChannelResult)
+
+        val mockPushEvent: BrazePushEvent = mock()
+        val mockPayload: com.braze.models.push.BrazeNotificationPayload = mock()
+        val notificationExtras = Bundle().apply {
+            putLong("braze_push_received_timestamp", 1_700_000_000_000L)
+            putString("ab_use_webview", "true")
+            putString("android_extra", "android_val")
+        }
+        val brazeExtras = Bundle().apply {
+            putString("campaign", "spring")
+            putString(com.braze.Constants.BRAZE_PUSH_BIG_IMAGE_URL_KEY, "should_be_filtered")
+        }
+
+        `when`(mockPushEvent.eventType).thenReturn(BrazePushEventType.NOTIFICATION_RECEIVED)
+        `when`(mockPushEvent.notificationPayload).thenReturn(mockPayload)
+        `when`(mockPayload.deeplink).thenReturn("https://example.com/deeplink")
+        `when`(mockPayload.titleText).thenReturn("Title")
+        `when`(mockPayload.contentText).thenReturn("Body")
+        `when`(mockPayload.summaryText).thenReturn("Summary")
+        `when`(mockPayload.notificationBadgeNumber).thenReturn(3)
+        `when`(mockPayload.bigImageUrl).thenReturn("https://example.com/image.png")
+        `when`(mockPayload.isUninstallTrackingPush).thenReturn(false)
+        `when`(mockPayload.shouldRefreshFeatureFlags).thenReturn(false)
+        `when`(mockPayload.notificationExtras).thenReturn(notificationExtras)
+        `when`(mockPayload.brazeExtras).thenReturn(brazeExtras)
+        clearInvocations(mockBinaryMessenger)
+
+        BrazePlugin.processPushNotificationEvent(mockPushEvent)
+        shadowOf(Looper.getMainLooper()).idle()
+
+        val decoded = decodeBrazePluginMethodCall()
+        assertEquals("handleBrazePushNotificationEvent", decoded.method)
+
+        @Suppress("UNCHECKED_CAST")
+        val args = decoded.arguments as Map<String, String>
+        val pushJson = JSONObject(args["pushEvent"]!!)
+        assertEquals("push_received", pushJson.getString("payload_type"))
+        assertEquals("https://example.com/deeplink", pushJson.getString("url"))
+        assertEquals("Title", pushJson.getString("title"))
+        assertEquals("Body", pushJson.getString("body"))
+        assertEquals("Summary", pushJson.getString("summary_text"))
+        assertEquals(3, pushJson.getInt("badge_count"))
+        assertEquals(1_700_000_000_000L, pushJson.getLong("timestamp"))
+        assertEquals(true, pushJson.getBoolean("use_webview"))
+        assertEquals(false, pushJson.getBoolean("is_silent"))
+        assertEquals(false, pushJson.getBoolean("is_braze_internal"))
+        assertEquals("https://example.com/image.png", pushJson.getString("image_url"))
+        assertEquals("android_val", pushJson.getJSONObject("android").getString("android_extra"))
+        val properties = pushJson.getJSONObject("braze_properties")
+        assertEquals("spring", properties.getString("campaign"))
+        assertNull(properties.opt(com.braze.Constants.BRAZE_PUSH_BIG_IMAGE_URL_KEY))
+    }
+
+    @Test
+    fun whenProcessPushNotificationEvent_withOpenedType_serializesPushOpened() {
+        brazePlugin.onMethodCall(MethodCall("setBrazePluginIsReady", null), mockMethodChannelResult)
+
+        val mockPushEvent: BrazePushEvent = mock()
+        val mockPayload: com.braze.models.push.BrazeNotificationPayload = mock()
+        val emptyExtras = Bundle()
+
+        `when`(mockPushEvent.eventType).thenReturn(BrazePushEventType.NOTIFICATION_OPENED)
+        `when`(mockPushEvent.notificationPayload).thenReturn(mockPayload)
+        `when`(mockPayload.deeplink).thenReturn(null)
+        `when`(mockPayload.titleText).thenReturn("Opened")
+        `when`(mockPayload.contentText).thenReturn("Tap")
+        `when`(mockPayload.summaryText).thenReturn(null)
+        `when`(mockPayload.notificationBadgeNumber).thenReturn(null)
+        `when`(mockPayload.bigImageUrl).thenReturn(null)
+        `when`(mockPayload.isUninstallTrackingPush).thenReturn(false)
+        `when`(mockPayload.shouldRefreshFeatureFlags).thenReturn(false)
+        `when`(mockPayload.notificationExtras).thenReturn(emptyExtras)
+        `when`(mockPayload.brazeExtras).thenReturn(emptyExtras)
+        clearInvocations(mockBinaryMessenger)
+
+        BrazePlugin.processPushNotificationEvent(mockPushEvent)
+        shadowOf(Looper.getMainLooper()).idle()
+
+        val decoded = decodeBrazePluginMethodCall()
+        assertEquals("handleBrazePushNotificationEvent", decoded.method)
+
+        @Suppress("UNCHECKED_CAST")
+        val args = decoded.arguments as Map<String, String>
+        val pushJson = JSONObject(args["pushEvent"]!!)
+        assertEquals("push_opened", pushJson.getString("payload_type"))
+        assertEquals(false, pushJson.getBoolean("is_silent"))
+    }
+
+    @Test
+    fun whenProcessPushNotificationEvent_withSilentPayload_setsIsSilentTrue() {
+        brazePlugin.onMethodCall(MethodCall("setBrazePluginIsReady", null), mockMethodChannelResult)
+
+        val mockPushEvent: BrazePushEvent = mock()
+        val mockPayload: com.braze.models.push.BrazeNotificationPayload = mock()
+        val emptyExtras = Bundle()
+
+        `when`(mockPushEvent.eventType).thenReturn(BrazePushEventType.NOTIFICATION_RECEIVED)
+        `when`(mockPushEvent.notificationPayload).thenReturn(mockPayload)
+        `when`(mockPayload.deeplink).thenReturn(null)
+        `when`(mockPayload.titleText).thenReturn(null)
+        `when`(mockPayload.contentText).thenReturn(null)
+        `when`(mockPayload.summaryText).thenReturn(null)
+        `when`(mockPayload.notificationBadgeNumber).thenReturn(null)
+        `when`(mockPayload.bigImageUrl).thenReturn(null)
+        `when`(mockPayload.isUninstallTrackingPush).thenReturn(false)
+        `when`(mockPayload.shouldRefreshFeatureFlags).thenReturn(false)
+        `when`(mockPayload.notificationExtras).thenReturn(emptyExtras)
+        `when`(mockPayload.brazeExtras).thenReturn(emptyExtras)
+        clearInvocations(mockBinaryMessenger)
+
+        BrazePlugin.processPushNotificationEvent(mockPushEvent)
+        shadowOf(Looper.getMainLooper()).idle()
+
+        val decoded = decodeBrazePluginMethodCall()
+
+        @Suppress("UNCHECKED_CAST")
+        val args = decoded.arguments as Map<String, String>
+        val pushJson = JSONObject(args["pushEvent"]!!)
+        assertEquals(true, pushJson.getBoolean("is_silent"))
+    }
+
+    private fun decodeBrazePluginMethodCall(): MethodCall {
+        val bufferCaptor = argumentCaptor<java.nio.ByteBuffer>()
+        verify(mockBinaryMessenger).send(eq("braze_plugin"), bufferCaptor.capture(), isNull())
+        bufferCaptor.firstValue.rewind()
+        return StandardMethodCodec.INSTANCE.decodeMethodCall(bufferCaptor.firstValue)
+    }
+
+    // --
     // Logging Tests
     // --
 
@@ -2039,6 +2307,7 @@ class BrazePluginTest {
         bufferCaptor.firstValue.rewind()
         val decoded = StandardMethodCodec.INSTANCE.decodeMethodCall(bufferCaptor.firstValue)
         assertEquals("handleBrazeLog", decoded.method)
+
         @Suppress("UNCHECKED_CAST")
         val args = decoded.arguments as Map<String, Any>
         assertEquals("verbose message", args["message"])

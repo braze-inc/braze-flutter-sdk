@@ -97,7 +97,8 @@ object IntegrationInitializer {
         Braze.getInstance(ctx).refreshFeatureFlags()
     }
 
-    private class BrazeInAppMessageManagerListener(
+    // Visible for unit tests of the automatic-integration IAM bridge.
+    internal class BrazeInAppMessageManagerListener(
         val defaultInAppMessageOperation: InAppMessageOperation
     ) : DefaultInAppMessageManagerListener() {
         override fun beforeInAppMessageDisplayed(
