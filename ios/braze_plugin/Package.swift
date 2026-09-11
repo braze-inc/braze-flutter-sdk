@@ -17,7 +17,7 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/braze-inc/braze-swift-sdk",
-            from: "18.0.0"
+            from: "18.2.1"
         )
     ],
     targets: [
@@ -28,16 +28,7 @@ let package = Package(
                 .product(name: "BrazeLocation", package: "braze-swift-sdk"),
                 .product(name: "BrazeUI", package: "braze-swift-sdk")
             ],
-            exclude: [
-                "BrazeFlutterPlugin/BrazeFlutterPluginTests",
-                "BrazeFlutterPlugin/BrazeFlutterPluginTests.xctestplan"
-            ],
             resources: []
-        ),
-        .testTarget(
-            name: "BrazeFlutterPluginTests",
-            dependencies: ["braze_plugin"],
-            path: "Sources/braze_plugin/BrazeFlutterPlugin/BrazeFlutterPluginTests"
         )
     ]
 )

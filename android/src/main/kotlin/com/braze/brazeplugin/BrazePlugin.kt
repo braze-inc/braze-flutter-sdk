@@ -26,6 +26,7 @@ import com.braze.models.inappmessage.IInAppMessage
 import com.braze.models.inappmessage.IInAppMessageImmersive
 import com.braze.models.outgoing.AttributionData
 import com.braze.models.outgoing.BrazeProperties
+import com.braze.push.BrazePushUnregistrationException
 import com.braze.support.BrazeLogger
 import com.braze.support.BrazeLogger.Priority.I
 import com.braze.support.BrazeLogger.Priority.V
@@ -718,6 +719,18 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     getBrazeInstance(context).registeredPushToken = pushToken
                 }
 
+                "unregisterPush" -> {
+                    brazelog(V) { "Unregistering Push." }
+                    getBrazeInstance(context).unregisterPush { nativeResult ->
+                        handleUnregistrationResult(
+                            result,
+                            nativeResult,
+                            BrazeFlutterErrorCode.UNREGISTER_PUSH,
+                            "unregisterPush",
+                        )
+                    }
+                }
+
                 "getDeviceId" -> {
                     result.success(getBrazeInstance(context).deviceId)
                 }
@@ -742,6 +755,18 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
 
                 "wipeData" -> {
                     Braze.wipeData(context)
+                }
+
+                "logout" -> {
+                    brazelog(V) { "Logging out." }
+                    getBrazeInstance(context).logout { nativeResult ->
+                        handleUnregistrationResult(
+                            result,
+                            nativeResult,
+                            BrazeFlutterErrorCode.LOGOUT,
+                            "logout",
+                        )
+                    }
                 }
 
                 "requestLocationInitialization" -> {
@@ -823,6 +848,45 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
     // --
     // Private methods
     // --
+
+    /**
+     * Handles a Flutter method-channel result from a push-unregistration/logout [Result].
+     *
+     * @param result The Flutter method-channel result to complete.
+     * @param nativeResult The native result from the push-unregistration/logout operation.
+     * @param errorCode The error code to use if the operation fails.
+     * @param operation The operation that was performed.
+     */
+    private fun handleUnregistrationResult(
+        result: MethodChannel.Result,
+        nativeResult: Result<Unit>,
+        errorCode: String,
+        operation: String,
+    ) {
+        Handler(Looper.getMainLooper()).post {
+            nativeResult.fold(
+                onSuccess = {
+                    brazelog(V) { "`$operation` succeeded." }
+                    result.success(null)
+                },
+                onFailure = { error ->
+                    val exception = error as? BrazePushUnregistrationException
+                    val details = hashMapOf<String, Any>(
+                        "isRetriable" to (exception?.isRetriable ?: false)
+                    )
+                    exception?.httpStatusCode?.let { details["httpStatusCode"] = it }
+                    brazelog(W) {
+                        "`$operation` failed: ${exception?.message ?: error.message} " +
+                            "(retriable: ${details["isRetriable"]}" +
+                            (details["httpStatusCode"]?.let { ", httpStatusCode: $it" } ?: "") +
+                            ")"
+                    }
+                    result.error(errorCode, exception?.message ?: error.message, details)
+                }
+            )
+        }
+    }
+
     private fun handleSdkAuthenticationError(errorEvent: BrazeSdkAuthenticationErrorEvent) {
         if (activePlugins.isEmpty()) {
             brazelog(W) {
@@ -1163,4 +1227,9 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
             return map
         }
     }
+}
+
+internal object BrazeFlutterErrorCode {
+    const val UNREGISTER_PUSH = "UNREGISTER_PUSH_ERROR"
+    const val LOGOUT = "LOGOUT_ERROR"
 }

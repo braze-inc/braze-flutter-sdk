@@ -38,7 +38,6 @@ android {
         targetSdkVersion 36
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
     }
 
@@ -70,16 +69,11 @@ flutter {
 }
 
 dependencies {
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test:runner:1.7.0'
-    androidTestImplementation 'androidx.test:rules:1.7.0'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
     implementation 'androidx.multidex:multidex:2.0.1'
 
     implementation "com.braze:android-sdk-ui:$brazeAndroidSdkVersion"
     implementation "com.google.firebase:firebase-messaging:23.4.1"
     implementation project(':braze_plugin')
-    implementation project(':integration_test')
 }
 
 apply plugin: 'com.google.gms.google-services'

@@ -39,3 +39,6 @@ Icon?
 .build/
 .swiftpm/
 Package.resolved
+
+# Plugin native iOS sources via CocoaPods
+/Classes/

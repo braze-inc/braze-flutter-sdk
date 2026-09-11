@@ -10,6 +10,7 @@ import 'package:braze_plugin_example/log_console.dart';
 import 'package:braze_plugin_example/sdk_helpers.dart';
 import 'package:braze_plugin_example/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// User identity, events, attributes, location, tracking, and SDK controls.
 class UserManagementScreen extends StatefulWidget {
@@ -20,6 +21,12 @@ class UserManagementScreen extends StatefulWidget {
 }
 
 class _UserManagementScreenState extends State<UserManagementScreen> {
+  /// Example-app-only channel used to trigger a native re-registration for
+  /// remote notifications. Handled in the iOS `AppDelegate` and Android
+  /// `MainActivity` of this sample app.
+  static const MethodChannel _pushRegistrationChannel =
+      MethodChannel('brazeSampleAppChannel');
+
   String _userId = '';
   String _sdkStatus = '';
   String _pushStreamStatus = 'Disabled';
@@ -45,6 +52,17 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     setState(() => _currentLogLevel = level);
   }
 
+  void _setUserId(String userId) {
+    currentUserId = userId;
+    if (!mounted) return;
+    setState(() => _userId = userId);
+  }
+
+  void _setSdkEnabled(bool enabled) {
+    brazeSdkEnabled = enabled;
+    setState(() => _sdkStatus = enabled ? 'Enabled' : 'Disabled');
+  }
+
   @override
   void initState() {
     super.initState();
@@ -58,11 +76,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
 
     braze.getUserId().then((userId) {
       if (userId != null && mounted) {
-        setState(() {
-          _userId = userId;
-          currentUserId = userId;
-          _userIdController.text = _userId;
-        });
+        _setUserId(userId);
+        _userIdController.text = userId;
       }
     });
 
@@ -94,6 +109,27 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     if (!mounted || !brazeSdkEnabled) return;
     print('Received push notification event: ${pushEvent.toString()}');
     context.showBrazeAppSnackbar('Push event: $pushEvent');
+  }
+
+  /// Asks the OS for a fresh push token natively and lets Braze's automatic
+  /// push integration forward it. Useful to re-populate a token after
+  /// calling unregisterPush().
+  Future<void> _registerForRemoteNotifications() async {
+    if (!validateBrazeSdkEnabled(context)) return;
+    try {
+      await _pushRegistrationChannel
+          .invokeMethod('registerForRemoteNotifications');
+      if (!mounted) return;
+      context.showBrazeAppSnackbar(
+        'Requested remote notification re-registration',
+      );
+    } on PlatformException catch (e) {
+      if (!mounted) return;
+      context.showBrazeAppSnackbar(
+        'Re-register failed: ${e.message}',
+        backgroundColor: BrazeAppColors.danger,
+      );
+    }
   }
 
   void _inAppMessageReceived(BrazeInAppMessage inAppMessage) {
@@ -177,10 +213,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                       userId,
                       sdkAuthSignature: await JwtGenerator.create(userId),
                     );
-                    setState(() {
-                      _userId = userId;
-                      currentUserId = userId;
-                    });
+                    _setUserId(userId);
                     if (!mounted) return;
                     context.showBrazeAppSnackbar('User changed to: $userId');
                   },
@@ -195,10 +228,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                     if (userId == null) {
                       context.showBrazeAppSnackbar('User ID not found.');
                     } else {
-                      setState(() {
-                        _userId = userId;
-                        currentUserId = userId;
-                      });
+                      _setUserId(userId);
                       context.showBrazeAppSnackbar('User ID: $userId');
                     }
                   },
@@ -335,6 +365,29 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                     context.showBrazeAppSnackbar(
                       'Registered push token: $token',
                     );
+                  },
+                ),
+                BrazeAppButton(
+                  title: 'Re-register for Remote Notifications',
+                  onPressed: _registerForRemoteNotifications,
+                ),
+                BrazeAppButton(
+                  title: 'Unregister Push',
+                  variant: BrazeButtonVariant.danger,
+                  onPressed: () async {
+                    try {
+                      await braze.unregisterPush();
+                      if (!context.mounted) return;
+                      context.showBrazeAppSnackbar('Push unregistered');
+                    } on BrazePushUnregistrationError catch (e) {
+                      if (!context.mounted) return;
+                      context.showBrazeAppSnackbar(
+                        'Unregister push failed: ${e.message} '
+                        '(retriable: ${e.isRetriable}, '
+                        'httpStatusCode: ${e.httpStatusCode})',
+                        backgroundColor: BrazeAppColors.danger,
+                      );
+                    }
                   },
                 ),
               ],
@@ -648,10 +701,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   title: 'Enable SDK',
                   onPressed: () {
                     braze.enableSDK();
-                    brazeSdkEnabled = true;
-                    if (Platform.isAndroid) {
-                      setState(() => _sdkStatus = 'Enabled');
-                    }
+                    _setSdkEnabled(true);
                     context.showBrazeAppSnackbar('SDK enabled');
                   },
                 ),
@@ -673,8 +723,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                             child: const Text('Yes'),
                             onPressed: () {
                               braze.disableSDK();
-                              brazeSdkEnabled = false;
-                              setState(() => _sdkStatus = 'Disabled');
+                              _setSdkEnabled(false);
                               Navigator.of(ctx).pop();
                               context.showBrazeAppSnackbar('SDK disabled');
                             },
@@ -703,11 +752,58 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                             onPressed: () {
                               braze.wipeData();
                               brazeSdkEnabled = false;
+                              _setUserId('');
                               if (Platform.isIOS) {
                                 setState(() => _sdkStatus = 'Disabled');
                               }
                               Navigator.of(ctx).pop();
                               context.showBrazeAppSnackbar('Data wiped');
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                BrazeAppButton(
+                  title: 'Logout',
+                  variant: BrazeButtonVariant.danger,
+                  onPressed: () {
+                    showDialog<void>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Logout'),
+                        content: const Text(
+                          'This unregisters push and, on success, wipes local '
+                          'data and disables the SDK. Are you sure?',
+                        ),
+                        actions: [
+                          TextButton(
+                            child: const Text('Cancel'),
+                            onPressed: () => Navigator.of(ctx).pop(),
+                          ),
+                          TextButton(
+                            child: const Text('Yes'),
+                            onPressed: () async {
+                              Navigator.of(ctx).pop();
+                              try {
+                                await braze.logout();
+                                brazeSdkEnabled = false;
+                                _setUserId('');
+                                if (mounted) {
+                                  setState(() => _sdkStatus = 'Disabled');
+                                }
+                                if (!context.mounted) return;
+                                context.showBrazeAppSnackbar('Logged out');
+                              } on BrazePushUnregistrationError catch (e) {
+                                if (!context.mounted) return;
+                                context.showBrazeAppSnackbar(
+                                  'Logout failed: ${e.message} '
+                                  '(retriable: ${e.isRetriable}, '
+                                  'httpStatusCode: ${e.httpStatusCode})',
+                                  backgroundColor: BrazeAppColors.danger,
+                                );
+                              }
                             },
                           ),
                         ],

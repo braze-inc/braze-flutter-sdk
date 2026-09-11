@@ -1,3 +1,15 @@
+## 22.1.0
+
+##### Added
+- Updates the native Android bridge [from Braze Android SDK 43.0.0 to 43.1.1](https://github.com/braze-inc/braze-android-sdk/compare/v43.0.0...v43.1.1#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+- Updates the native iOS bridge [from Braze Swift SDK 18.0.0 to 18.2.1](https://github.com/braze-inc/braze-swift-sdk/compare/18.0.0...18.2.1#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+- Implements the abstractions released in Swift SDK 18.2.0 for internal SDK testing of the Flutter iOS bridge code.
+  - No behavioral changes are expected with this refactor.
+- Adds support to unregister the device's push token from the current user's profile.
+  - `BrazePlugin.unregisterPush()` unregisters the device's push token. On failure, it throws a `BrazePushUnregistrationError` so integrators can implement their own retry behavior.
+- Adds a new logout method to unregister the device's push token _and_ push-to-start tokens (iOS only), if present.
+  - `BrazePlugin.logout()` unregisters push (and push-to-start on iOS if present), then wipes local data and disables the SDK on success. On failure, it throws a `BrazePushUnregistrationError` so integrators can implement their own retry behavior.
+
 ## 22.0.0
 
 ##### Breaking
