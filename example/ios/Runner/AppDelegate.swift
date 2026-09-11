@@ -4,6 +4,7 @@ import BrazeUI
 import Flutter
 import SDWebImage
 import UIKit
+import UserNotifications
 import braze_plugin
 
 @main
@@ -14,8 +15,7 @@ import braze_plugin
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
-
-    let controller = window?.rootViewController as? FlutterViewController
+    setupSampleAppChannel()
 
     // Store Braze configuration for delayed initialization.
     // The Braze instance will be created when initialize(apiKey, endpoint) is called from Dart.
@@ -43,6 +43,43 @@ import braze_plugin
     GIFViewProvider.shared = .sdWebImage
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  /// Internal channel in the sample app to communicate across the Flutter and Swift layers.
+  private func setupSampleAppChannel() {
+    guard
+      let controller = window?.rootViewController as? FlutterViewController
+    else { return }
+    let pushChannel = FlutterMethodChannel(
+      name: "brazeSampleAppChannel", binaryMessenger: controller.binaryMessenger)
+    pushChannel.setMethodCallHandler { call, result in
+      switch call.method {
+
+      // Allows the sample app to force repopulation of the iOS push token.
+      case "registerForRemoteNotifications":
+        UNUserNotificationCenter.current().requestAuthorization(
+          options: [.alert, .badge, .sound]
+        ) { granted, error in
+          // `requestAuthorization` may complete off the main thread.
+          DispatchQueue.main.async {
+            if let error = error {
+              result(
+                FlutterError(
+                  code: "PUSH_AUTHORIZATION_ERROR",
+                  message: error.localizedDescription,
+                  details: nil))
+              return
+            }
+            // Trigger APNs registration regardless of the prompt outcome so a
+            // token is re-delivered when notifications were already authorized.
+            UIApplication.shared.registerForRemoteNotifications()
+            result(nil)
+          }
+        }
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
   }
 }
 

@@ -303,7 +303,7 @@
 				};
 			};
 			buildConfigurationList = 97C146E91CF9000F007C117D /* Build configuration list for PBXProject "Runner" */;
-			compatibilityVersion = "Xcode 3.2";
+			compatibilityVersion = "Xcode 12.0";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -1000,7 +1000,7 @@
 			repositoryURL = "https://github.com/braze-inc/braze-swift-sdk";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 18.0.0;
+				minimumVersion = 18.2.1;
 			};
 		};
 		D54250692F325F1200919601 /* XCRemoteSwiftPackageReference "SDWebImage" */ = {

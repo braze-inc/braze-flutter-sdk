@@ -9,6 +9,10 @@ import android.os.StrictMode.ThreadPolicy
 import android.util.Log
 import com.braze.Braze
 import com.braze.support.BrazeLogger
+import com.braze.support.BrazeLogger.Priority.I
+import com.braze.support.BrazeLogger.Priority.W
+import com.braze.support.BrazeLogger.brazelog
+import com.google.firebase.messaging.FirebaseMessaging
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -20,6 +24,37 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         GeneratedPluginRegistrant.registerWith(flutterEngine)
         Braze.getInstance(this).logCustomEvent("flutter_sample_opened")
+
+        /// Internal channel in the sample app to communicate across the Flutter and Kotlin layers.
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "brazeSampleAppChannel"
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                // Allows the sample app to force repopulation of the Android push token.
+                "registerForRemoteNotifications" -> {
+                    FirebaseMessaging.getInstance().token
+                        .addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                Braze.getInstance(applicationContext)
+                                    .registeredPushToken = task.result
+                                result.success(null)
+                            } else {
+                                val errorMessage =
+                                    "Failed to register push token. Ensure you are running on an actual device. " +
+                                        "Error: ${task.exception?.localizedMessage}"
+                                brazelog(W) { errorMessage }
+                                result.error(
+                                    "PUSH_REGISTRATION_ERROR",
+                                    errorMessage,
+                                    null
+                                )
+                            }
+                        }
+                }
+                else -> result.notImplemented()
+            }
+        }
 
         // - Flush Braze SDK logs to the Dart layer.
         // This is strictly for testing purposes to display logs in the sample app.

@@ -588,6 +588,20 @@ class BrazePlugin {
     _callStringMethod('registerPushToken', 'pushToken', pushToken);
   }
 
+  /// Unregisters this device's push token from Braze.
+  ///
+  /// On success, the push token is unregistered from Braze and removed locally. To receive push
+  /// notifications again, re-register via [registerPushToken] or by using the appropriate system APIs
+  /// in the native layers.
+  ///
+  /// Throws a [BrazePushUnregistrationError] on failure. The SDK does not retry on its own.
+  /// Inspect [BrazePushUnregistrationError.isRetriable] to decide whether calling again may succeed.
+  Future<void> unregisterPush() {
+    return _channel.invokeMethod('unregisterPush').catchError((e) {
+      throw BrazePushUnregistrationError.fromPlatformException(e);
+    });
+  }
+
   /// Requests an immediate data flush.
   void requestImmediateDataFlush() {
     _channel.invokeMethod('requestImmediateDataFlush');
@@ -597,6 +611,25 @@ class BrazePlugin {
   /// implementation details before using.
   void wipeData() {
     _channel.invokeMethod('wipeData');
+  }
+
+  /// Unregisters this device's push token and push-to-start tokens (iOS only) from Braze and
+  /// performs cleanup on success.
+  ///
+  /// On success, the device's push and push-to-start tokens are unregistered, local data is wiped, and
+  /// the SDK is disabled. To receive push notifications again, re-register via [registerPushToken] or
+  /// by using the appropriate system APIs in the native layers.
+  /// On failure, no data is wiped and the SDK stays enabled.
+  ///
+  /// Push-to-start tokens are only unregistered if the iOS host app has integrated Live Activities
+  /// _and_ registered them for push-to-start in the iOS code. Otherwise, this step is skipped.
+  ///
+  /// Throws a [BrazePushUnregistrationError] on failure. The SDK does not retry on its own.
+  /// Inspect [BrazePushUnregistrationError.isRetriable] to decide whether calling again may succeed.
+  Future<void> logout() {
+    return _channel.invokeMethod('logout').catchError((e) {
+      throw BrazePushUnregistrationError.fromPlatformException(e);
+    });
   }
 
   /// Refreshes Content Cards.
@@ -1885,6 +1918,60 @@ class BrazeSdkAuthenticationError {
   @override
   String toString() {
     return brazeSdkAuthenticationErrorString;
+  }
+}
+
+/// Thrown when [BrazePlugin.unregisterPush] or [BrazePlugin.logout] fails.
+class BrazePushUnregistrationError implements Exception {
+  /// Human-readable description of the failure(s).
+  final String message;
+
+  /// Whether calling the failed operation again may succeed. The SDK does not
+  /// retry on its own.
+  ///
+  /// For [BrazePlugin.logout] on iOS, this is for retrying logout as a whole.
+  final bool isRetriable;
+
+  /// The HTTP status code when the failure came from an HTTP response, or `null`
+  /// otherwise (e.g. a local rate limit or the SDK being disabled).
+  ///
+  /// For [BrazePlugin.logout] on iOS, this is the unregisterPush status code only.
+  final int? httpStatusCode;
+
+  BrazePushUnregistrationError(
+      this.message, this.isRetriable, this.httpStatusCode);
+
+  /// Builds a [BrazePushUnregistrationError] from an error thrown by the
+  /// platform method channel. The native layer surfaces `isRetriable` and an
+  /// optional `httpStatusCode` in the [PlatformException] details map.
+  factory BrazePushUnregistrationError.fromPlatformException(Object error) {
+    if (error is PlatformException) {
+      final details = error.details;
+      var isRetriable = false;
+      int? httpStatusCode;
+      if (details is Map) {
+        final isRetriableValue = details['isRetriable'];
+        if (isRetriableValue is bool) {
+          isRetriable = isRetriableValue;
+        }
+        final httpStatusCodeValue = details['httpStatusCode'];
+        if (httpStatusCodeValue is int) {
+          httpStatusCode = httpStatusCodeValue;
+        }
+      }
+      return BrazePushUnregistrationError(
+        error.message ?? error.code,
+        isRetriable,
+        httpStatusCode,
+      );
+    }
+    return BrazePushUnregistrationError(error.toString(), false, null);
+  }
+
+  @override
+  String toString() {
+    return 'BrazePushUnregistrationError(message: $message, '
+        'isRetriable: $isRetriable, httpStatusCode: $httpStatusCode)';
   }
 }
 
