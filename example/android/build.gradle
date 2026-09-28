@@ -1,5 +1,9 @@
 buildscript {
     repositories {
+        // CI-only. An unreachable Artifactory listed first fails the buildscript classpath.
+        if (System.getenv("BUILDKITE") != null) {
+            maven { url = uri("https://artifactory.infra.braze.com/artifactory/braze-maven") }
+        }
         google()
         gradlePluginPortal()
         mavenCentral()
@@ -21,6 +25,9 @@ dependencies {
 
 allprojects {
     repositories {
+        if (System.getenv("BUILDKITE") != null) {
+            maven { url = uri("https://artifactory.infra.braze.com/artifactory/braze-maven") }
+        }
         google()
         mavenCentral()
     }

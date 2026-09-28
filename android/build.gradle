@@ -16,7 +16,11 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.13.2'
+        classpath 'com.android.tools.build:gradle:9.2.1'
+        // On the classpath so Flutter can apply KGP when a host app sets
+        // android.builtInKotlin=false. Do not apply kotlin-android here.
+        // Flutter treats that line as this plugin applying KGP, and AGP 9
+        // rejects the plugin when built-in Kotlin is enabled.
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
@@ -29,7 +33,6 @@ rootProject.allprojects {
 }
 
 apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
 
 android {
     compileSdkVersion safeExtGet('compileSdkVersion', 36)
@@ -47,16 +50,18 @@ android {
         disable 'InvalidPackage'
     }
 
-    kotlinOptions {
-        freeCompilerArgs = ['-Xjvm-default=all']
-        jvmTarget = "1.8"
-    }
-
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 
+}
+
+kotlin {
+    compilerOptions {
+        jvmDefault.set(org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode.NO_COMPATIBILITY)
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+    }
 }
 
 dependencies {

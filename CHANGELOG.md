@@ -1,3 +1,15 @@
+## 23.0.0
+
+#### Breaking
+- Raises the minimum supported Flutter version from 1.10.0 to 3.44.0 and the minimum Dart version from 2.17.0 to 3.12.0.
+- Migrates the Android build to Android Gradle Plugin 9.2.1 and Java 11. The plugin no longer applies the Kotlin Gradle Plugin.
+  - Host apps need Android Gradle Plugin 9.2.1, Gradle 9.4.1, and JDK 17.
+  - Fixes [#135](https://github.com/braze-inc/braze-flutter-sdk/issues/135).
+
+##### Fixed
+- Fixes an Android hang where `getCachedContentCards()` never completed if the native cache was null. The method now returns an empty list, matching iOS.
+- Android `getBanner`, `requestBannersRefresh`, and `getFeatureFlagByID` now complete the method channel with an error when required arguments are missing.
+
 ## 22.1.0
 
 ##### Added

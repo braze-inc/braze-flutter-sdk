@@ -7,18 +7,55 @@ pluginManagement {
         return flutterSdkPath
     }()
 
+    def flutterToolsGradle = file("$flutterSdkPath/packages/flutter_tools/gradle")
+    if (System.getenv("BUILDKITE") != null && flutterToolsGradle.directory) {
+        def brazeMaven =
+            'maven { url = uri("https://artifactory.infra.braze.com/artifactory/braze-maven") }'
+        flutterToolsGradle.eachFileRecurse(groovy.io.FileType.FILES) { gradleFile ->
+            if (gradleFile.absolutePath.tokenize(File.separator).contains(".gradle")) {
+                return
+            }
+            if (!(gradleFile.name.endsWith(".gradle") || gradleFile.name.endsWith(".gradle.kts"))) {
+                return
+            }
+            def text = gradleFile.getText("UTF-8")
+            def original = text
+            if (!text.contains("braze-maven") && (text =~ /repositories\s*\{/)) {
+                text = text.replaceAll(/repositories\s*\{/, "repositories {\n    ${brazeMaven}\n")
+            }
+            if (gradleFile.name.startsWith("settings") && !text.contains("pluginManagement")) {
+                text = """pluginManagement {
+    repositories {
+        ${brazeMaven}
+        google()
+        gradlePluginPortal()
+    }
+}
+
+""" + text
+            }
+            if (text != original) {
+                gradleFile.write(text)
+            }
+        }
+    }
+
     includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
 
     repositories {
+        // The Artifactory mirror is for CI. Listing it first fails local resolution
+        // when that host accepts TCP and drops TLS, because Gradle does not fall through.
+        if (System.getenv("BUILDKITE") != null) {
+            maven { url = uri("https://artifactory.infra.braze.com/artifactory/braze-maven") }
+        }
         google()
-        mavenCentral()
         gradlePluginPortal()
     }
 }
 
 plugins {
     id "dev.flutter.flutter-plugin-loader" version "1.0.0" // apply true
-    id "com.android.application" version "8.13.2" apply false
+    id "com.android.application" version "9.2.1" apply false
     id "org.jetbrains.kotlin.android" version "2.4.10" apply false
     id "com.github.burrunan.s3-build-cache" version "1.9.8"
 }
@@ -34,6 +71,18 @@ buildCache {
         lookupDefaultAwsCredentials = true
         enabled = System.getenv("BUILDKITE") != null || System.getenv("S3_BUILD_CACHE_ENABLED") == "true"
         push = System.getenv("BUILDKITE") != null
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        if (System.getenv("BUILDKITE") != null) {
+            maven { url = uri("https://artifactory.infra.braze.com/artifactory/braze-maven") }
+        }
+        google()
+        mavenCentral()
+        maven { url = uri("https://storage.googleapis.com/download.flutter.io") }
     }
 }
 

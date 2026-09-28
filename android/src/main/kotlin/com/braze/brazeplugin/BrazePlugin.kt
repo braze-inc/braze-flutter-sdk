@@ -263,14 +263,12 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                 }
 
                 "getCachedContentCards" -> {
-                    val contentCards = getBrazeInstance(context).getCachedContentCards()
-                    if (contentCards != null) {
-                        result.success(
-                            contentCards.map { contentCard ->
-                                contentCard.forJsonPut().toString()
-                            }
-                        )
-                    }
+                    val contentCards = getBrazeInstance(context).getCachedContentCards() ?: emptyList()
+                    result.success(
+                        contentCards.map { contentCard ->
+                            contentCard.forJsonPut().toString()
+                        }
+                    )
                 }
 
                 "logContentCardClicked" -> {
@@ -304,6 +302,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val placementId = call.argument<String>("placementId")
                     if (placementId == null) {
                         brazelog(W) { "Unexpected null placementId in `getBanner`." }
+                        result.error("INVALID_ARGUMENT", "getBanner - Invalid placementId", null)
                         return
                     }
                     val banner = getBrazeInstance(context).getBanner(placementId)
@@ -316,6 +315,11 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val placementIds = call.argument<List<String>>("placementIds")
                     if (placementIds == null) {
                         brazelog(W) { "Unexpected null ids in `requestBannersRefresh`." }
+                        result.error(
+                            "INVALID_ARGUMENT",
+                            "requestBannersRefresh - Invalid placementIds",
+                            null
+                        )
                         return
                     }
                     getBrazeInstance(context).requestBannersRefresh(placementIds)
@@ -807,6 +811,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     val ffId = call.argument<String>("id")
                     if (ffId == null) {
                         brazelog(W) { "Unexpected null id in `getFeatureFlagByID`." }
+                        result.error("INVALID_ARGUMENT", "getFeatureFlagByID - Invalid id", null)
                         return
                     }
 

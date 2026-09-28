@@ -82,9 +82,8 @@ The following table lists the minimum supported versions for tools used by the B
 
 | Tool                                                         | Minimum supported version |
 | :----------------------------------------------------------- | :------------------------ |
-| Dart                                                         | 2.17.0+                   |
-| Flutter (integration via CocoaPods)                          | 1.10.0+                   |
-| Flutter (integration via CocoaPods or Swift Package Manager) | 3.24.0+                   |
+| Dart                                                         | 3.12.0+                   |
+| Flutter                                                      | 3.44.0+                   |
 | iOS Deployment Target                                        | 12.0+                     |
 
 This SDK also inherits requirements from the underlying Braze native SDKs. For more information, see [braze-inc/braze-android-sdk](https://github.com/braze-inc/braze-android-sdk) and [braze-inc/braze-swift-sdk](https://github.com/braze-inc/braze-swift-sdk).

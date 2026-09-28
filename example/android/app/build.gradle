@@ -1,6 +1,5 @@
 plugins {
     id "com.android.application"
-    id "kotlin-android"
     id "dev.flutter.flutter-gradle-plugin"
 }
 
@@ -48,20 +47,22 @@ android {
         }
     }
 
-    kotlinOptions {
-        freeCompilerArgs = ['-Xjvm-default=all']
-        jvmTarget = "1.8"
-    }
-
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
     lint {
         disable 'InvalidPackage'
     }
     namespace 'braze.com.brazepluginexample'
     compileSdk 36
+}
+
+kotlin {
+    compilerOptions {
+        jvmDefault.set(org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode.NO_COMPATIBILITY)
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
+    }
 }
 
 flutter {
