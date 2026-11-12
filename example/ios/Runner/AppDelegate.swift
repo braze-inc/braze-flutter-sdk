@@ -8,15 +8,16 @@ import UserNotifications
 import braze_plugin
 
 @main
-@objc class AppDelegate: FlutterAppDelegate {
+@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
+
+  private var messenger: FlutterBinaryMessenger?
+  private var pendingDeepLinks: [URL] = []
+  private var isDeepLinkHandlerReady = false
 
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    GeneratedPluginRegistrant.register(with: self)
-    setupSampleAppChannel()
-
     // Store Braze configuration for delayed initialization.
     // The Braze instance will be created when initialize(apiKey, endpoint) is called from Dart.
     BrazePlugin.configure(
@@ -45,15 +46,24 @@ import braze_plugin
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
+  func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+    GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    messenger = engineBridge.applicationRegistrar.messenger()
+    setupSampleAppChannel()
+  }
+
   /// Internal channel in the sample app to communicate across the Flutter and Swift layers.
   private func setupSampleAppChannel() {
-    guard
-      let controller = window?.rootViewController as? FlutterViewController
-    else { return }
+    guard let messenger else { return }
     let pushChannel = FlutterMethodChannel(
-      name: "brazeSampleAppChannel", binaryMessenger: controller.binaryMessenger)
-    pushChannel.setMethodCallHandler { call, result in
+      name: "brazeSampleAppChannel", binaryMessenger: messenger)
+    pushChannel.setMethodCallHandler { [weak self] call, result in
       switch call.method {
+
+      // The Dart deep link handler is registered, so queued cold-start links can be delivered.
+      case "deepLinkHandlerReady":
+        self?.flushPendingDeepLinks()
+        result(nil)
 
       // Allows the sample app to force repopulation of the iOS push token.
       case "registerForRemoteNotifications":
@@ -118,39 +128,29 @@ extension GIFViewProvider {
 
 extension AppDelegate {
 
-  private func forwardURL(_ url: URL) {
-    guard
-      let controller: FlutterViewController = window?.rootViewController as? FlutterViewController
-    else { return }
+  func forwardURL(_ url: URL) {
+    // Links that arrive before the Dart handler is registered are queued, such as on cold start.
+    guard isDeepLinkHandlerReady, messenger != nil else {
+      pendingDeepLinks.append(url)
+      return
+    }
+    sendDeepLink(url)
+  }
+
+  func flushPendingDeepLinks() {
+    isDeepLinkHandlerReady = true
+    let urls = pendingDeepLinks
+    pendingDeepLinks = []
+    urls.forEach(sendDeepLink)
+  }
+
+  private func sendDeepLink(_ url: URL) {
+    guard let messenger else { return }
     let deepLinkChannel = FlutterMethodChannel(
-      name: "deepLinkChannel", binaryMessenger: controller.binaryMessenger)
+      name: "deepLinkChannel", binaryMessenger: messenger)
     // Sending messages on a native platform channel must be done on the main thread.
     DispatchQueue.main.async {
       deepLinkChannel.invokeMethod("receiveDeepLink", arguments: url.absoluteString)
     }
-  }
-
-  // Custom scheme
-  // See https://developer.apple.com/documentation/xcode/defining-a-custom-url-scheme-for-your-app for more information.
-  override func application(
-    _ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]
-  ) -> Bool {
-    forwardURL(url)
-    return true
-  }
-
-  // Universal link
-  // See https://developer.apple.com/documentation/xcode/allowing-apps-and-websites-to-link-to-your-content for more information.
-  override func application(
-    _ application: UIApplication, continue userActivity: NSUserActivity,
-    restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void
-  ) -> Bool {
-    guard userActivity.activityType == NSUserActivityTypeBrowsingWeb,
-      let url = userActivity.webpageURL
-    else {
-      return false
-    }
-    forwardURL(url)
-    return true
   }
 }

@@ -621,10 +621,7 @@ public class BrazePlugin: NSObject, FlutterPlugin, BrazeSDKAuthDelegate {
     )
 
     // Re-serialize the updated JSON
-    var options: JSONSerialization.WritingOptions = [.sortedKeys]
-    if #available(iOS 13.0, *) {
-      options.insert(.withoutEscapingSlashes)
-    }
+    let options: JSONSerialization.WritingOptions = [.sortedKeys, .withoutEscapingSlashes]
     guard
       let updatedJsonData = try? JSONSerialization.data(
         withJSONObject: pushEventJson, options: options),

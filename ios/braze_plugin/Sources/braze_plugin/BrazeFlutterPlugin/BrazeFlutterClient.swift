@@ -649,21 +649,16 @@ extension BrazeFlutterClient {
   }
 
   private var keyWindowRootViewController: UIViewController? {
-    if #available(iOS 13.0, *) {
-      let scenes = UIApplication.shared.connectedScenes
-        .compactMap { $0 as? UIWindowScene }
+    let scenes = UIApplication.shared.connectedScenes
+      .compactMap { $0 as? UIWindowScene }
 
-      // Prefer the foreground-active scene, but fall back to any connected
-      // scene so this still resolves during launch / scene transitions.
-      let scene = scenes.first { $0.activationState == .foregroundActive }
-        ?? scenes.first
+    // Prefer the foreground-active scene, but fall back to any connected
+    // scene so this still resolves during launch / scene transitions.
+    let scene = scenes.first { $0.activationState == .foregroundActive }
+      ?? scenes.first
 
-      return scene?.windows.first { $0.isKeyWindow }?.rootViewController
-        ?? scene?.windows.first?.rootViewController
-    }
-
-    // iOS 12: no scenes, use the app delegate's window.
-    return UIApplication.shared.delegate?.window??.rootViewController
+    return scene?.windows.first { $0.isKeyWindow }?.rootViewController
+      ?? scene?.windows.first?.rootViewController
   }
 
   func logContentCardClicked(callArguments: [String: Any]) {

@@ -92,6 +92,10 @@ class _HomeScreenState extends State<HomeScreen> {
         showDeepLinkAlert(context, call.arguments as String);
       }
     });
+    // Lets the native side deliver any deep links that arrived before this handler existed.
+    MethodChannel('brazeSampleAppChannel')
+        .invokeMethod('deepLinkHandlerReady')
+        .catchError((_) {});
   }
 
   @override

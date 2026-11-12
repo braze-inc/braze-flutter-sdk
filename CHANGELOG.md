@@ -1,3 +1,32 @@
+## 24.0.0
+
+##### Breaking
+- Updates the native iOS bridge [from Braze Swift SDK 18.2.1 to 19.2.0](https://github.com/braze-inc/braze-swift-sdk/compare/18.2.1...19.2.0#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+  - Raises the minimum supported iOS version from 12.0 to 15.0, matching the requirements of Braze Swift SDK 19.0.0.
+- Updates the native Android bridge [from Braze Android SDK 43.1.1 to 45.0.1](https://github.com/braze-inc/braze-android-sdk/compare/v43.1.1...v45.0.1#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed).
+  - Braze Android SDK 45.0.1 updates Kotlin from 2.2.20 to 2.4.21. Host apps need a compatible Kotlin version.
+
+##### Fixed
+- Adds the `FlutterFramework` dependency required by future Flutter versions when using Swift Package Manager.
+  - Fixes [#146](https://github.com/braze-inc/braze-flutter-sdk/issues/146).
+- Fixes iOS push events missing dashboard key-value pairs in `BrazePushEvent.brazeProperties` for notifications without deep links, matching Android.
+  - Fixes [#144](https://github.com/braze-inc/braze-flutter-sdk/issues/144).
+- Fixes an Android issue where in-app messages stayed hidden until the app was backgrounded when `initialize()` ran after delayed initialization.
+  - Fixes [#145](https://github.com/braze-inc/braze-flutter-sdk/issues/145).
+- Fixes an Android issue where `initialize()` restarted the SDK on cold start even when the API key and endpoint were unchanged, which cancelled Session Start in-app messages and broke session tracking.
+
+## 23.0.0
+
+#### Breaking
+- Raises the minimum supported Flutter version from 1.10.0 to 3.44.0 and the minimum Dart version from 2.17.0 to 3.12.0.
+- Migrates the Android build to Android Gradle Plugin 9.2.1 and Java 11. The plugin no longer applies the Kotlin Gradle Plugin.
+  - Host apps need Android Gradle Plugin 9.2.1, Gradle 9.4.1, and JDK 17.
+  - Fixes [#135](https://github.com/braze-inc/braze-flutter-sdk/issues/135).
+
+##### Fixed
+- Fixes an Android hang where `getCachedContentCards()` never completed if the native cache was null. The method now returns an empty list, matching iOS.
+- Android `getBanner`, `requestBannersRefresh`, and `getFeatureFlagByID` now complete the method channel with an error when required arguments are missing.
+
 ## 22.1.0
 
 ##### Added
