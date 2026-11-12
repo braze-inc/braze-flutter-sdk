@@ -12,6 +12,7 @@ import com.braze.Braze
 import com.braze.BrazeUser
 import com.braze.Constants
 import com.braze.configuration.BrazeConfig
+import com.braze.configuration.BrazeConfigurationProvider
 import com.braze.enums.BrazePushEventType
 import com.braze.enums.Gender
 import com.braze.enums.Month
@@ -151,6 +152,37 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
     }
 
     // --
+    // Initialization helpers
+    // --
+
+    /**
+     * Whether the Braze SDK is already enabled, fully initialized (not waiting on delayed
+     * initialization), and configured with this API key and endpoint.
+     *
+     * If the runtime configuration can't be read yet, this returns false and `initialize` takes the
+     * full disable / configure / enable path.
+     */
+    internal fun isRunningWith(apiKey: String, endpoint: String): Boolean {
+        if (Braze.isDelayedInitializationEnabled || Braze.isDisabled) {
+            return false
+        }
+        val configurationProvider = BrazeConfigurationProvider(context)
+        return Braze.getConfiguredApiKey(configurationProvider) == apiKey &&
+            configurationProvider.customEndpoint == endpoint
+    }
+
+    // Initialize the Flutter plugin integration if not already initialized.
+    // This sets up event subscriptions and lifecycle callbacks.
+    private fun initializeIntegrationIfNeeded() {
+        if (IntegrationInitializer.isUninitialized) {
+            val application = context.applicationContext as? android.app.Application
+            application?.let {
+                IntegrationInitializer.initializePlugin(it, flutterConfiguration)
+            }
+        }
+    }
+
+    // --
     // Braze SDK bindings
     // --
     @Suppress("LongMethod", "ComplexMethod", "ComplexCondition", "NestedBlockDepth", "ReturnCount")
@@ -169,6 +201,22 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     }
                     brazelog(V) { "Initializing the Braze Flutter SDK with API key: $apiKey and endpoint: $endpoint" }
 
+                    // On cold start the SDK is already running with the key and endpoint saved by the
+                    // last initialize() call, and the lifecycle callbacks have opened the session.
+                    // Restarting it would reset the activity count and cancel the Session Start
+                    // in-app message, so leave the running instance alone.
+                    if (isRunningWith(apiKey, endpoint)) {
+                        brazelog(I) {
+                            "Braze is already running with this API key and endpoint. Skipping re-initialization."
+                        }
+                        initializeIntegrationIfNeeded()
+                        result.success(null)
+                        return
+                    }
+
+                    // Capture before disableSdk/configure so they can't change this decision.
+                    val hadDelayedInitialization = Braze.isDelayedInitializationEnabled
+
                     // First disable the SDK.
                     // This allows us to re-configure the SDK.
                     Braze.disableSdk(context)
@@ -181,7 +229,7 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     Braze.configure(context, brazeConfig)
 
                     // Then disable delayed init (if applicable).
-                    if (Braze.isDelayedInitializationEnabled) {
+                    if (hadDelayedInitialization) {
                         brazelog(V) { "Disabling delayed initialization for the Braze Flutter SDK." }
                         Braze.disableDelayedInitialization(context)
                     }
@@ -189,12 +237,20 @@ class BrazePlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
                     // re-enable the SDK
                     Braze.enableSdk(context)
 
-                    // Initialize the Flutter plugin integration if not already initialized
-                    // This sets up event subscriptions and lifecycle callbacks
-                    if (IntegrationInitializer.isUninitialized) {
-                        val application = context.applicationContext as? android.app.Application
-                        application?.let {
-                            IntegrationInitializer.initializePlugin(it, flutterConfiguration)
+                    initializeIntegrationIfNeeded()
+
+                    // While delayed init was on, onActivityStarted skipped openSession for the activity
+                    // that is already resumed. Replay it here, otherwise no session starts until the
+                    // app is backgrounded. This must only run when delayed init was on, since the
+                    // lifecycle callbacks already opened the session otherwise.
+                    if (hadDelayedInitialization) {
+                        activity?.let { currentActivity ->
+                            brazelog(V) {
+                                "Opening session and registering in-app messages for the current activity " +
+                                    "after delayed initialization: ${currentActivity.javaClass}"
+                            }
+                            getBrazeInstance(context).openSession(currentActivity)
+                            BrazeInAppMessageManager.getInstance().registerInAppMessageManager(currentActivity)
                         }
                     }
 

@@ -349,7 +349,7 @@
 			repositoryURL = "https://github.com/braze-inc/braze-swift-sdk";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 18.2.1;
+				minimumVersion = 19.2.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

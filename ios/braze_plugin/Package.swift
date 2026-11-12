@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "braze_plugin",
     platforms: [
-        .iOS(.v12)
+        .iOS(.v15)
     ],
     products: [
         .library(
@@ -15,15 +15,17 @@ let package = Package(
         )
     ],
     dependencies: [
+        .package(name: "FlutterFramework", path: "../FlutterFramework"),
         .package(
             url: "https://github.com/braze-inc/braze-swift-sdk",
-            from: "18.2.1"
+            from: "19.2.0"
         )
     ],
     targets: [
         .target(
             name: "braze_plugin",
             dependencies: [
+                .product(name: "FlutterFramework", package: "FlutterFramework"),
                 .product(name: "BrazeKit", package: "braze-swift-sdk"),
                 .product(name: "BrazeLocation", package: "braze-swift-sdk"),
                 .product(name: "BrazeUI", package: "braze-swift-sdk")
